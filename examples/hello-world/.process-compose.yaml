@@ -1,0 +1,16 @@
+processes:
+  enclave:
+    description: The Enclave Application
+    command: go run ./enclave/main.go
+    ready_log_line: "Listening on:"
+    availability:
+      exit_on_end: true
+  nonclave:
+    description: The Non-Enclave Application
+    command: |
+      go run ./nonclave/main.go
+    depends_on:
+      enclave:
+        condition: process_log_ready
+    availability:
+      exit_on_end: true
