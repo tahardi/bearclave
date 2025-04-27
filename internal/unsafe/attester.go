@@ -54,12 +54,3 @@ func (a *Attester) Attest(userdata []byte) ([]byte, error) {
 	}
 	return attestationBytes, nil
 }
-
-func ECDSASign(privateKey *ecdsa.PrivateKey, data []byte) ([]byte, error) {
-	r, s, err := ecdsa.Sign(crand.Reader, privateKey, data)
-	if err != nil {
-		return nil, fmt.Errorf("ecdsa signing data: %w", err)
-	}
-	signature := append(r.Bytes(), s.Bytes()...)
-	return signature, nil
-}
