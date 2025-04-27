@@ -29,6 +29,13 @@ test-unit: tidy test-internal-unit
 test-internal-unit:
 	@go test -v -count=1 ./internal/...
 
+.PHONY: test-examples
+test-examples: hello-world-example
+
+.PHONY: hello-world-example
+hello-world-example:
+	@make -C ./examples/hello-world/
+
 .PHONY: clean
 clean:
 	rm -rf ./chains/
