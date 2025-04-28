@@ -8,71 +8,45 @@ import (
 	"time"
 
 	"github.com/tahardi/bearclave"
+	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
-func MakeDetectors() ([]bearclave.Detector, error) {
-	cvmsDetector, err := bearclave.NewCVMSDetector()
-	if err != nil {
-		return nil, fmt.Errorf("creating CVMS detector: %w", err)
+func MakeVerifier(platform sdk.Platform) (bearclave.Verifier, error) {
+	switch platform {
+	case sdk.ConfidentialVMs:
+		return bearclave.NewCVMSVerifier()
+	case sdk.Nitro:
+		return bearclave.NewNitroVerifier()
+	case sdk.Unsafe:
+		return bearclave.NewUnsafeVerifier()
+	default:
+		return nil, fmt.Errorf("unsupported platform '%s'", platform)
 	}
-	nitroDetector, err := bearclave.NewNitroDetector()
-	if err != nil {
-		return nil, fmt.Errorf("creating Nitro detector: %w", err)
-	}
-	unsafeDetector, err := bearclave.NewUnsafeDetector()
-	if err != nil {
-		return nil, fmt.Errorf("creating Unsafe detector: %w", err)
-	}
-	return []bearclave.Detector{
-		cvmsDetector,
-		nitroDetector,
-		unsafeDetector,
-	}, nil
 }
 
-func MakeVerifier(detectors []bearclave.Detector) (bearclave.Verifier, error) {
-	for _, detector := range detectors {
-		platform, ok := detector.Detect()
-		switch {
-		case !ok:
-			continue
-		case platform == bearclave.CVMSPlatform:
-			return bearclave.NewCVMSVerifier()
-		case platform == bearclave.NitroPlatform:
-			return bearclave.NewNitroVerifier()
-		case platform == bearclave.UnsafePlatform:
-			return bearclave.NewUnsafeVerifier()
-		}
+func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
+	switch platform {
+	case sdk.ConfidentialVMs:
+		return bearclave.NewCVMSCommunicator()
+	case sdk.Nitro:
+		return bearclave.NewNitroCommunicator(
+			nitroEnclaveCID,
+			nitroEnclavePort,
+			nitroNonclavePort,
+		)
+	case sdk.Unsafe:
+		return bearclave.NewUnsafeCommunicator(
+			unsafeEnclaveAddr,
+			unsafeNonclaveAddr,
+		)
+	default:
+		return nil, fmt.Errorf("unsupported platform '%s'", platform)
 	}
-	return nil, fmt.Errorf("no supported platforms detected")
 }
 
-func MakeCommunicator(detectors []bearclave.Detector) (bearclave.Communicator, error) {
-	for _, detector := range detectors {
-		platform, ok := detector.Detect()
-		switch {
-		case !ok:
-			continue
-		case platform == bearclave.CVMSPlatform:
-			return bearclave.NewCVMSCommunicator()
-		case platform == bearclave.NitroPlatform:
-			return bearclave.NewNitroCommunicator(
-				nitroEnclaveCID,
-				nitroEnclavePort,
-				nitroNonclavePort,
-			)
-		case platform == bearclave.UnsafePlatform:
-			return bearclave.NewUnsafeCommunicator(
-				unsafeEnclaveAddr,
-				unsafeNonclaveAddr,
-			)
-		}
-	}
-	return nil, fmt.Errorf("no supported platforms detected")
-}
+var platform string
 
 var nitroEnclaveCID int
-var nitroNonclaveCID int
 var nitroEnclavePort int
 var nitroNonclavePort int
 
@@ -80,17 +54,19 @@ var unsafeEnclaveAddr string
 var unsafeNonclaveAddr string
 
 func main() {
+	flag.StringVar(
+		&platform,
+		"platform",
+		"unsafe",
+		"The Trusted Computing platform to use. Options: "+
+			"cvms, nitro, unsafe (default: unsafe)",
+	)
+
 	flag.IntVar(
 		&nitroEnclaveCID,
 		"nitroEnclaveCID",
 		bearclave.NitroEnclaveCID,
 		"The context ID that the enclave should use when using Nitro",
-	)
-	flag.IntVar(
-		&nitroNonclaveCID,
-		"nitroNonclaveCID",
-		bearclave.NitroNonclaveCID,
-		"The context ID that the non-enclave should use when using Nitro",
 	)
 	flag.IntVar(
 		&nitroEnclavePort,
@@ -118,17 +94,12 @@ func main() {
 		"The address that the non-enclave should listen on",
 	)
 
-	detectors, err := MakeDetectors()
+	verifier, err := MakeVerifier(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}
 
-	verifier, err := MakeVerifier(detectors)
-	if err != nil {
-		panic(err)
-	}
-
-	communicator, err := MakeCommunicator(detectors)
+	communicator, err := MakeCommunicator(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}
