@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"time"
 
 	"github.com/tahardi/bearclave"
 )
@@ -132,9 +131,7 @@ func main() {
 		panic(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
+	ctx := context.Background()
 	fmt.Printf("Listening on: %s\n", unsafeEnclaveAddr)
 	userdata, err := communicator.Receive(ctx)
 	if err != nil {
