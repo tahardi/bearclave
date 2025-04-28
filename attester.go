@@ -6,13 +6,13 @@ import (
 	"github.com/tahardi/bearclave/internal/unsafe"
 )
 
-type Attester interface {
-	Attest(userdata []byte) (attestation []byte, err error)
-}
-
 type CVMSAttester = cvms.Attester
 type NitroAttester = nitro.Attester
 type UnsafeAttester = unsafe.Attester
+
+type Attester interface {
+	Attest(userdata []byte) (attestation []byte, err error)
+}
 
 func NewCVMSAttester() (*CVMSAttester, error) {
 	return cvms.NewAttester()

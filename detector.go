@@ -6,17 +6,19 @@ import (
 	"github.com/tahardi/bearclave/internal/unsafe"
 )
 
-type Detector interface {
-	Detect() (platform string, ok bool)
-}
-
-const CVMSPlatform = cvms.Platform
-const NitroPlatform = nitro.Platform
-const UnsafePlatform = unsafe.Platform
+const (
+	CVMSPlatform   = cvms.Platform
+	NitroPlatform  = nitro.Platform
+	UnsafePlatform = unsafe.Platform
+)
 
 type CVMSDetector = cvms.Detector
 type NitroDetector = nitro.Detector
 type UnsafeDetector = unsafe.Detector
+
+type Detector interface {
+	Detect() (platform string, ok bool)
+}
 
 func NewCVMSDetector() (*CVMSDetector, error) {
 	return cvms.NewDetector()

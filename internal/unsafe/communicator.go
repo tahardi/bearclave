@@ -17,13 +17,7 @@ func NewCommunicator(sendAddr string, receiveAddr string) (*Communicator, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set up TCP listener on %s: %w", receiveAddr, err)
 	}
-	return NewCommunicatorWithListener(sendAddr, receiveListener)
-}
 
-func NewCommunicatorWithListener(
-	sendAddr string,
-	receiveListener net.Listener,
-) (*Communicator, error) {
 	return &Communicator{
 		sendAddr:        sendAddr,
 		receiveListener: receiveListener,

@@ -8,34 +8,36 @@ import (
 	"github.com/tahardi/bearclave/internal/unsafe"
 )
 
+const (
+	NitroNonclaveCID = nitro.NonclaveCID
+	NitroEnclaveCID  = nitro.EnclaveCID
+)
+
+type CVMSCommunicator = cvms.Communicator
+type NitroCommunicator = nitro.Communicator
+type UnsafeCommunicator = unsafe.Communicator
+
 type Communicator interface {
 	Close() error
 	Send(ctx context.Context, data []byte) (err error)
 	Receive(ctx context.Context) (data []byte, err error)
 }
 
-type CVMSCommunicator = cvms.Communicator
-type NitroCommunicator = nitro.Communicator
-type UnsafeEnclaveCommunicator = unsafe.Communicator
-type UnsafeNonclaveCommunicator = unsafe.Communicator
-
 func NewCVMSCommunicator() (*CVMSCommunicator, error) {
 	return cvms.NewCommunicator()
 }
 
-func NewNitroCommunicator() (*NitroCommunicator, error) {
-	return nitro.NewCommunicator()
-}
-func NewUnsafeEnclaveCommunicator(
-	sendAddr string,
-	receiveAddr string,
-) (*UnsafeEnclaveCommunicator, error) {
-	return unsafe.NewCommunicator(sendAddr, receiveAddr)
+func NewNitroCommunicator(
+	sendContextID int,
+	sendPort int,
+	receivePort int,
+) (*NitroCommunicator, error) {
+	return nitro.NewCommunicator(sendContextID, sendPort, receivePort)
 }
 
-func NewUnsafeNonclaveCommunicator(
+func NewUnsafeCommunicator(
 	sendAddr string,
 	receiveAddr string,
-) (*UnsafeNonclaveCommunicator, error) {
+) (*UnsafeCommunicator, error) {
 	return unsafe.NewCommunicator(sendAddr, receiveAddr)
 }

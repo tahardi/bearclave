@@ -2,12 +2,12 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
-.DEFAULT_GOAL := hello-world
+.DEFAULT_GOAL := hello-world-unsafe
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
-.PHONY: hello-world
-hello-world:
+.PHONY: hello-world-unsafe
+hello-world-unsafe:
 	@make --no-print-directory servers-up
 
 # https://github.com/F1bonacc1/process-compose

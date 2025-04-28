@@ -1,6 +1,11 @@
 package nitro
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+
+	"github.com/hf/nitrite"
+)
 
 type Verifier struct{}
 
@@ -9,5 +14,15 @@ func NewVerifier() (*Verifier, error) {
 }
 
 func (n *Verifier) Verify(attestation []byte) ([]byte, error) {
-	return nil, fmt.Errorf("not implemented")
+	resp, err := nitrite.Verify(
+		attestation,
+		nitrite.VerifyOptions{
+			CurrentTime: time.Now(),
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("verifying attestation: %w", err)
+	}
+
+	return resp.Document.UserData, nil
 }
