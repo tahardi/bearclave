@@ -6,6 +6,41 @@ SHELL := bash
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
+enclave/bin/enclave: $(shell find ./enclave -type f -name '*.go')
+	@cd ./enclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave
+
+nonclave/bin/nonclave: $(shell find ./nonclave -type f -name '*.go')
+	@cd ./nonclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/nonclave
+
+enclave: enclave/bin/enclave
+nonclave: nonclave/bin/nonclave
+
+.PHONY: enclave-image
+enclave-image: enclave
+	@docker build -f ./enclave/Dockerfile -t hello-world-enclave ./enclave
+
+enclave-eif: enclave-image
+	@nitro-cli build-enclave \
+		--docker-uri hello-world-enclave:latest \
+		--output-file ./enclave/bin/enclave.eif
+
+.PHONY: run-enclave-eif
+run-enclave-eif: enclave-eif
+	@nitro-cli run-enclave \
+		--cpu-count 2 \
+		--memory 512 \
+		--enclave-cid 4 \
+		--eif-path ./enclave/bin/enclave.eif \
+		--debug-mode
+
+.PHONY: describe-enclave-eif
+describe-enclave-eif: enclave-eif
+	@nitro-cli describe-eif --eif-path ./enclave/bin/enclave.eif
+
+# TODO: nitro-cli describe-enclaves then extract EnclaveID field for use in console cmd
+.PHONY: console-enclave-eif
+console-enclave-eif:
+
 .PHONY: hello-world-unsafe
 hello-world-unsafe:
 	@make --no-print-directory servers-up
@@ -19,3 +54,8 @@ servers-down:
 .PHONY: servers-up
 servers-up:
 	@process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml
+
+.PHONY: clean
+clean:
+	rm -rf ./enclave/bin
+	rm -rf ./nonclave/bin
