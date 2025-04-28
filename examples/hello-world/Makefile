@@ -6,6 +6,20 @@ SHELL := bash
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
+enclave: enclave/bin/enclave
+
+enclave/bin/enclave: $(shell find ./enclave -type f -name '*.go')
+	@cd ./enclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave
+
+nonclave: nonclave/bin/nonclave
+
+nonclave/bin/nonclave: $(shell find ./nonclave -type f -name '*.go')
+	@cd ./nonclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/nonclave
+
+.PHONY: enclave-image
+enclave-image: enclave
+	@docker build -f ./enclave/Dockerfile -t hello-world-enclave ./enclave
+
 .PHONY: hello-world-unsafe
 hello-world-unsafe:
 	@make --no-print-directory servers-up
@@ -19,3 +33,8 @@ servers-down:
 .PHONY: servers-up
 servers-up:
 	@process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml
+
+.PHONY: clean
+clean:
+	rm -rf ./enclave/bin
+	rm -rf ./nonclave/bin
