@@ -39,3 +39,4 @@ hello-world-example:
 .PHONY: clean
 clean:
 	rm -rf ./chains/
+	@make -C ./examples/hello-world/ clean
