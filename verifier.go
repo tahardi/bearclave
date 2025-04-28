@@ -6,13 +6,13 @@ import (
 	"github.com/tahardi/bearclave/internal/unsafe"
 )
 
-type Verifier interface {
-	Verify(attestation []byte) (userdata []byte, err error)
-}
-
 type CVMSVerifier = cvms.Verifier
 type NitroVerifier = nitro.Verifier
 type UnsafeVerifier = unsafe.Verifier
+
+type Verifier interface {
+	Verify(attestation []byte) (userdata []byte, err error)
+}
 
 func NewCVMSVerifier() (*CVMSVerifier, error) {
 	return cvms.NewVerifier()
