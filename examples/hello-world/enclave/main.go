@@ -92,13 +92,13 @@ func main() {
 
 	attester, err := MakeAttester(sdk.Platform(platform), config)
 	if err != nil {
-		logger.Error("making attester", err)
+		logger.Error("making attester", slog.String("error", err.Error()))
 		return
 	}
 
 	communicator, err := MakeCommunicator(sdk.Platform(platform), config)
 	if err != nil {
-		logger.Error("making communicator", err)
+		logger.Error("making communicator", slog.String("error", err.Error()))
 		return
 	}
 
@@ -106,20 +106,20 @@ func main() {
 	ctx := context.Background()
 	userdata, err := communicator.Receive(ctx)
 	if err != nil {
-		logger.Error("receiving userdata", err)
+		logger.Error("receiving userdata", slog.String("error", err.Error()))
 		return
 	}
 
 	logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
 	attestation, err := attester.Attest(userdata)
 	if err != nil {
-		logger.Error("attesting userdata", err)
+		logger.Error("attesting userdata", slog.String("error", err.Error()))
 		return
 	}
 
 	err = communicator.Send(ctx, attestation)
 	if err != nil {
-		logger.Error("sending attestation", err)
+		logger.Error("sending attestation", slog.String("error", err.Error()))
 		return
 	}
 }
