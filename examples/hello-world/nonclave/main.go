@@ -5,13 +5,18 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
-func MakeVerifier(platform sdk.Platform) (bearclave.Verifier, error) {
+func MakeVerifier(
+	platform sdk.Platform,
+	config *sdk.Config,
+) (bearclave.Verifier, error) {
 	switch platform {
 	case sdk.Nitro:
 		return bearclave.NewNitroVerifier()
@@ -26,30 +31,33 @@ func MakeVerifier(platform sdk.Platform) (bearclave.Verifier, error) {
 	}
 }
 
-func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
+func MakeCommunicator(
+	platform sdk.Platform,
+	config *sdk.Config,
+) (bearclave.Communicator, error) {
 	switch platform {
 	case sdk.Nitro:
 		return bearclave.NewNitroCommunicator(
-			enclaveCID,
-			enclavePort,
-			nonclavePort,
+			config.EnclaveCID,
+			config.EnclavePort,
+			config.NonclavePort,
 		)
 	case sdk.SEV:
 		return bearclave.NewSEVCommunicator(
-			enclaveCID,
-			enclavePort,
-			nonclavePort,
+			config.EnclaveCID,
+			config.EnclavePort,
+			config.NonclavePort,
 		)
 	case sdk.TDX:
 		return bearclave.NewTDXCommunicator(
-			enclaveCID,
-			enclavePort,
-			nonclavePort,
+			config.EnclaveCID,
+			config.EnclavePort,
+			config.NonclavePort,
 		)
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeCommunicator(
-			unsafeEnclaveAddr,
-			unsafeNonclaveAddr,
+			config.EnclaveAddr,
+			config.NonclaveAddr,
 		)
 	default:
 		return nil, fmt.Errorf("unsupported platform '%s'", platform)
@@ -57,13 +65,7 @@ func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
 }
 
 var platform string
-
-var enclaveCID int
-var enclavePort int
-var nonclavePort int
-
-var unsafeEnclaveAddr string
-var unsafeNonclaveAddr string
+var configFile string
 
 func main() {
 	flag.StringVar(
@@ -73,72 +75,61 @@ func main() {
 		"The Trusted Computing platform to use. Options: "+
 			"cvms, nitro, unsafe (default: unsafe)",
 	)
-
-	flag.IntVar(
-		&enclaveCID,
-		"enclaveCID",
-		bearclave.NitroEnclaveCID,
-		"The context ID of the enclave that the non-enclave should connect to",
-	)
-	flag.IntVar(
-		&enclavePort,
-		"enclavePort",
-		8080,
-		"The port of the enclave that the non-enclave should connect to",
-	)
-	flag.IntVar(
-		&nonclavePort,
-		"nonclavePort",
-		8081,
-		"The port that the non-enclave should listen on",
-	)
-
 	flag.StringVar(
-		&unsafeEnclaveAddr,
-		"enclave",
-		"127.0.0.1:8080",
-		"The address that the enclave should listen on",
-	)
-	flag.StringVar(
-		&unsafeNonclaveAddr,
-		"nonclave",
-		"127.0.0.1:8081",
-		"The address that the non-enclave should listen on",
+		&configFile,
+		"config",
+		sdk.DefaultConfigFile,
+		"The Trusted Computing platform to use. Options: "+
+			"nitro, sev, tdx, unsafe (default: unsafe)",
 	)
 	flag.Parse()
 
-	verifier, err := MakeVerifier(sdk.Platform(platform))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	config, err := sdk.LoadConfig(configFile)
 	if err != nil {
-		panic(err)
+		logger.Error("loading config", slog.String("error", err.Error()))
+		return
+	}
+	logger.Info("loaded config", slog.Any(configFile, config))
+
+	verifier, err := MakeVerifier(sdk.Platform(platform), config)
+	if err != nil {
+		logger.Error("making verifier", slog.String("error", err.Error()))
+		return
 	}
 
-	communicator, err := MakeCommunicator(sdk.Platform(platform))
+	communicator, err := MakeCommunicator(sdk.Platform(platform), config)
 	if err != nil {
-		panic(err)
+		logger.Error("making communicator", slog.String("error", err.Error()))
+		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	fmt.Printf("Sending to: %s\n", unsafeEnclaveAddr)
 	want := []byte("Hello, world!")
+	logger.Info("Sending userdata to enclave...", slog.String("userdata", string(want)))
 	err = communicator.Send(ctx, want)
 	if err != nil {
-		panic(err)
+		logger.Error("sending userdata", slog.String("error", err.Error()))
+		return
 	}
 
 	attestation, err := communicator.Receive(ctx)
 	if err != nil {
-		panic(err)
+		logger.Error("receiving attestation", slog.String("error", err.Error()))
+		return
 	}
 
 	got, err := verifier.Verify(attestation)
 	if err != nil {
-		panic(err)
+		logger.Error("verifying attestation", slog.String("error", err.Error()))
+		return
 	}
 
 	if !bytes.Equal(got, want) {
-		panic("got != want")
+		logger.Error("userdata verification failed")
+		return
 	}
-	fmt.Printf("Verified userdata: %s\n", string(got))
+	logger.Info("verified userdata", slog.String("userdata", string(got)))
 }
