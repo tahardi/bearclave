@@ -6,5 +6,6 @@ FROM scratch
 WORKDIR /app
 COPY --from=builder /app/enclave .
 
-ARG PLATFORM=nitro
+ARG ARG_PLATFORM=nitro
+ENV PLATFORM=$ARG_PLATFORM
 CMD ["/app/enclave", "--platform", "${PLATFORM}"]
