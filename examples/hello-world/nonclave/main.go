@@ -106,12 +106,12 @@ func main() {
 		"The address that the non-enclave should listen on",
 	)
 
-	verifier, err := MakeVerifier(sdk.Platform(platform))
+	verifier, err := MakeVerifier(sdk.Nitro)
 	if err != nil {
 		panic(err)
 	}
 
-	communicator, err := MakeCommunicator(sdk.Platform(platform))
+	communicator, err := MakeCommunicator(sdk.Nitro)
 	if err != nil {
 		panic(err)
 	}

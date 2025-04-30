@@ -104,31 +104,41 @@ func main() {
 		"The address that the non-enclave should listen on when using Unsafe",
 	)
 
-	attester, err := MakeAttester(sdk.Platform(platform))
-	if err != nil {
-		panic(err)
-	}
+	fmt.Printf("Using platform: %s\n", platform)
+	fmt.Printf("Using non-enclave CID: %d\n", nonclaveCID)
+	fmt.Printf("Using enclave port: %d\n", enclavePort)
+	fmt.Printf("Using non-enclave port: %d\n", nonclavePort)
 
-	communicator, err := MakeCommunicator(sdk.Platform(platform))
+	attester, err := MakeAttester(sdk.Nitro)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Made attester\n")
+
+	communicator, err := MakeCommunicator(sdk.Nitro)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Made communicator\n")
 
 	ctx := context.Background()
 	fmt.Printf("Listening on: %s\n", unsafeEnclaveAddr)
 	userdata, err := communicator.Receive(ctx)
 	if err != nil {
+		fmt.Printf("Error receiving: %s\n", err.Error())
 		panic(err)
 	}
 
 	fmt.Printf("Attesting userdata: %s\n", userdata)
 	attestation, err := attester.Attest(userdata)
 	if err != nil {
+		fmt.Printf("Error attesting: %s\n", err.Error())
 		panic(err)
 	}
 
 	err = communicator.Send(ctx, attestation)
 	if err != nil {
+		fmt.Printf("Error sending: %s\n", err.Error())
 		panic(err)
 	}
 }
