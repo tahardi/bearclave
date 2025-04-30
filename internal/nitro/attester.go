@@ -13,11 +13,14 @@ func NewAttester() (*Attester, error) {
 	return &Attester{}, nil
 }
 
+// TODO: userdata limit?
 // TODO: Check limits for userdata, nonce, and public key?
 // TODO: Consider how to update the Attest interface to account for
 // other arguments (e.g., Nonce, Publickey). Maybe it takes `any` instead
 // and tries to unmarshal into platform specific struct?
 func (n *Attester) Attest(userdata []byte) ([]byte, error) {
+	// TODO: Can I hold onto a long-lived session instance?
+	// TODO: Can I mock the session for testing of this function?
 	session, err := nsm.OpenDefaultSession()
 	if err != nil {
 		return nil, fmt.Errorf("opening nsm session: %w", err)
