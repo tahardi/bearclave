@@ -1,14 +1,12 @@
 package bearclave
 
 import (
-	"github.com/tahardi/bearclave/internal/cvms"
 	"github.com/tahardi/bearclave/internal/nitro"
 	"github.com/tahardi/bearclave/internal/sev"
 	"github.com/tahardi/bearclave/internal/tdx"
 	"github.com/tahardi/bearclave/internal/unsafe"
 )
 
-type CVMSVerifier = cvms.Verifier
 type NitroVerifier = nitro.Verifier
 type SEVVerifier = sev.Verifier
 type TDXVerifier = tdx.Verifier
