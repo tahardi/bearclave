@@ -3,7 +3,8 @@ package sdk
 type Platform string
 
 const (
-	ConfidentialVMs Platform = "cvms"
-	Nitro           Platform = "nitro"
-	Unsafe          Platform = "unsafe"
+	Nitro  Platform = "nitro"
+	SEV    Platform = "sev"
+	TDX    Platform = "tdx"
+	Unsafe Platform = "unsafe"
 )

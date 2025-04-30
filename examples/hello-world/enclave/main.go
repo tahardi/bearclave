@@ -11,10 +11,12 @@ import (
 
 func MakeAttester(platform sdk.Platform) (bearclave.Attester, error) {
 	switch platform {
-	case sdk.ConfidentialVMs:
-		return bearclave.NewCVMSAttester()
 	case sdk.Nitro:
 		return bearclave.NewNitroAttester()
+	case sdk.SEV:
+		return bearclave.NewSEVAttester()
+	case sdk.TDX:
+		return bearclave.NewTDXAttester()
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeAttester()
 	default:
@@ -24,13 +26,23 @@ func MakeAttester(platform sdk.Platform) (bearclave.Attester, error) {
 
 func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
 	switch platform {
-	case sdk.ConfidentialVMs:
-		return bearclave.NewCVMSCommunicator()
 	case sdk.Nitro:
 		return bearclave.NewNitroCommunicator(
-			nitroNonclaveCID,
-			nitroNonclavePort,
-			nitroEnclavePort,
+			nonclaveCID,
+			nonclavePort,
+			enclavePort,
+		)
+	case sdk.SEV:
+		return bearclave.NewSEVCommunicator(
+			nonclaveCID,
+			nonclavePort,
+			enclavePort,
+		)
+	case sdk.TDX:
+		return bearclave.NewTDXCommunicator(
+			nonclaveCID,
+			nonclavePort,
+			enclavePort,
 		)
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeCommunicator(
@@ -44,9 +56,9 @@ func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
 
 var platform string
 
-var nitroNonclaveCID int
-var nitroEnclavePort int
-var nitroNonclavePort int
+var nonclaveCID int
+var enclavePort int
+var nonclavePort int
 
 var unsafeEnclaveAddr string
 var unsafeNonclaveAddr string
@@ -61,22 +73,22 @@ func main() {
 	)
 
 	flag.IntVar(
-		&nitroNonclaveCID,
-		"nitroNonclaveCID",
-		bearclave.NitroNonclaveCID,
-		"The context ID that the non-enclave should use when using Nitro",
-	)
-	flag.IntVar(
-		&nitroEnclavePort,
-		"nitroEnclavePort",
+		&enclavePort,
+		"enclavePort",
 		8080,
-		"The port that the enclave should listen on when using Nitro",
+		"The port that the enclave should listen on",
 	)
 	flag.IntVar(
-		&nitroNonclavePort,
-		"nitroNonclavePort",
+		&nonclaveCID,
+		"nonclaveCID",
+		bearclave.NitroNonclaveCID,
+		"The context ID of the non-enclave (Nitro: 3, SEV: 2, TDX: 2)",
+	)
+	flag.IntVar(
+		&nonclavePort,
+		"nonclavePort",
 		8081,
-		"The port that the non-enclave should listen on when using Nitro",
+		"The port of the non-enclave that the enclave should connect to",
 	)
 
 	flag.StringVar(
