@@ -9,28 +9,40 @@ import (
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
-func MakeAttester(platform sdk.Platform) (bearclave.Attester, error) {
-	switch platform {
-	case sdk.ConfidentialVMs:
-		return bearclave.NewCVMSAttester()
+func MakeAttester(pl sdk.Platform) (bearclave.Attester, error) {
+	switch pl {
 	case sdk.Nitro:
 		return bearclave.NewNitroAttester()
+	case sdk.SEV:
+		return bearclave.NewSEVAttester()
+	case sdk.TDX:
+		return bearclave.NewTDXAttester()
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeAttester()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", pl)
 	}
 }
 
-func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
-	switch platform {
-	case sdk.ConfidentialVMs:
-		return bearclave.NewCVMSCommunicator()
+func MakeCommunicator(pl sdk.Platform) (bearclave.Communicator, error) {
+	switch pl {
 	case sdk.Nitro:
 		return bearclave.NewNitroCommunicator(
-			nitroNonclaveCID,
-			nitroNonclavePort,
-			nitroEnclavePort,
+			nonclaveCID,
+			nonclavePort,
+			enclavePort,
+		)
+	case sdk.SEV:
+		return bearclave.NewSEVCommunicator(
+			nonclaveCID,
+			nonclavePort,
+			enclavePort,
+		)
+	case sdk.TDX:
+		return bearclave.NewTDXCommunicator(
+			nonclaveCID,
+			nonclavePort,
+			enclavePort,
 		)
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeCommunicator(
@@ -38,15 +50,15 @@ func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
 			unsafeEnclaveAddr,
 		)
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", pl)
 	}
 }
 
 var platform string
 
-var nitroNonclaveCID int
-var nitroEnclavePort int
-var nitroNonclavePort int
+var nonclaveCID int
+var enclavePort int
+var nonclavePort int
 
 var unsafeEnclaveAddr string
 var unsafeNonclaveAddr string
@@ -61,22 +73,22 @@ func main() {
 	)
 
 	flag.IntVar(
-		&nitroNonclaveCID,
-		"nitroNonclaveCID",
-		bearclave.NitroNonclaveCID,
-		"The context ID that the non-enclave should use when using Nitro",
-	)
-	flag.IntVar(
-		&nitroEnclavePort,
-		"nitroEnclavePort",
+		&enclavePort,
+		"enclavePort",
 		8080,
-		"The port that the enclave should listen on when using Nitro",
+		"The port that the enclave should listen on",
 	)
 	flag.IntVar(
-		&nitroNonclavePort,
-		"nitroNonclavePort",
+		&nonclaveCID,
+		"nonclaveCID",
+		bearclave.NitroNonclaveCID,
+		"The context ID of the non-enclave (Nitro: 3, SEV: 2, TDX: 2)",
+	)
+	flag.IntVar(
+		&nonclavePort,
+		"nonclavePort",
 		8081,
-		"The port that the non-enclave should listen on when using Nitro",
+		"The port of the non-enclave that the enclave should connect to",
 	)
 
 	flag.StringVar(
@@ -91,32 +103,43 @@ func main() {
 		"127.0.0.1:8081",
 		"The address that the non-enclave should listen on when using Unsafe",
 	)
+	flag.Parse()
+
+	fmt.Printf("Using platform: %s\n", platform)
+	fmt.Printf("Using non-enclave CID: %d\n", nonclaveCID)
+	fmt.Printf("Using enclave port: %d\n", enclavePort)
+	fmt.Printf("Using non-enclave port: %d\n", nonclavePort)
 
 	attester, err := MakeAttester(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Made attester\n")
 
 	communicator, err := MakeCommunicator(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Made communicator\n")
 
 	ctx := context.Background()
 	fmt.Printf("Listening on: %s\n", unsafeEnclaveAddr)
 	userdata, err := communicator.Receive(ctx)
 	if err != nil {
+		fmt.Printf("Error receiving: %s\n", err.Error())
 		panic(err)
 	}
 
 	fmt.Printf("Attesting userdata: %s\n", userdata)
 	attestation, err := attester.Attest(userdata)
 	if err != nil {
+		fmt.Printf("Error attesting: %s\n", err.Error())
 		panic(err)
 	}
 
 	err = communicator.Send(ctx, attestation)
 	if err != nil {
+		fmt.Printf("Error sending: %s\n", err.Error())
 		panic(err)
 	}
 }
