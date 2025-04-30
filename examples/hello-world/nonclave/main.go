@@ -105,13 +105,14 @@ func main() {
 		"127.0.0.1:8081",
 		"The address that the non-enclave should listen on",
 	)
+	flag.Parse()
 
-	verifier, err := MakeVerifier(sdk.Nitro)
+	verifier, err := MakeVerifier(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}
 
-	communicator, err := MakeCommunicator(sdk.Nitro)
+	communicator, err := MakeCommunicator(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}

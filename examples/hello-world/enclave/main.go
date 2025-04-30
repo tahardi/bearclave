@@ -9,8 +9,8 @@ import (
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
-func MakeAttester(platform sdk.Platform) (bearclave.Attester, error) {
-	switch platform {
+func MakeAttester(pl sdk.Platform) (bearclave.Attester, error) {
+	switch pl {
 	case sdk.Nitro:
 		return bearclave.NewNitroAttester()
 	case sdk.SEV:
@@ -20,12 +20,12 @@ func MakeAttester(platform sdk.Platform) (bearclave.Attester, error) {
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeAttester()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", pl)
 	}
 }
 
-func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
-	switch platform {
+func MakeCommunicator(pl sdk.Platform) (bearclave.Communicator, error) {
+	switch pl {
 	case sdk.Nitro:
 		return bearclave.NewNitroCommunicator(
 			nonclaveCID,
@@ -50,7 +50,7 @@ func MakeCommunicator(platform sdk.Platform) (bearclave.Communicator, error) {
 			unsafeEnclaveAddr,
 		)
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", pl)
 	}
 }
 
@@ -103,19 +103,20 @@ func main() {
 		"127.0.0.1:8081",
 		"The address that the non-enclave should listen on when using Unsafe",
 	)
+	flag.Parse()
 
 	fmt.Printf("Using platform: %s\n", platform)
 	fmt.Printf("Using non-enclave CID: %d\n", nonclaveCID)
 	fmt.Printf("Using enclave port: %d\n", enclavePort)
 	fmt.Printf("Using non-enclave port: %d\n", nonclavePort)
 
-	attester, err := MakeAttester(sdk.Nitro)
+	attester, err := MakeAttester(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("Made attester\n")
 
-	communicator, err := MakeCommunicator(sdk.Nitro)
+	communicator, err := MakeCommunicator(sdk.Platform(platform))
 	if err != nil {
 		panic(err)
 	}
