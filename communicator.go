@@ -12,10 +12,6 @@ import (
 const (
 	NitroNonclaveCID = nitro.NonclaveCID
 	NitroEnclaveCID  = nitro.EnclaveCID
-	SEVNonclaveCID   = sev.NonclaveCID
-	SEVEnclaveCID    = sev.EnclaveCID
-	TDXNonclaveCID   = tdx.NonclaveCID
-	TDXEnclaveCID    = tdx.EnclaveCID
 )
 
 type NitroCommunicator = nitro.Communicator
@@ -38,11 +34,10 @@ func NewNitroCommunicator(
 }
 
 func NewSEVCommunicator(
-	sendContextID int,
-	sendPort int,
-	receivePort int,
+	sendAddr string,
+	receiveAddr string,
 ) (*SEVCommunicator, error) {
-	return sev.NewCommunicator(sendContextID, sendPort, receivePort)
+	return sev.NewCommunicator(sendAddr, receiveAddr)
 }
 
 func NewTDXCommunicator(

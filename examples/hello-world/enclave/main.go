@@ -36,9 +36,8 @@ func MakeCommunicator(config *sdk.Config) (bearclave.Communicator, error) {
 		)
 	case sdk.SEV:
 		return bearclave.NewSEVCommunicator(
-			config.NonclaveCID,
-			config.NonclavePort,
-			config.EnclavePort,
+			config.NonclaveAddr,
+			config.EnclaveAddr,
 		)
 	case sdk.TDX:
 		return bearclave.NewTDXCommunicator(

@@ -4,62 +4,32 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-
-	"github.com/mdlayher/vsock"
+	"net"
 )
 
-// TODO: This might be 2 and 3 on other systems. In fact, I think it's:
-//   - 0 for hypervisor
-//   - 1 is reserved
-//   - 2 for any process running on the host (i.e., nonclave)
-//   - 3 and above. You can sometimes control the CID when you start the VM
-//
-// TODO: You might be able to determine the CID in the enclave program at
-// runtime with IOCTL_VM_SOCKETS_GET_LOCAL_CID and then pass that in to
-// this module when initializing the Communicator
-
-// NonclaveCID In AWS Nitro the "nonclave" program runs on the host (i.e.,
-// the parent EC2 instance), which, according to documentation, is always 3.
-const NonclaveCID = 2
-
-// EnclaveCID In AWS Nitro the "enclave" program runs on the guest (i.e., the
-// VM), which can be any value between 4 and 1023. We use 4 here because it's
-// the default value for the `cid` argument to `nitro-cli run-enclave`.
-const EnclaveCID = 3
-
 type Communicator struct {
-	sendContextID   uint32
-	sendPort        uint32
-	receiveListener *vsock.Listener
+	receiveListener net.Listener
+	sendAddr        string
 }
 
-func NewCommunicator(
-	sendContextID int,
-	sendPort int,
-	receivePort int,
-) (*Communicator, error) {
-	receiveListener, err := vsock.Listen(uint32(receivePort), nil)
+func NewCommunicator(sendAddr string, receiveAddr string) (*Communicator, error) {
+	receiveListener, err := net.Listen("tcp", receiveAddr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to set up vsock listener: %w", err)
+		return nil, fmt.Errorf("failed to set up TCP listener on %s: %w", receiveAddr, err)
 	}
 
 	return &Communicator{
-		sendContextID:   uint32(sendContextID),
-		sendPort:        uint32(sendPort),
+		sendAddr:        sendAddr,
 		receiveListener: receiveListener,
 	}, nil
-}
-
-func (c *Communicator) Close() error {
-	return fmt.Errorf("not implemented")
 }
 
 func (c *Communicator) Send(ctx context.Context, data []byte) error {
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := vsock.Dial(c.sendContextID, c.sendPort, nil)
+		conn, err := net.Dial("tcp", c.sendAddr)
 		if err != nil {
-			errChan <- fmt.Errorf("failed to connect to %v: %w", c.sendPort, err)
+			errChan <- fmt.Errorf("failed to connect to %s: %w", c.sendAddr, err)
 			return
 		}
 		defer conn.Close()
@@ -120,4 +90,11 @@ func (c *Communicator) Receive(ctx context.Context) ([]byte, error) {
 	case data := <-dataChan:
 		return data, nil
 	}
+}
+
+func (c *Communicator) Close() error {
+	if c.receiveListener != nil {
+		c.receiveListener.Close()
+	}
+	return nil
 }
