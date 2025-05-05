@@ -128,7 +128,7 @@ func main() {
 
 	// TODO: Do I want to set other options?
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    "0.0.0.0:8080",
 		Handler: serverMux,
 	}
 
