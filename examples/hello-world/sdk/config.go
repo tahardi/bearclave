@@ -12,16 +12,18 @@ import (
 const DefaultConfigFile = "Hardcoded Defaults"
 
 type Config struct {
-	EnclaveCID   int    `mapstructure:"enclave_cid"`
-	EnclavePort  int    `mapstructure:"enclave_port"`
-	EnclaveAddr  string `mapstructure:"enclave_addr"`
-	NonclaveCID  int    `mapstructure:"nonclave_cid"`
-	NonclavePort int    `mapstructure:"nonclave_port"`
-	NonclaveAddr string `mapstructure:"nonclave_addr"`
+	Platform     Platform `mapstructure:"platform"`
+	EnclaveCID   int      `mapstructure:"enclave_cid"`
+	EnclavePort  int      `mapstructure:"enclave_port"`
+	EnclaveAddr  string   `mapstructure:"enclave_addr"`
+	NonclaveCID  int      `mapstructure:"nonclave_cid"`
+	NonclavePort int      `mapstructure:"nonclave_port"`
+	NonclaveAddr string   `mapstructure:"nonclave_addr"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {
 	config := &Config{
+		Platform:     Unsafe,
 		EnclaveCID:   bearclave.NitroEnclaveCID,
 		EnclavePort:  8080,
 		EnclaveAddr:  "127.0.0.1:8080",

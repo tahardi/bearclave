@@ -11,11 +11,8 @@ import (
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
-func MakeAttester(
-	platform sdk.Platform,
-	config *sdk.Config,
-) (bearclave.Attester, error) {
-	switch platform {
+func MakeAttester(config *sdk.Config) (bearclave.Attester, error) {
+	switch config.Platform {
 	case sdk.Nitro:
 		return bearclave.NewNitroAttester()
 	case sdk.SEV:
@@ -25,15 +22,12 @@ func MakeAttester(
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeAttester()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
 	}
 }
 
-func MakeCommunicator(
-	platform sdk.Platform,
-	config *sdk.Config,
-) (bearclave.Communicator, error) {
-	switch platform {
+func MakeCommunicator(config *sdk.Config) (bearclave.Communicator, error) {
+	switch config.Platform {
 	case sdk.Nitro:
 		return bearclave.NewNitroCommunicator(
 			config.NonclaveCID,
@@ -58,21 +52,13 @@ func MakeCommunicator(
 			config.EnclaveAddr,
 		)
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
 	}
 }
 
-var platform string
 var configFile string
 
 func main() {
-	flag.StringVar(
-		&platform,
-		"platform",
-		"unsafe",
-		"The Trusted Computing platform to use. Options: "+
-			"nitro, sev, tdx, unsafe (default: unsafe)",
-	)
 	flag.StringVar(
 		&configFile,
 		"config",
@@ -90,13 +76,13 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := MakeAttester(sdk.Platform(platform), config)
+	attester, err := MakeAttester(config)
 	if err != nil {
 		logger.Error("making attester", slog.String("error", err.Error()))
 		return
 	}
 
-	communicator, err := MakeCommunicator(sdk.Platform(platform), config)
+	communicator, err := MakeCommunicator(config)
 	if err != nil {
 		logger.Error("making communicator", slog.String("error", err.Error()))
 		return

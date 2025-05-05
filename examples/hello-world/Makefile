@@ -16,12 +16,23 @@ enclave: enclave/bin/enclave
 nonclave: nonclave/bin/nonclave
 
 .PHONY: enclave-image
-enclave-image: enclave
-	@docker build -f ./enclave/Dockerfile -t hello-world-enclave ./enclave
+enclave-image-nitro: enclave
+	@docker build \
+		-f ./enclave/Dockerfile \
+		-t hello-world-enclave-nitro \
+		--build-arg nitro-config.yaml \
+		./enclave
 
-enclave-eif: enclave-image
+enclave-image-sev: enclave
+	@docker build \
+		-f ./enclave/Dockerfile \
+		-t hello-world-enclave-sev \
+		--build-arg sev-config.yaml \
+		./enclave
+
+enclave-eif: enclave-image-nitro
 	@nitro-cli build-enclave \
-		--docker-uri hello-world-enclave:latest \
+		--docker-uri hello-world-enclave-nitro:latest \
 		--output-file ./enclave/bin/enclave.eif
 
 .PHONY: run-enclave-eif
