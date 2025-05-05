@@ -14,4 +14,4 @@ COPY --from=builder /app/enclave .
 COPY --from=builder /app/gateway .
 COPY --from=builder /app/sev-run.sh .
 COPY --from=builder /app/config.yaml .
-CMD ["/app/sev-run.sh"]
+CMD ["/bin/sh", "/app/sev-run.sh"]
