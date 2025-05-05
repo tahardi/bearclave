@@ -68,3 +68,142 @@ export GOROOT=/usr/local/go
 export GOPATH=$HOME
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 ```
+
+# AWS Notes
+[setup aws cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html)
+Configure aws cli to use your short-lived SSO Identity Center profile instead
+of long-lived IAM creds and/or logging in directly under aws account
+
+- export `BROWSER` bc aws cli uses default browser to log in
+```bash
+export BROWSER="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+```
+
+1. Run `aws configure sso` and provided it the following
+```bash
+# SSO session name
+tahardi-dev-mac 
+# SSO start URL
+https://d-9a67642110.awsapps.com/start
+# SSO region
+us-east-2
+# SSO registration scopes (this is the default)
+sso:account:access
+```
+2. I then chose my "SystemAdministrator" role and it asked me some questions
+about configuring a profile for logging into said rol
+```bash
+# default client region
+us-east-2
+# cli default output format
+json
+# profile name
+tahardi-ec2-mac 
+```
+3. You can edit these settings in `~/.aws.config`. To use this profile with
+the aws cli specify `--profile tahardi-ec2-mac`
+4. You may have to login first with
+```bash
+# sign into a profile. Caches creds and auto renews as needed
+aws sso login --profile tahardi-ec2-mac 
+# sign out
+aws sso logout
+# consider setting this so you don't have to constantly specify the profile flag
+export AWS_PROFILE=tahardi-ec2-mac
+```
+5. EC2 commands
+```bash
+# start an instance - this is my tahard-bearclave instance ID
+# specify a profile otherwise it tries to use what default
+# aws is configured for
+export AWS_PROFILE=tahardi-ec2-mac
+aws sso login --profile tahardi-ec2-mac
+
+export TAHARDI_BEARCLAVE_EC2_ID=i-01bdf23ce28366cb5
+aws ec2 start-instances --instance-ids $TAHARDI_BEARCLAVE_EC2_ID
+
+aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=tahardi-bearclave" \
+    --query 'Reservations[*].Instances[*].{InstanceId: InstanceId, InstanceType: InstanceType, State: State.Name, PublicIp: PublicIpAddress, Name: Tags[?Key==`Name`].Value|[0]}' \
+    --output json
+
+aws ec2 stop-instances --instance-ids $TAHARDI_BEARCLAVE_EC2_ID
+aws sso logout
+```
+
+6. Extract IP from running ec2 instance and update ssh config (on mac)
+```bash
+NEW_IP=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=tahardi-bearclave" \
+    --query 'Reservations[*].Instances[*].{PublicIp: PublicIpAddress}' \
+    --output json | jq -r '.[0][0].PublicIp') && \
+sed -i '.bak' -E "s/(Host ec2-bearclave[[:space:]]*$'\n'[[:space:]]*Hostname[[:space:]]*)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_IP/" ~/.ssh/config 
+```
+
+6. Extract IP from running ec2 instance and update ssh config (on linux)
+```bash
+# Get the IP and update ssh config
+NEW_IP=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=tahardi-bearclave" \
+    --query 'Reservations[*].Instances[*].{PublicIp: PublicIpAddress}' \
+    --output json | jq -r '.[0][0].PublicIp') && \
+sed -i.bak -E "s/(Host ec2-bearclave\n[[:space:]]*Hostname[[:space:]]*)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_IP/" ~/.ssh/config
+```
+
+# GCE Notes
+Guide on how to [create a confidential VM instance](https://cloud.google.com/confidential-computing/confidential-vm/docs/create-your-first-confidential-vm-instance).
+Only how to configure and deploy one in GCE console but not how you specify a docker image to run or how you
+interact with it once it's deployed.
+
+[Interactive vm tutorial](https://console.cloud.google.com/welcome/new?tutorial=confidential-vm__quickstart-create-confidential-vm-instance&pli=1&walkthrough_id=confidential-vm--quickstart-create-confidential-vm-instance)
+- Under "Security" during the create instance phase you have to enable confidential VM
+- N2D standard $0.08/hr
+- Do I want to turn on "SEcure Boot"? Maybe that is required for SEV-NP
+
+[video on creating amd-sev-np confidential vm](https://www.youtube.com/watch?v=qfjCCjYMwtg)
+video is very short
+
+[video on tdx confdiential vm](https://www.youtube.com/watch?v=FAS84AKa4wA)
+video is 40 mins long! Worth watching assuming they actually go through code deployment process
+
+[confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
+confidential spaces use confidential VMs. This tutorial at least has some code and shows deployment but its still
+unclear to me how communicating with programs within the confidential VM works (if at all)
+
+I *think* google has a VM instance and you just specify a docker image to pull and run in said instance. So, just like
+how Nitro has their custom Linux VM for running "EIFs" google has their own custom VM though they do say you can
+[define and run your own VM image](https://cloud.google.com/confidential-computing/confidential-vm/docs/create-custom-confidential-vm-images)
+  - when creating the VM instance there is an option under "OS and Storage -> Container" that allows you to deploy
+an image with the VM
+
+[stet repo](https://github.com/GoogleCloudPlatform/stet)
+related to confidential spaces. Has some code that may help
+
+[confidential-space repo](https://github.com/GoogleCloudPlatform/confidential-space)
+another confidential spaces repo. may or may not be helpful
+
+[confidential space deploy workload doc](https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads)
+[confidential spaces images](https://cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-images)
+
+[third party confidential space project](https://github.com/salrashid123/confidential_space)
+this might be the most thorough example yet. Go through code to figure out how they are designing/building
+confidential spaces apps
+
+[confidential space codelab 1](https://codelabs.developers.google.com/confidential-space-pki#0)
+
+[confidential space codelab 2](https://codelabs.developers.google.com/codelabs/confidential-space#0)
+
+[ncc confidential spaces security review](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.nccgroup.com/media/edukzwst/_ncc_group_googleinc_e004374_confidentialspacereport_public_v10.pdf)
+
+Add a personal ssh key to your google vm instance when you make it. You'll have to note the username afterwards though
+bc its not the default "ubuntu". Mine was "taylor.antonio.hardin" I think it pulled from the email in my ssh pub key
+file that i uploaded
+
+1. refactor hello-world example to support building and running for both nitro and gcp (sev?)
+2. refactor enclave and nonclave to just receive and send simple strings---dont try attestation and verification yet
+3. sign up for Docker and figure out how to upload your images to dockerhub
+   4. or see if there is a google registry for you to upload to
+5. Try deploying your simple enclave image to a confidential vm instance with debug mode on
+   6. check logs to look for "fmt.Print" messages from enclave starting up
+7. either build nonclave and copy binary via scp or setup gcp compute instance to pull repo
+8. try running nonclave program on instance to see if it communicates with enclave in VM
