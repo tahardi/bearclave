@@ -20,14 +20,14 @@ enclave-image-nitro: enclave
 	@docker build \
 		-f ./enclave/Dockerfile \
 		-t hello-world-enclave-nitro \
-		--build-arg nitro-config.yaml \
+		--build-arg CONFIG_FILE=nitro-config.yaml \
 		./enclave
 
 enclave-image-sev: enclave
 	@docker build \
 		-f ./enclave/Dockerfile \
 		-t hello-world-enclave-sev \
-		--build-arg sev-config.yaml \
+		--build-arg CONFIG_FILE=sev-config.yaml \
 		./enclave
 
 enclave-eif: enclave-image-nitro
