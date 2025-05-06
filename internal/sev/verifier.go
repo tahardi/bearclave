@@ -13,6 +13,7 @@ func NewVerifier() (*Verifier, error) {
 	return &Verifier{}, nil
 }
 
+// TODO: Might not work (need to get attester working first
 func (n *Verifier) Verify(attestation []byte) ([]byte, error) {
 	pbAttestation, err := abi.ReportCertsToProto(attestation)
 	if err != nil {

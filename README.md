@@ -74,11 +74,6 @@ export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 Configure aws cli to use your short-lived SSO Identity Center profile instead
 of long-lived IAM creds and/or logging in directly under aws account
 
-- export `BROWSER` bc aws cli uses default browser to log in
-```bash
-export BROWSER="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
-```
-
 1. Run `aws configure sso` and provided it the following
 ```bash
 # SSO session name
@@ -91,7 +86,7 @@ us-east-2
 sso:account:access
 ```
 2. I then chose my "SystemAdministrator" role and it asked me some questions
-about configuring a profile for logging into said rol
+about configuring a profile for logging into said role
 ```bash
 # default client region
 us-east-2
@@ -150,22 +145,24 @@ NEW_IP=$(aws ec2 describe-instances \
 sed -i.bak -E "s/(Host ec2-bearclave\n[[:space:]]*Hostname[[:space:]]*)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_IP/" ~/.ssh/config
 ```
 
-# GCE Notes
-Guide on how to [create a confidential VM instance](https://cloud.google.com/confidential-computing/confidential-vm/docs/create-your-first-confidential-vm-instance).
-Only how to configure and deploy one in GCE console but not how you specify a docker image to run or how you
-interact with it once it's deployed.
+# GCP Notes
+Below is a very rough draft of notes, tips, links compiled during my initial GCP exploration. I plan to clean them
+up in future PRs as I continue to refine the sev and tdx implementations.
 
-[Interactive vm tutorial](https://console.cloud.google.com/welcome/new?tutorial=confidential-vm__quickstart-create-confidential-vm-instance&pli=1&walkthrough_id=confidential-vm--quickstart-create-confidential-vm-instance)
-- Under "Security" during the create instance phase you have to enable confidential VM
-- N2D standard $0.08/hr
-- Do I want to turn on "SEcure Boot"? Maybe that is required for SEV-NP
+## TODOs
+1. move communication into `vsock` and `sock` folders since those are the two forms of communication needed
+   2. update instance names to something like build and run
+2. consider other names for gateway (ask AI). rewrite the config files, sdk, and example once you've settled on
+   better names. I do like using "nonclave" to refer to the non-enclave code (i.e., remote code not running on TEE)
+   - nitro specific dockerfile (move up a level)
+   - config specifically for enclave and nonclave? how to make config extensible
+3. clean up these notes
+4. figure out attestation and verification for sev/sev-np
+5. why do i have to run my container in privileged mode? Is this true? Try unprivileged again now that you
+   know the code is working
+5. Figure out how to actually set up google cloud IAM and other things correctly at some point...
 
-[video on creating amd-sev-np confidential vm](https://www.youtube.com/watch?v=qfjCCjYMwtg)
-video is very short
-
-[video on tdx confdiential vm](https://www.youtube.com/watch?v=FAS84AKa4wA)
-video is 40 mins long! Worth watching assuming they actually go through code deployment process
-
+## Tutorial/Code links
 [confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
 confidential spaces use confidential VMs. This tutorial at least has some code and shows deployment but its still
 unclear to me how communicating with programs within the confidential VM works (if at all)
@@ -195,15 +192,35 @@ confidential spaces apps
 
 [ncc confidential spaces security review](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.nccgroup.com/media/edukzwst/_ncc_group_googleinc_e004374_confidentialspacereport_public_v10.pdf)
 
-Add a personal ssh key to your google vm instance when you make it. You'll have to note the username afterwards though
-bc its not the default "ubuntu". Mine was "taylor.antonio.hardin" I think it pulled from the email in my ssh pub key
-file that i uploaded
+# Confidential VM Setup & Deployment
+- setup gcloud cli tool: currently using this in conjunction with the web console though I may ultimately move to
+just the cli tool
 
-1. refactor hello-world example to support building and running for both nitro and gcp (sev?)
-2. refactor enclave and nonclave to just receive and send simple strings---dont try attestation and verification yet
-3. sign up for Docker and figure out how to upload your images to dockerhub
-   4. or see if there is a google registry for you to upload to
-5. Try deploying your simple enclave image to a confidential vm instance with debug mode on
-   6. check logs to look for "fmt.Print" messages from enclave starting up
-7. either build nonclave and copy binary via scp or setup gcp compute instance to pull repo
-8. try running nonclave program on instance to see if it communicates with enclave in VM
+- You can add a personal ssh key to the VM instance. Note that when you deploy your container as a confidential VM it
+only allows you to log into the guest confidential VM in read-only mode---you cannot ssh into the host instance! For
+this reason I don't find ssh'ing all that helpful right now
+  - The default username is not "ubuntu". Mine was "taylor.antonio.hardin" I think it pulled from the email in my ssh
+    pub key file that i uploaded
+
+- Enable "Artifact Registry API" for storing your docker images
+- enable http in network settings (also added 8080 port to the default http firewall rules)
+
+Commands for pushing your image to google's Artifact Registry so you can pull them into your VM
+
+```bash
+gcloud init
+gcloud auth login
+gcloud config set account `403490793521-compute@developer.gserviceaccount.com`
+gcloud auth configure-docker us-east1-docker.pkg.dev
+#
+gcloud artifacts repositories add-iam-policy-binding bearclave \
+  --location=us-east1 \
+  --member=serviceAccount:403490793521-compute@developer.gserviceaccount.com \
+  --role=roles/artifactregistry.writer
+
+# Do I actually have to add this super long tag?
+docker tag hello-world-enclave-sev us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
+
+# Is the tag what tells it where to push or is that bc I logged into the registry earlier?
+docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
+```
