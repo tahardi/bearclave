@@ -26,10 +26,10 @@ func LoadConfig(configFile string) (*Config, error) {
 		Platform:     Unsafe,
 		EnclaveCID:   bearclave.NitroEnclaveCID,
 		EnclavePort:  8081,
-		EnclaveAddr:  "127.0.0.1:8081",
+		EnclaveAddr:  "0.0.0.0:8081",
 		NonclaveCID:  bearclave.NitroNonclaveCID,
 		NonclavePort: 8082,
-		NonclaveAddr: "127.0.0.1:8082",
+		NonclaveAddr: "0.0.0.0:8082",
 	}
 	if configFile == DefaultConfigFile {
 		return config, nil
