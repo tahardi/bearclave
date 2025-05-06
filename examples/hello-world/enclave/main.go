@@ -87,24 +87,26 @@ func main() {
 		return
 	}
 
-	logger.Info("Waiting to receive userdata from non-enclave...")
-	ctx := context.Background()
-	userdata, err := communicator.Receive(ctx)
-	if err != nil {
-		logger.Error("receiving userdata", slog.String("error", err.Error()))
-		return
-	}
+	for {
+		logger.Info("Waiting to receive userdata from non-enclave...")
+		ctx := context.Background()
+		userdata, err := communicator.Receive(ctx)
+		if err != nil {
+			logger.Error("receiving userdata", slog.String("error", err.Error()))
+			return
+		}
 
-	logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
-	attestation, err := attester.Attest(userdata)
-	if err != nil {
-		logger.Error("attesting userdata", slog.String("error", err.Error()))
-		return
-	}
+		logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
+		attestation, err := attester.Attest(userdata)
+		if err != nil {
+			logger.Error("attesting userdata", slog.String("error", err.Error()))
+			return
+		}
 
-	err = communicator.Send(ctx, attestation)
-	if err != nil {
-		logger.Error("sending attestation", slog.String("error", err.Error()))
-		return
+		err = communicator.Send(ctx, attestation)
+		if err != nil {
+			logger.Error("sending attestation", slog.String("error", err.Error()))
+			return
+		}
 	}
 }

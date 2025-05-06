@@ -29,7 +29,7 @@ func (c *Communicator) Send(ctx context.Context, data []byte) error {
 	go func() {
 		conn, err := net.Dial("tcp", c.sendAddr)
 		if err != nil {
-			errChan <- fmt.Errorf("failed to connect to %s: %w", c.sendAddr, err)
+			errChan <- fmt.Errorf("SEVCommunicator failed to connect to %s: %w", c.sendAddr, err)
 			return
 		}
 		defer conn.Close()
