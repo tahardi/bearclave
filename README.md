@@ -150,15 +150,13 @@ Below is a very rough draft of notes, tips, links compiled during my initial GCP
 up in future PRs as I continue to refine the sev and tdx implementations.
 
 ## TODOs
-1. move communication into `vsock` and `sock` folders since those are the two forms of communication needed
-   2. update instance names to something like build and run
-2. consider other names for gateway (ask AI). rewrite the config files, sdk, and example once you've settled on
+1. consider other names for gateway (ask AI). rewrite the config files, sdk, and example once you've settled on
    better names. I do like using "nonclave" to refer to the non-enclave code (i.e., remote code not running on TEE)
    - nitro specific dockerfile (move up a level)
    - config specifically for enclave and nonclave? how to make config extensible
-3. clean up these notes
-4. figure out attestation and verification for sev/sev-np
-5. why do i have to run my container in privileged mode? Is this true? Try unprivileged again now that you
+2. clean up these notes
+3. figure out attestation and verification for sev/sev-np
+4. why do i have to run my container in privileged mode? Is this true? Try unprivileged again now that you
    know the code is working
 5. Figure out how to actually set up google cloud IAM and other things correctly at some point...
 
