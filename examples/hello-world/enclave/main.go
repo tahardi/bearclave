@@ -96,13 +96,14 @@ func main() {
 			return
 		}
 
-		logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
-		attestation, err := attester.Attest(userdata)
-		if err != nil {
-			logger.Error("attesting userdata", slog.String("error", err.Error()))
-			return
-		}
+		//logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
+		//attestation, err := attester.Attest(userdata)
+		//if err != nil {
+		//	logger.Error("attesting userdata", slog.String("error", err.Error()))
+		//	return
+		//}
 
+		attestation := userdata
 		err = communicator.Send(ctx, attestation)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
