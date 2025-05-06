@@ -78,19 +78,19 @@ func MakeAttestUserDataHandler(communicator bearclave.Communicator, logger *slog
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		logger.Info("Sending userdata to enclave...", slog.String("userdata", string(req.Data)))
 		err = communicator.Send(ctx, req.Data)
 		if err != nil {
-			logger.Error("sending userdata", slog.String("error", err.Error()))
+			writeError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
 		}
 
 		attestation, err := communicator.Receive(ctx)
 		if err != nil {
-			logger.Error("receiving attestation", slog.String("error", err.Error()))
+			writeError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
 			return
 		}
 		writeResponse(w, AttestUserDataResponse{Attestation: attestation})
