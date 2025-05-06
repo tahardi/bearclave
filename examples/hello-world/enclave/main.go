@@ -75,11 +75,11 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := MakeAttester(config)
-	if err != nil {
-		logger.Error("making attester", slog.String("error", err.Error()))
-		return
-	}
+	//attester, err := MakeAttester(config)
+	//if err != nil {
+	//	logger.Error("making attester", slog.String("error", err.Error()))
+	//	return
+	//}
 
 	communicator, err := MakeCommunicator(config)
 	if err != nil {

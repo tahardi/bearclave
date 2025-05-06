@@ -125,11 +125,11 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	verifier, err := MakeVerifier(config)
-	if err != nil {
-		logger.Error("making verifier", slog.String("error", err.Error()))
-		return
-	}
+	//verifier, err := MakeVerifier(config)
+	//if err != nil {
+	//	logger.Error("making verifier", slog.String("error", err.Error()))
+	//	return
+	//}
 
 	want := []byte("Hello, world!")
 	client := NewGatewayClient("http://34.172.96.52:8080")
