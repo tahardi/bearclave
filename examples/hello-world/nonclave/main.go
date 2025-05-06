@@ -2,22 +2,19 @@ package main
 
 import (
 	"bytes"
-	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"log/slog"
-	"os"
-	"time"
-
 	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
+	"io"
+	"log/slog"
+	"net/http"
+	"os"
 )
 
-func MakeVerifier(
-	platform sdk.Platform,
-	config *sdk.Config,
-) (bearclave.Verifier, error) {
-	switch platform {
+func MakeVerifier(config *sdk.Config) (bearclave.Verifier, error) {
+	switch config.Platform {
 	case sdk.Nitro:
 		return bearclave.NewNitroVerifier()
 	case sdk.SEV:
@@ -27,54 +24,90 @@ func MakeVerifier(
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeVerifier()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
 	}
 }
 
-func MakeCommunicator(
-	platform sdk.Platform,
-	config *sdk.Config,
-) (bearclave.Communicator, error) {
-	switch platform {
-	case sdk.Nitro:
-		return bearclave.NewNitroCommunicator(
-			config.EnclaveCID,
-			config.EnclavePort,
-			config.NonclavePort,
-		)
-	case sdk.SEV:
-		return bearclave.NewSEVCommunicator(
-			config.EnclaveCID,
-			config.EnclavePort,
-			config.NonclavePort,
-		)
-	case sdk.TDX:
-		return bearclave.NewTDXCommunicator(
-			config.EnclaveCID,
-			config.EnclavePort,
-			config.NonclavePort,
-		)
-	case sdk.Unsafe:
-		return bearclave.NewUnsafeCommunicator(
-			config.EnclaveAddr,
-			config.NonclaveAddr,
-		)
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+type GatewayClient struct {
+	host   string
+	client *http.Client
+}
+
+func NewGatewayClient(host string) *GatewayClient {
+	// TODO: Check configuration - should I set a timeout?
+	client := &http.Client{}
+	return NewGatewayClientWithClient(host, client)
+}
+
+func NewGatewayClientWithClient(
+	host string,
+	client *http.Client,
+) *GatewayClient {
+	return &GatewayClient{
+		host:   host,
+		client: client,
 	}
 }
 
-var platform string
+type AttestUserDataRequest struct {
+	Data []byte `json:"data"`
+}
+type AttestUserDataResponse struct {
+	Attestation []byte `json:"attestation"`
+}
+
+func (c *GatewayClient) AttestUserData(data []byte) ([]byte, error) {
+	attestUserDataRequest := AttestUserDataRequest{Data: data}
+	attestUserDataResponse := AttestUserDataResponse{}
+	err := c.Do("POST", "/attest-user-data", attestUserDataRequest, &attestUserDataResponse)
+	if err != nil {
+		return nil, fmt.Errorf("doing attest user data request: %w", err)
+	}
+	return attestUserDataResponse.Attestation, nil
+}
+
+func (c *GatewayClient) Do(
+	method string,
+	api string,
+	apiReq any,
+	apiResp any,
+) error {
+	bodyBytes, err := json.Marshal(apiReq)
+	if err != nil {
+		return fmt.Errorf("marshaling request body: %w", err)
+	}
+
+	url := c.host + api
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err = io.ReadAll(resp.Body)
+	switch {
+	case err != nil:
+		return fmt.Errorf("reading response body: %w", err)
+	case resp.StatusCode != http.StatusOK:
+		return fmt.Errorf("received non-200 response: %s", string(bodyBytes))
+	}
+
+	err = json.Unmarshal(bodyBytes, apiResp)
+	if err != nil {
+		return fmt.Errorf("unmarshaling response: %w", err)
+	}
+	return nil
+}
+
 var configFile string
 
 func main() {
-	flag.StringVar(
-		&platform,
-		"platform",
-		"unsafe",
-		"The Trusted Computing platform to use. Options: "+
-			"cvms, nitro, unsafe (default: unsafe)",
-	)
 	flag.StringVar(
 		&configFile,
 		"config",
@@ -92,41 +125,27 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	verifier, err := MakeVerifier(sdk.Platform(platform), config)
-	if err != nil {
-		logger.Error("making verifier", slog.String("error", err.Error()))
-		return
-	}
-
-	communicator, err := MakeCommunicator(sdk.Platform(platform), config)
-	if err != nil {
-		logger.Error("making communicator", slog.String("error", err.Error()))
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	//verifier, err := MakeVerifier(config)
+	//if err != nil {
+	//	logger.Error("making verifier", slog.String("error", err.Error()))
+	//	return
+	//}
 
 	want := []byte("Hello, world!")
-	logger.Info("Sending userdata to enclave...", slog.String("userdata", string(want)))
-	err = communicator.Send(ctx, want)
+	client := NewGatewayClient("http://34.172.96.52:8080")
+	attestation, err := client.AttestUserData(want)
 	if err != nil {
-		logger.Error("sending userdata", slog.String("error", err.Error()))
+		logger.Error("attesting userdata", slog.String("error", err.Error()))
 		return
 	}
 
-	attestation, err := communicator.Receive(ctx)
-	if err != nil {
-		logger.Error("receiving attestation", slog.String("error", err.Error()))
-		return
-	}
+	//got, err := verifier.Verify(attestation)
+	//if err != nil {
+	//	logger.Error("verifying attestation", slog.String("error", err.Error()))
+	//	return
+	//}
 
-	got, err := verifier.Verify(attestation)
-	if err != nil {
-		logger.Error("verifying attestation", slog.String("error", err.Error()))
-		return
-	}
-
+	got := attestation
 	if !bytes.Equal(got, want) {
 		logger.Error("userdata verification failed")
 		return

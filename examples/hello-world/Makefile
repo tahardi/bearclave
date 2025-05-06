@@ -9,19 +9,34 @@ SHELL := bash
 enclave/bin/enclave: $(shell find ./enclave -type f -name '*.go')
 	@cd ./enclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave
 
+gateway/bin/gateway: $(shell find ./gateway -type f -name '*.go')
+	@cd ./gateway && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/gateway
+
 nonclave/bin/nonclave: $(shell find ./nonclave -type f -name '*.go')
 	@cd ./nonclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/nonclave
 
 enclave: enclave/bin/enclave
+gateway: gateway/bin/gateway
 nonclave: nonclave/bin/nonclave
 
 .PHONY: enclave-image
-enclave-image: enclave
-	@docker build -f ./enclave/Dockerfile -t hello-world-enclave ./enclave
+enclave-image-nitro: enclave
+	@docker build \
+		-f ./enclave/Dockerfile \
+		-t hello-world-enclave-nitro \
+		--build-arg CONFIG_FILE=nitro-config.yaml \
+		./enclave
 
-enclave-eif: enclave-image
+enclave-image-sev: enclave gateway
+	@docker build \
+		-f ./sev.Dockerfile \
+		-t hello-world-enclave-sev \
+		--build-arg CONFIG_FILE=enclave/sev-config.yaml \
+		.
+
+enclave-eif: enclave-image-nitro
 	@nitro-cli build-enclave \
-		--docker-uri hello-world-enclave:latest \
+		--docker-uri hello-world-enclave-nitro:latest \
 		--output-file ./enclave/bin/enclave.eif
 
 .PHONY: run-enclave-eif

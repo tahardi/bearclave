@@ -14,6 +14,7 @@ func NewAttester() (*Attester, error) {
 	return &Attester{}, nil
 }
 
+// TODO: Does not work
 func (n *Attester) Attest(userdata []byte) ([]byte, error) {
 	if len(userdata) > AMD_SEV_USERDATA_SIZE {
 		return nil, fmt.Errorf(
