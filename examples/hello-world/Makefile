@@ -9,14 +9,14 @@ SHELL := bash
 enclave/bin/enclave: $(shell find ./enclave -type f -name '*.go')
 	@cd ./enclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave
 
-gateway/bin/gateway: $(shell find ./gateway -type f -name '*.go')
-	@cd ./gateway && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/gateway
+enclave-proxy/bin/enclave-proxy: $(shell find ./enclave-proxy -type f -name '*.go')
+	@cd ./enclave-proxy && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave-proxy
 
 nonclave/bin/nonclave: $(shell find ./nonclave -type f -name '*.go')
 	@cd ./nonclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/nonclave
 
 enclave: enclave/bin/enclave
-gateway: gateway/bin/gateway
+enclave-proxy: enclave-proxy/bin/enclave-proxy
 nonclave: nonclave/bin/nonclave
 
 .PHONY: enclave-image
@@ -27,7 +27,7 @@ enclave-image-nitro: enclave
 		--build-arg CONFIG_FILE=nitro-config.yaml \
 		./enclave
 
-enclave-image-sev: enclave gateway
+enclave-image-sev: enclave enclave-proxy
 	@docker build \
 		-f ./sev.Dockerfile \
 		-t hello-world-enclave-sev \
@@ -73,5 +73,5 @@ servers-up:
 .PHONY: clean
 clean:
 	rm -rf ./enclave/bin
-	rm -rf ./gateway/bin
+	rm -rf ./enclave-proxy/bin
 	rm -rf ./nonclave/bin

@@ -13,8 +13,8 @@ import (
 	"os"
 )
 
-func MakeVerifier(config *sdk.Config) (bearclave.Verifier, error) {
-	switch config.Platform {
+func MakeVerifier(platform sdk.Platform) (bearclave.Verifier, error) {
+	switch platform {
 	case sdk.Nitro:
 		return bearclave.NewNitroVerifier()
 	case sdk.SEV:
@@ -24,7 +24,7 @@ func MakeVerifier(config *sdk.Config) (bearclave.Verifier, error) {
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeVerifier()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
+		return nil, fmt.Errorf("unsupported platform '%s'", platform)
 	}
 }
 
@@ -105,25 +105,27 @@ func (c *GatewayClient) Do(
 	return nil
 }
 
-var configFile string
+var host string
+var platform string
 
 func main() {
 	flag.StringVar(
-		&configFile,
-		"config",
-		sdk.DefaultConfigFile,
-		"The Trusted Computing platform to use. Options: "+
+		&host,
+		"host",
+		"127.0.0.1:8080",
+		"The hostname of the enclave gateway to connect to (default: 127.0.0.1:8080)",
+	)
+	flag.StringVar(
+		&platform,
+		"platform",
+		"unsafe",
+		"The Trusted Computing platform the enclave is running on. Options: "+
 			"nitro, sev, tdx, unsafe (default: unsafe)",
 	)
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config, err := sdk.LoadConfig(configFile)
-	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
-	}
-	logger.Info("loaded config", slog.Any(configFile, config))
+	logger.Info("nonclave configuration", slog.String("host", host), slog.String("platform", platform))
 
 	//verifier, err := MakeVerifier(config)
 	//if err != nil {
@@ -132,7 +134,7 @@ func main() {
 	//}
 
 	want := []byte("Hello, world!")
-	client := NewGatewayClient("http://34.172.96.52:8080")
+	client := NewGatewayClient(host)
 	attestation, err := client.AttestUserData(want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))
