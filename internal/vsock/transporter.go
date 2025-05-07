@@ -1,4 +1,4 @@
-package nitro
+package vsock
 
 import (
 	"context"
@@ -8,43 +8,34 @@ import (
 	"github.com/mdlayher/vsock"
 )
 
-// NonclaveCID In AWS Nitro the "nonclave" program runs on the host (i.e.,
-// the parent EC2 instance), which, according to documentation, is always 3.
-const NonclaveCID = 3
-
-// EnclaveCID In AWS Nitro the "enclave" program runs on the guest (i.e., the
-// VM), which can be any value between 4 and 1023. We use 4 here because it's
-// the default value for the `cid` argument to `nitro-cli run-enclave`.
-const EnclaveCID = 4
-
-type Communicator struct {
+type Transporter struct {
 	sendContextID   uint32
 	sendPort        uint32
 	receiveListener *vsock.Listener
 }
 
-func NewCommunicator(
+func NewTransporter(
 	sendContextID int,
 	sendPort int,
 	receivePort int,
-) (*Communicator, error) {
+) (*Transporter, error) {
 	receiveListener, err := vsock.Listen(uint32(receivePort), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set up vsock listener: %w", err)
 	}
 
-	return &Communicator{
+	return &Transporter{
 		sendContextID:   uint32(sendContextID),
 		sendPort:        uint32(sendPort),
 		receiveListener: receiveListener,
 	}, nil
 }
 
-func (c *Communicator) Close() error {
+func (c *Transporter) Close() error {
 	return fmt.Errorf("not implemented")
 }
 
-func (c *Communicator) Send(ctx context.Context, data []byte) error {
+func (c *Transporter) Send(ctx context.Context, data []byte) error {
 	errChan := make(chan error, 1)
 	go func() {
 		conn, err := vsock.Dial(c.sendContextID, c.sendPort, nil)
@@ -75,7 +66,7 @@ func (c *Communicator) Send(ctx context.Context, data []byte) error {
 	}
 }
 
-func (c *Communicator) Receive(ctx context.Context) ([]byte, error) {
+func (c *Transporter) Receive(ctx context.Context) ([]byte, error) {
 	dataChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
 	go func() {

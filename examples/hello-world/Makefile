@@ -73,4 +73,5 @@ servers-up:
 .PHONY: clean
 clean:
 	rm -rf ./enclave/bin
+	rm -rf ./gateway/bin
 	rm -rf ./nonclave/bin

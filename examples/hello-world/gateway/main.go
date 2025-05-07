@@ -14,27 +14,26 @@ import (
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
-func MakeCommunicator(config *sdk.Config) (bearclave.Communicator, error) {
+func MakeTransporter(config *sdk.Config) (bearclave.Transporter, error) {
 	switch config.Platform {
 	case sdk.Nitro:
-		return bearclave.NewNitroCommunicator(
+		return bearclave.NewNitroTransporter(
 			config.EnclaveCID,
 			config.EnclavePort,
 			config.NonclavePort,
 		)
 	case sdk.SEV:
-		return bearclave.NewSEVCommunicator(
-			"0.0.0.0:8082",
-			"0.0.0.0:8081",
+		return bearclave.NewSEVTransporter(
+			config.EnclaveAddr,
+			config.NonclaveAddr,
 		)
 	case sdk.TDX:
-		return bearclave.NewTDXCommunicator(
-			config.EnclaveCID,
-			config.EnclavePort,
-			config.NonclavePort,
+		return bearclave.NewTDXTransporter(
+			config.EnclaveAddr,
+			config.NonclaveAddr,
 		)
 	case sdk.Unsafe:
-		return bearclave.NewUnsafeCommunicator(
+		return bearclave.NewUnsafeTransporter(
 			config.EnclaveAddr,
 			config.NonclaveAddr,
 		)
@@ -69,7 +68,7 @@ type AttestUserDataResponse struct {
 	Attestation []byte `json:"attestation"`
 }
 
-func MakeAttestUserDataHandler(communicator bearclave.Communicator, logger *slog.Logger) http.HandlerFunc {
+func MakeAttestUserDataHandler(transporter bearclave.Transporter, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := AttestUserDataRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -82,13 +81,13 @@ func MakeAttestUserDataHandler(communicator bearclave.Communicator, logger *slog
 		defer cancel()
 
 		logger.Info("Sending userdata to enclave...", slog.String("userdata", string(req.Data)))
-		err = communicator.Send(ctx, req.Data)
+		err = transporter.Send(ctx, req.Data)
 		if err != nil {
 			writeError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
 		}
 
-		attestation, err := communicator.Receive(ctx)
+		attestation, err := transporter.Receive(ctx)
 		if err != nil {
 			writeError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
 			return
@@ -117,16 +116,16 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	communicator, err := MakeCommunicator(config)
+	transporter, err := MakeTransporter(config)
 	if err != nil {
-		logger.Error("making communicator", slog.String("error", err.Error()))
+		logger.Error("making transporter", slog.String("error", err.Error()))
 		return
 	}
 
 	serverMux := http.NewServeMux()
-	serverMux.Handle("POST "+"/attest-user-data", MakeAttestUserDataHandler(communicator, logger))
+	serverMux.Handle("POST "+"/attest-user-data", MakeAttestUserDataHandler(transporter, logger))
 
-	// TODO: Do I want to set other options?
+	// TODO: Do I want to set other options? Take in port from config?
 	server := &http.Server{
 		Addr:    "0.0.0.0:8080",
 		Handler: serverMux,

@@ -26,27 +26,26 @@ func MakeAttester(config *sdk.Config) (bearclave.Attester, error) {
 	}
 }
 
-func MakeCommunicator(config *sdk.Config) (bearclave.Communicator, error) {
+func MakeTransporter(config *sdk.Config) (bearclave.Transporter, error) {
 	switch config.Platform {
 	case sdk.Nitro:
-		return bearclave.NewNitroCommunicator(
+		return bearclave.NewNitroTransporter(
 			config.NonclaveCID,
 			config.NonclavePort,
 			config.EnclavePort,
 		)
 	case sdk.SEV:
-		return bearclave.NewSEVCommunicator(
-			"0.0.0.0:8081",
-			"0.0.0.0:8082",
+		return bearclave.NewSEVTransporter(
+			config.NonclaveAddr,
+			config.EnclaveAddr,
 		)
 	case sdk.TDX:
-		return bearclave.NewTDXCommunicator(
-			config.NonclaveCID,
-			config.NonclavePort,
-			config.EnclavePort,
+		return bearclave.NewTDXTransporter(
+			config.NonclaveAddr,
+			config.EnclaveAddr,
 		)
 	case sdk.Unsafe:
-		return bearclave.NewUnsafeCommunicator(
+		return bearclave.NewUnsafeTransporter(
 			config.NonclaveAddr,
 			config.EnclaveAddr,
 		)
@@ -81,16 +80,16 @@ func main() {
 	//	return
 	//}
 
-	communicator, err := MakeCommunicator(config)
+	transporter, err := MakeTransporter(config)
 	if err != nil {
-		logger.Error("making communicator", slog.String("error", err.Error()))
+		logger.Error("making transporter", slog.String("error", err.Error()))
 		return
 	}
 
 	for {
 		logger.Info("Waiting to receive userdata from non-enclave...")
 		ctx := context.Background()
-		userdata, err := communicator.Receive(ctx)
+		userdata, err := transporter.Receive(ctx)
 		if err != nil {
 			logger.Error("receiving userdata", slog.String("error", err.Error()))
 			return
@@ -104,7 +103,7 @@ func main() {
 		//}
 
 		attestation := userdata
-		err = communicator.Send(ctx, attestation)
+		err = transporter.Send(ctx, attestation)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
 			return
