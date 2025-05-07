@@ -148,7 +148,7 @@ func main() {
 	//}
 
 	got := attestation
-	if !bytes.Equal(got, want) {
+	if !bytes.Contains(got, want) {
 		logger.Error("userdata verification failed")
 		return
 	}

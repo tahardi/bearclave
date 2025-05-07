@@ -102,7 +102,8 @@ func main() {
 		//	return
 		//}
 
-		attestation := userdata
+		attestation := []byte("Hello from the enclave! Received userdata: ")
+		attestation = append(attestation, userdata...)
 		err = transporter.Send(ctx, attestation)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
