@@ -19,28 +19,35 @@ enclave: enclave/bin/enclave
 enclave-proxy: enclave-proxy/bin/enclave-proxy
 nonclave: nonclave/bin/nonclave
 
-.PHONY: enclave-image
-enclave-image-nitro: enclave
-	@docker build \
-		-f ./enclave/Dockerfile \
-		-t hello-world-enclave-nitro \
-		--build-arg CONFIG_FILE=nitro-config.yaml \
-		./enclave
-
-enclave-image-sev: enclave enclave-proxy
+.PHONY: sev-build-enclave-image
+sev-build-enclave-image: enclave enclave-proxy
 	@docker build \
 		-f ./sev.Dockerfile \
 		-t hello-world-enclave-sev \
 		--build-arg CONFIG_FILE=enclave/sev-config.yaml \
 		.
 
-enclave-eif: enclave-image-nitro
+.PHONY: sev-push-enclave-image
+sev-push-enclave-image:
+	@docker tag hello-world-enclave-sev us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
+	@docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
+
+.PHONY: nitro-build-enclave-image
+nitro-build-enclave-image: enclave
+	@docker build \
+		-f ./enclave/Dockerfile \
+		-t hello-world-enclave-nitro \
+		--build-arg CONFIG_FILE=nitro-config.yaml \
+		./enclave
+
+.PHONY: nitro-build-enclave-eif
+nitro-build-enclave-eif: nitro-build-enclave-image
 	@nitro-cli build-enclave \
 		--docker-uri hello-world-enclave-nitro:latest \
 		--output-file ./enclave/bin/enclave.eif
 
-.PHONY: run-enclave-eif
-run-enclave-eif: enclave-eif
+.PHONY: nitro-run-enclave-eif
+nitro-run-enclave-eif: nitro-build-enclave-eif
 	@nitro-cli run-enclave \
 		--cpu-count 2 \
 		--memory 512 \
@@ -48,8 +55,8 @@ run-enclave-eif: enclave-eif
 		--eif-path ./enclave/bin/enclave.eif \
 		--debug-mode
 
-.PHONY: describe-enclave-eif
-describe-enclave-eif: enclave-eif
+.PHONY: nitro-describe-enclave-eif
+nitro-describe-enclave-eif: nitro-build-enclave-eif
 	@nitro-cli describe-eif --eif-path ./enclave/bin/enclave.eif
 
 # TODO: nitro-cli describe-enclaves then extract EnclaveID field for use in console cmd
