@@ -28,7 +28,7 @@ sev-build-enclave-image: enclave enclave-proxy
 		.
 
 .PHONY: sev-push-enclave-image
-sev-push-enclave-image:
+sev-push-enclave-image: sev-build-enclave-image
 	@docker tag hello-world-enclave-sev us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 	@docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 
