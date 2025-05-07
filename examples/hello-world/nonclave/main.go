@@ -112,8 +112,8 @@ func main() {
 	flag.StringVar(
 		&host,
 		"host",
-		"127.0.0.1:8080",
-		"The hostname of the enclave gateway to connect to (default: 127.0.0.1:8080)",
+		"http://127.0.0.1:8080",
+		"The hostname of the enclave gateway to connect to (default: http://127.0.0.1:8080)",
 	)
 	flag.StringVar(
 		&platform,
