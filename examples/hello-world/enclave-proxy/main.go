@@ -20,22 +20,22 @@ func MakeTransporter(config *sdk.Config) (bearclave.Transporter, error) {
 		return bearclave.NewNitroTransporter(
 			config.EnclaveCID,
 			config.EnclavePort,
-			config.NonclavePort,
+			config.EnclaveProxyPort,
 		)
 	case sdk.SEV:
 		return bearclave.NewSEVTransporter(
-			config.EnclaveAddr,
-			config.NonclaveAddr,
+			config.EnclavePort,
+			config.EnclaveProxyPort,
 		)
 	case sdk.TDX:
 		return bearclave.NewTDXTransporter(
-			config.EnclaveAddr,
-			config.NonclaveAddr,
+			config.EnclavePort,
+			config.EnclaveProxyPort,
 		)
 	case sdk.Unsafe:
 		return bearclave.NewUnsafeTransporter(
-			config.EnclaveAddr,
-			config.NonclaveAddr,
+			config.EnclavePort,
+			config.EnclaveProxyPort,
 		)
 	default:
 		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)

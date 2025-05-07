@@ -1,9 +1,9 @@
 platform: "nitro"
 
-# On Nitro enclave CIDs start from 4, but SEV and TDX start from 3
+# On Nitro enclave CIDs start from 4
 enclave_cid: "4"
-enclave_port: "8080"
+enclave_port: "8082"
 
-# On Nitro nonclave CID is always 3, but SEV and TDX is 2
-nonclave_cid: "3"
-nonclave_port: "8081"
+# On Nitro nonclave CID is always 3
+enclave_proxy_cid: "3"
+enclave_proxy_port: "8081"
