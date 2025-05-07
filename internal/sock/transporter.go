@@ -13,10 +13,10 @@ type Transporter struct {
 }
 
 func NewTransporter(sendPort int, receivePort int) (*Transporter, error) {
-	//sendAddr := fmt.Sprintf("127.0.0.1:%d", sendPort)
-	//receiveAddr := fmt.Sprintf("127.0.0.1:%d", receivePort)
-	sendAddr := fmt.Sprintf("0.0.0.0:%d", sendPort)
-	receiveAddr := fmt.Sprintf("0.0.0.0:%d", receivePort)
+	sendAddr := fmt.Sprintf("127.0.0.1:%d", sendPort)
+	receiveAddr := fmt.Sprintf("127.0.0.1:%d", receivePort)
+	//sendAddr := fmt.Sprintf("0.0.0.0:%d", sendPort)
+	//receiveAddr := fmt.Sprintf("0.0.0.0:%d", receivePort)
 	receiveListener, err := net.Listen("tcp", receiveAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set up TCP listener on %s: %w", receiveAddr, err)
