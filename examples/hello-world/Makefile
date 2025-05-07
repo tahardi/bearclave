@@ -24,21 +24,21 @@ sev-build-enclave-image: enclave enclave-proxy
 	@docker build \
 		-f ./sev.Dockerfile \
 		-t hello-world-enclave-sev \
+		-t us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev \
 		--build-arg CONFIG_FILE=enclave/sev-config.yaml \
 		.
 
 .PHONY: sev-push-enclave-image
 sev-push-enclave-image: sev-build-enclave-image
-	@docker tag hello-world-enclave-sev us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 	@docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 
 .PHONY: nitro-build-enclave-image
 nitro-build-enclave-image: enclave
 	@docker build \
-		-f ./enclave/Dockerfile \
+		-f ./nitro.Dockerfile \
 		-t hello-world-enclave-nitro \
 		--build-arg CONFIG_FILE=nitro-config.yaml \
-		./enclave
+		.
 
 .PHONY: nitro-build-enclave-eif
 nitro-build-enclave-eif: nitro-build-enclave-image
@@ -64,18 +64,19 @@ nitro-describe-enclave-eif: nitro-build-enclave-eif
 console-enclave-eif:
 
 .PHONY: hello-world-unsafe
-hello-world-unsafe:
-	@make --no-print-directory servers-up
+hello-world-unsafe: enclave enclave-proxy nonclave
+	@-make --no-print-directory servers-up
+	@-make --no-print-directory servers-down
 
 # https://github.com/F1bonacc1/process-compose
-PROCESS_COMPOSE_PORT=8082
+PROCESS_COMPOSE_PORT=8083
 .PHONY: servers-down
 servers-down:
-	@process-compose down --port=${PROCESS_COMPOSE_PORT}
+	@-process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
 
 .PHONY: servers-up
 servers-up:
-	@process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml
+	@-process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml 2> /dev/null
 
 .PHONY: clean
 clean:
