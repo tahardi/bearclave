@@ -1,7 +1,7 @@
 FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
-ARG CONFIG_FILE=enclave/sev-config.yaml
+ARG CONFIG_FILE=sev-config.yaml
 COPY ./enclave/bin/enclave .
 COPY ./enclave-proxy/bin/enclave-proxy .
 COPY ./sev-run.sh .
