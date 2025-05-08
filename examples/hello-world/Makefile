@@ -25,7 +25,7 @@ sev-build-enclave-image: enclave enclave-proxy
 		-f ./sev.Dockerfile \
 		-t hello-world-enclave-sev \
 		-t us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev \
-		--build-arg CONFIG_FILE=enclave/sev-config.yaml \
+		--build-arg CONFIG_FILE=sev-config.yaml \
 		.
 
 .PHONY: sev-push-enclave-image

@@ -2,8 +2,8 @@ FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
 ARG CONFIG_FILE=nitro-config.yaml
-COPY ./enclave/bin/enclave .
 COPY ./${CONFIG_FILE} ./config.yaml
+COPY ./enclave/bin/enclave .
 
 FROM scratch
 WORKDIR /app

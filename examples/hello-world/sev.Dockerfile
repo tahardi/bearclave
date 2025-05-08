@@ -2,11 +2,11 @@ FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
 ARG CONFIG_FILE=sev-config.yaml
+COPY ./${CONFIG_FILE} ./config.yaml
 COPY ./enclave/bin/enclave .
 COPY ./enclave-proxy/bin/enclave-proxy .
 COPY ./sev-run.sh .
 RUN chmod +x ./sev-run.sh
-COPY ./${CONFIG_FILE} ./config.yaml
 
 FROM alpine:latest
 WORKDIR /app
