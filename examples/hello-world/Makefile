@@ -65,7 +65,7 @@ nitro-describe-enclave-eif: nitro-build-enclave-eif
 console-enclave-eif:
 
 .PHONY: hello-world-unsafe
-hello-world-unsafe: enclave enclave-proxy nonclave
+hello-world-unsafe:
 	@-make --no-print-directory servers-up
 	@-make --no-print-directory servers-down
 

@@ -7,18 +7,6 @@ import (
 	"github.com/tahardi/bearclave/internal/vsock"
 )
 
-const (
-	// TODO: Update Nonclave to Gateway or whatever term you end up using
-	// NitroEnclaveProxyCID In AWS Nitro the "proxy" program runs on the host (i.e.,
-	// the parent EC2 instance), which, according to documentation, is always 3.
-	NitroEnclaveProxyCID = 3
-
-	// NitroEnclaveCID In AWS Nitro the "enclave" program runs on the guest (i.e., the
-	// VM), which can be any value between 4 and 1023. We use 4 here because it's
-	// the default value for the `cid` argument to `nitro-cli run-enclave`.
-	NitroEnclaveCID = 4
-)
-
 type NitroTransporter = vsock.Transporter
 type SEVTransporter = sock.Transporter
 type TDXTransporter = sock.Transporter

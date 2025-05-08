@@ -1,13 +1,13 @@
 processes:
   enclave:
     description: The Enclave Application
-    command: go run ./enclave/main.go
+    command: go run ./enclave/main.go --config ./enclave/unsafe-config.yaml
     ready_log_line: "Waiting to receive"
     availability:
       exit_on_end: true
   enclave-proxy:
     description: The Enclave-Proxy Application
-    command: go run ./enclave-proxy/main.go
+    command: go run ./enclave-proxy/main.go --config ./enclave-proxy/unsafe-config.yaml
     ready_log_line: "HTTP server started"
     availability:
       exit_on_end: true

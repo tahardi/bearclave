@@ -108,7 +108,7 @@ func main() {
 		Handler: serverMux,
 	}
 
-	logger.Info("Starting HTTP server on '%s'", server.Addr)
+	logger.Info("HTTP server started", slog.String("addr", server.Addr))
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Error("HTTP server error", slog.String("error", err.Error()))
 	}
