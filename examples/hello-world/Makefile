@@ -53,7 +53,8 @@ nitro-run-enclave-eif: nitro-build-enclave-eif
 		--memory 512 \
 		--enclave-cid 4 \
 		--eif-path ./enclave/bin/enclave.eif \
-		--debug-mode
+		--debug-mode \
+		--attach-console
 
 .PHONY: nitro-describe-enclave-eif
 nitro-describe-enclave-eif: nitro-build-enclave-eif
