@@ -9,4 +9,4 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/enclave .
 COPY --from=builder /app/config.yaml .
-CMD ["/app/enclave", "--config", "./config.yaml"]
+CMD ["/app/enclave", "--config", "/app/config.yaml"]
