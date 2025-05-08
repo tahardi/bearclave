@@ -8,7 +8,7 @@ processes:
   enclave-proxy:
     description: The Enclave-Proxy Application
     command: go run ./enclave-proxy/main.go
-    ready_log_line: "Starting HTTP server"
+    ready_log_line: "HTTP server started"
     availability:
       exit_on_end: true
   nonclave:
