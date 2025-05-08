@@ -5,28 +5,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/tahardi/bearclave"
-	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 )
-
-func MakeVerifier(platform sdk.Platform) (bearclave.Verifier, error) {
-	switch platform {
-	case sdk.Nitro:
-		return bearclave.NewNitroVerifier()
-	case sdk.SEV:
-		return bearclave.NewSEVVerifier()
-	case sdk.TDX:
-		return bearclave.NewTDXVerifier()
-	case sdk.Unsafe:
-		return bearclave.NewUnsafeVerifier()
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
-	}
-}
 
 type GatewayClient struct {
 	host   string
@@ -127,7 +110,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	logger.Info("nonclave configuration", slog.String("host", host), slog.String("platform", platform))
 
-	//verifier, err := MakeVerifier(config)
+	//verifier, err := sdk.MakeVerifier(config)
 	//if err != nil {
 	//	logger.Error("making verifier", slog.String("error", err.Error()))
 	//	return

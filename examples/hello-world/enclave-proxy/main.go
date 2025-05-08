@@ -14,34 +14,6 @@ import (
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
-func MakeTransporter(config *sdk.Config) (bearclave.Transporter, error) {
-	switch config.Platform {
-	case sdk.Nitro:
-		return bearclave.NewNitroTransporter(
-			config.EnclaveCID,
-			config.EnclavePort,
-			config.EnclaveProxyPort,
-		)
-	case sdk.SEV:
-		return bearclave.NewSEVTransporter(
-			config.EnclavePort,
-			config.EnclaveProxyPort,
-		)
-	case sdk.TDX:
-		return bearclave.NewTDXTransporter(
-			config.EnclavePort,
-			config.EnclaveProxyPort,
-		)
-	case sdk.Unsafe:
-		return bearclave.NewUnsafeTransporter(
-			config.EnclavePort,
-			config.EnclaveProxyPort,
-		)
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
-	}
-}
-
 func writeError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
@@ -116,7 +88,12 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	transporter, err := MakeTransporter(config)
+	transporter, err := sdk.MakeTransporter(
+		config.Platform,
+		config.SendCID,
+		config.SendPort,
+		config.ReceivePort,
+	)
 	if err != nil {
 		logger.Error("making transporter", slog.String("error", err.Error()))
 		return

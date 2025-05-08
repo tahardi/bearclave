@@ -1,9 +1,0 @@
-platform: "sev"
-
-# On Nitro enclave CIDs start from 4
-enclave_cid: "4"
-enclave_port: "8082"
-
-# On Nitro nonclave CID is always 3
-enclave_proxy_cid: "3"
-enclave_proxy_port: "8081"

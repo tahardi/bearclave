@@ -6,26 +6,23 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
-	"github.com/tahardi/bearclave"
 )
 
 const DefaultConfigFile = "Hardcoded Defaults"
 
 type Config struct {
-	Platform         Platform `mapstructure:"platform"`
-	EnclaveCID       int      `mapstructure:"enclave_cid"`
-	EnclavePort      int      `mapstructure:"enclave_port"`
-	EnclaveProxyCID  int      `mapstructure:"enclave_proxy_cid"`
-	EnclaveProxyPort int      `mapstructure:"enclave_proxy_port"`
+	Platform    Platform `mapstructure:"platform"`
+	SendCID     int      `mapstructure:"send_cid"`
+	SendPort    int      `mapstructure:"send_port"`
+	ReceivePort int      `mapstructure:"receive_port"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {
 	config := &Config{
-		Platform:         Unsafe,
-		EnclaveCID:       bearclave.NitroEnclaveCID,
-		EnclavePort:      8082,
-		EnclaveProxyCID:  bearclave.NitroEnclaveProxyCID,
-		EnclaveProxyPort: 8081,
+		Platform:    Unsafe,
+		SendCID:     3,
+		SendPort:    8081,
+		ReceivePort: 8082,
 	}
 	if configFile == DefaultConfigFile {
 		return config, nil
