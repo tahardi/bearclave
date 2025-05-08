@@ -2,6 +2,6 @@ platform: "nitro"
 
 # On Nitro, the host instance programs (i.e., the enclave-proxy) are identified
 # by CID 3 and the enclave programs are identified by CIDs 4 and upwards
-send_cid: "3"
-send_port: "8081"
-receive_port: "8082"
+send_cid: "4"
+send_port: "8082"
+receive_port: "8081"

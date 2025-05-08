@@ -3,56 +3,11 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
-
-func MakeAttester(config *sdk.Config) (bearclave.Attester, error) {
-	switch config.Platform {
-	case sdk.Nitro:
-		return bearclave.NewNitroAttester()
-	case sdk.SEV:
-		return bearclave.NewSEVAttester()
-	case sdk.TDX:
-		return bearclave.NewTDXAttester()
-	case sdk.Unsafe:
-		return bearclave.NewUnsafeAttester()
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
-	}
-}
-
-func MakeTransporter(config *sdk.Config) (bearclave.Transporter, error) {
-	switch config.Platform {
-	case sdk.Nitro:
-		return bearclave.NewNitroTransporter(
-			config.NonclaveCID,
-			config.NonclavePort,
-			config.EnclavePort,
-		)
-	case sdk.SEV:
-		return bearclave.NewSEVTransporter(
-			config.NonclaveAddr,
-			config.EnclaveAddr,
-		)
-	case sdk.TDX:
-		return bearclave.NewTDXTransporter(
-			config.NonclaveAddr,
-			config.EnclaveAddr,
-		)
-	case sdk.Unsafe:
-		return bearclave.NewUnsafeTransporter(
-			config.NonclaveAddr,
-			config.EnclaveAddr,
-		)
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
-	}
-}
 
 var configFile string
 
@@ -74,13 +29,18 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	//attester, err := MakeAttester(config)
+	//attester, err := sdk.MakeAttester(config)
 	//if err != nil {
 	//	logger.Error("making attester", slog.String("error", err.Error()))
 	//	return
 	//}
 
-	transporter, err := MakeTransporter(config)
+	transporter, err := sdk.MakeTransporter(
+		config.Platform,
+		config.SendCID,
+		config.SendPort,
+		config.ReceivePort,
+	)
 	if err != nil {
 		logger.Error("making transporter", slog.String("error", err.Error()))
 		return
@@ -102,7 +62,8 @@ func main() {
 		//	return
 		//}
 
-		attestation := userdata
+		attestation := []byte("Hello from the enclave! Received userdata: ")
+		attestation = append(attestation, userdata...)
 		err = transporter.Send(ctx, attestation)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))

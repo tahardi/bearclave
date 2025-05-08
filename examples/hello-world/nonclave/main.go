@@ -5,28 +5,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/tahardi/bearclave"
-	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 )
-
-func MakeVerifier(config *sdk.Config) (bearclave.Verifier, error) {
-	switch config.Platform {
-	case sdk.Nitro:
-		return bearclave.NewNitroVerifier()
-	case sdk.SEV:
-		return bearclave.NewSEVVerifier()
-	case sdk.TDX:
-		return bearclave.NewTDXVerifier()
-	case sdk.Unsafe:
-		return bearclave.NewUnsafeVerifier()
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", config.Platform)
-	}
-}
 
 type GatewayClient struct {
 	host   string
@@ -105,34 +88,36 @@ func (c *GatewayClient) Do(
 	return nil
 }
 
-var configFile string
+var host string
+var platform string
 
 func main() {
 	flag.StringVar(
-		&configFile,
-		"config",
-		sdk.DefaultConfigFile,
-		"The Trusted Computing platform to use. Options: "+
+		&host,
+		"host",
+		"http://127.0.0.1:8080",
+		"The hostname of the enclave gateway to connect to (default: http://127.0.0.1:8080)",
+	)
+	flag.StringVar(
+		&platform,
+		"platform",
+		"unsafe",
+		"The Trusted Computing platform the enclave is running on. Options: "+
 			"nitro, sev, tdx, unsafe (default: unsafe)",
 	)
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config, err := sdk.LoadConfig(configFile)
-	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
-	}
-	logger.Info("loaded config", slog.Any(configFile, config))
+	logger.Info("nonclave configuration", slog.String("host", host), slog.String("platform", platform))
 
-	//verifier, err := MakeVerifier(config)
+	//verifier, err := sdk.MakeVerifier(config)
 	//if err != nil {
 	//	logger.Error("making verifier", slog.String("error", err.Error()))
 	//	return
 	//}
 
 	want := []byte("Hello, world!")
-	client := NewGatewayClient("http://34.172.96.52:8080")
+	client := NewGatewayClient(host)
 	attestation, err := client.AttestUserData(want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))
@@ -146,7 +131,7 @@ func main() {
 	//}
 
 	got := attestation
-	if !bytes.Equal(got, want) {
+	if !bytes.Contains(got, want) {
 		logger.Error("userdata verification failed")
 		return
 	}

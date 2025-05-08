@@ -1,16 +1,23 @@
 processes:
   enclave:
     description: The Enclave Application
-    command: go run ./enclave/main.go
-    ready_log_line: "Listening on:"
+    command: go run ./enclave/main.go --config ./enclave/unsafe-config.yaml
+    ready_log_line: "Waiting to receive"
+    availability:
+      exit_on_end: true
+  enclave-proxy:
+    description: The Enclave-Proxy Application
+    command: go run ./enclave-proxy/main.go --config ./enclave-proxy/unsafe-config.yaml
+    ready_log_line: "HTTP server started"
     availability:
       exit_on_end: true
   nonclave:
     description: The Non-Enclave Application
-    command: |
-      go run ./nonclave/main.go
+    command: go run ./nonclave/main.go
     depends_on:
       enclave:
+        condition: process_log_ready
+      enclave-proxy:
         condition: process_log_ready
     availability:
       exit_on_end: true
