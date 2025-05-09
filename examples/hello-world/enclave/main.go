@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/tahardi/bearclave"
 	"log/slog"
 	"os"
 
@@ -29,7 +30,8 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := sdk.MakeAttester(config.Platform)
+	attester, err := bearclave.NewUnsafeAttester()
+	//attester, err := sdk.MakeAttester(config.Platform)
 	if err != nil {
 		logger.Error("making attester", slog.String("error", err.Error()))
 		return
