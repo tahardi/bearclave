@@ -11,10 +11,17 @@ COPY ./sev-run.sh .
 RUN chmod +x ./sev-run.sh
 
 FROM alpine:latest
+# Add tini for better process management
+RUN apk add --no-cache tini bash
+
 WORKDIR /app
 COPY --from=builder /app/enclave .
 COPY --from=builder /app/enclave-proxy .
 COPY --from=builder /app/sev-run.sh .
 COPY --from=builder /app/enclave-config.yaml .
 COPY --from=builder /app/proxy-config.yaml .
-CMD ["/bin/sh", "/app/sev-run.sh"]
+
+# Use tini as the entry point
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["/app/sev-run.sh"]
+
