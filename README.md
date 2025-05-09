@@ -236,7 +236,7 @@ gcloud compute instances create-with-container instance-bearclave-sev-snp \
 gcloud compute instances update-container instance-bearclave-sev-snp \
     --zone=us-central1-a \
     --project=bearclave \
-    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:cca4019c8909b92202de15d7b8d20b70129a231be02dbf8e72bd54a876e1725f
+    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:ca1a3a51b96bd9b9047d337b7c333f4f427ffd4852f93d26ed6d244ed0781195
 
 # God fucking dammit you have to mount `/dev/sev-guest` to the guest VM since that is not
 # done by default... Christ almight some documentation would be very helpful
@@ -261,34 +261,4 @@ gcloud compute instances create vm1 \
   --service-account=operator-svc-account@$OPERATOR_PROJECT_ID.iam.gserviceaccount.com \
   --metadata ^~^tee-image-reference=$IMAGE_HASH~tee-restart-policy=Never~tee-container-log-redirect=true~tee-signed-image-repos=us-central1-docker.pkg.dev/$BUILDER_PROJECT_ID/repo1/tee
 
-```
-
-
-```golang
-	//if len(userdata) > AMD_SEV_USERDATA_SIZE {
-	//	return nil, fmt.Errorf(
-	//		"userdata must be less than %d bytes",
-	//		AMD_SEV_USERDATA_SIZE,
-	//	)
-	//}
-	//attestation := []byte("in sev-snp attester: ")
-	//attestation = append(attestation, userdata...)
-	//return attestation, nil
-
-	//sevQP, err := client.GetQuoteProvider()
-	//if err != nil {
-	//	return nil, fmt.Errorf("getting quote provider: %w", err)
-	//}
-	//
-	//if !sevQP.IsSupported() {
-	//	return nil, fmt.Errorf("SEV is not supported")
-	//}
-	//
-	//var reportData [64]byte
-	//copy(reportData[:], userdata)
-	//attestation, err := sevQP.GetRawQuote(reportData)
-	//if err != nil {
-	//	return nil, fmt.Errorf("getting quote: %w", err)
-	//}
-	//return attestation, nil
 ```
