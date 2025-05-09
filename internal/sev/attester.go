@@ -2,8 +2,6 @@ package sev
 
 import (
 	"fmt"
-
-	"github.com/google/go-sev-guest/client"
 )
 
 const AMD_SEV_USERDATA_SIZE = 64
@@ -22,21 +20,23 @@ func (n *Attester) Attest(userdata []byte) ([]byte, error) {
 			AMD_SEV_USERDATA_SIZE,
 		)
 	}
-
-	sevQP, err := client.GetQuoteProvider()
-	if err != nil {
-		return nil, fmt.Errorf("getting quote provider: %w", err)
-	}
-
-	if !sevQP.IsSupported() {
-		return nil, fmt.Errorf("SEV is not supported")
-	}
-
-	var reportData [64]byte
-	copy(reportData[:], userdata)
-	attestation, err := sevQP.GetRawQuote(reportData)
-	if err != nil {
-		return nil, fmt.Errorf("getting quote: %w", err)
-	}
+	attestation := []byte("in sev-snp attester: ")
+	attestation = append(attestation, userdata...)
 	return attestation, nil
+	//sevQP, err := client.GetQuoteProvider()
+	//if err != nil {
+	//	return nil, fmt.Errorf("getting quote provider: %w", err)
+	//}
+	//
+	//if !sevQP.IsSupported() {
+	//	return nil, fmt.Errorf("SEV is not supported")
+	//}
+	//
+	//var reportData [64]byte
+	//copy(reportData[:], userdata)
+	//attestation, err := sevQP.GetRawQuote(reportData)
+	//if err != nil {
+	//	return nil, fmt.Errorf("getting quote: %w", err)
+	//}
+	//return attestation, nil
 }
