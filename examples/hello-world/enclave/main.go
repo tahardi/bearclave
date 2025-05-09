@@ -30,7 +30,7 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := bearclave.NewUnsafeAttester()
+	attester, err := bearclave.NewSEVAttester()
 	//attester, err := sdk.MakeAttester(config.Platform)
 	if err != nil {
 		logger.Error("making attester", slog.String("error", err.Error()))
