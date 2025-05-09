@@ -36,12 +36,14 @@ func (n *Attester) Attest(userdata []byte) ([]byte, error) {
 		//return nil, fmt.Errorf("SEV is not supported")
 	}
 
-	//var reportData [64]byte
-	//copy(reportData[:], userdata)
-	//attestation, err := sevQP.GetRawQuote(reportData)
-	//if err != nil {
-	//	return nil, fmt.Errorf("getting quote: %w", err)
-	//}
-	//return attestation, nil
-	return userdata, nil
+	var reportData [64]byte
+	copy(reportData[:], userdata)
+	attestation, err := sevQP.GetRawQuote(reportData)
+	if err != nil {
+		msg := fmt.Sprintf("error getting quote: %s", err)
+		return []byte(msg), nil
+		//return nil, fmt.Errorf("getting quote: %w", err)
+	}
+	return attestation, nil
+	//return userdata, nil
 }
