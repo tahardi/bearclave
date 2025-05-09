@@ -23,6 +23,21 @@ func (n *Attester) Attest(userdata []byte) ([]byte, error) {
 		//)
 	}
 
+	if !client.UseDefaultSevGuest() {
+		msg := fmt.Sprintf("Not using default SEV guest")
+		return []byte(msg), nil
+	}
+
+	dev := &client.LinuxDevice{}
+	if err := dev.Open("/dev/sev-guest"); err != nil {
+		msg := fmt.Sprintf("opening device: %s", err)
+		return []byte(msg), nil
+	}
+	dev.Close()
+
+	// FAILING TO GET QUOTE PROVIDER WHY???
+	// search their code for this string: no supported SEV-SNP QuoteProvider found
+	// ALSO need to figure out how to debug on confidential VM
 	sevQP, err := client.GetQuoteProvider()
 	if err != nil {
 		msg := fmt.Sprintf("error getting quote provider: %s", err)
