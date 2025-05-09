@@ -152,8 +152,11 @@ up in future PRs as I continue to refine the sev and tdx implementations.
 ## TODOs
 1. Figure out how to see enclave logging output---some sort of google confidential VM debug mode?
 2. clean up these notes
-3. Figure out how to allow for http calls to ec2 instance so i can call proxy
-4. Figure out how to actually set up google cloud IAM and other things correctly at some point...
+3. figure out attestation and verification for sev/sev-np
+4. why do i have to run my container in privileged mode? Is this true? Try unprivileged again now that you
+   know the code is working
+5. Figure out how to actually set up google cloud IAM and other things correctly at some point...
+5. Add unit tests for nitro and sev attester by saving an attestation string and using as testdata
 
 ## Tutorial/Code links
 [confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
