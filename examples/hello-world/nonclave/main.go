@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 	"io"
 	"log/slog"
 	"net/http"
@@ -110,11 +111,11 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	logger.Info("nonclave configuration", slog.String("host", host), slog.String("platform", platform))
 
-	//verifier, err := sdk.MakeVerifier(config)
-	//if err != nil {
-	//	logger.Error("making verifier", slog.String("error", err.Error()))
-	//	return
-	//}
+	verifier, err := sdk.MakeVerifier(sdk.Platform(platform))
+	if err != nil {
+		logger.Error("making verifier", slog.String("error", err.Error()))
+		return
+	}
 
 	want := []byte("Hello, world!")
 	client := NewGatewayClient(host)
@@ -124,13 +125,12 @@ func main() {
 		return
 	}
 
-	//got, err := verifier.Verify(attestation)
-	//if err != nil {
-	//	logger.Error("verifying attestation", slog.String("error", err.Error()))
-	//	return
-	//}
+	got, err := verifier.Verify(attestation)
+	if err != nil {
+		logger.Error("verifying attestation", slog.String("error", err.Error()))
+		return
+	}
 
-	got := attestation
 	if !bytes.Contains(got, want) {
 		logger.Error("userdata verification failed")
 		return

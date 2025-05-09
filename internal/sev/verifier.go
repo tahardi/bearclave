@@ -13,7 +13,8 @@ func NewVerifier() (*Verifier, error) {
 	return &Verifier{}, nil
 }
 
-// TODO: Might not work (need to get attester working first
+// Only annoying thing is that it always returns a 64 byte slice, even if the
+// userdata is less than 64 bytes.
 func (n *Verifier) Verify(attestation []byte) ([]byte, error) {
 	pbAttestation, err := abi.ReportCertsToProto(attestation)
 	if err != nil {

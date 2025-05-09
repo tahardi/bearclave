@@ -150,15 +150,10 @@ Below is a very rough draft of notes, tips, links compiled during my initial GCP
 up in future PRs as I continue to refine the sev and tdx implementations.
 
 ## TODOs
-1. consider other names for gateway (ask AI). rewrite the config files, sdk, and example once you've settled on
-   better names. I do like using "nonclave" to refer to the non-enclave code (i.e., remote code not running on TEE)
-   - nitro specific dockerfile (move up a level)
-   - config specifically for enclave and nonclave? how to make config extensible
+1. Figure out how to see enclave logging output---some sort of google confidential VM debug mode?
 2. clean up these notes
-3. figure out attestation and verification for sev/sev-np
-4. why do i have to run my container in privileged mode? Is this true? Try unprivileged again now that you
-   know the code is working
-5. Figure out how to actually set up google cloud IAM and other things correctly at some point...
+3. Figure out how to allow for http calls to ec2 instance so i can call proxy
+4. Figure out how to actually set up google cloud IAM and other things correctly at some point...
 
 ## Tutorial/Code links
 [confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
@@ -216,9 +211,84 @@ gcloud artifacts repositories add-iam-policy-binding bearclave \
   --member=serviceAccount:403490793521-compute@developer.gserviceaccount.com \
   --role=roles/artifactregistry.writer
 
-# Do I actually have to add this super long tag?
+# Why do I have to tag it this way? Push fails if I dont...
 docker tag hello-world-enclave-sev us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 
 # Is the tag what tells it where to push or is that bc I logged into the registry earlier?
 docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
+```
+
+```bash
+# Maybe how you create an AMD_SEV_SNP instance? According to AI assistant you can't actually
+# create an sev-snp-enabled instance via the web GUI
+gcloud compute instances create-with-container instance-bearclave-sev-snp \
+    --zone=us-central1-a \
+    --machine-type=n2d-standard-2 \
+    --confidential-compute-type=SEV_SNP \
+    --maintenance-policy=TERMINATE \
+    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:a824652361384b513af405e25c8f4c5c258d193c56b249ed70391befc0e2b43f \
+    --project=bearclave \
+    --tags=http-server \
+    --scopes=cloud-platform \
+    --shielded-secure-boot
+
+# update the image for a running instance
+gcloud compute instances update-container instance-bearclave-sev-snp \
+    --zone=us-central1-a \
+    --project=bearclave \
+    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:cca4019c8909b92202de15d7b8d20b70129a231be02dbf8e72bd54a876e1725f
+
+# God fucking dammit you have to mount `/dev/sev-guest` to the guest VM since that is not
+# done by default... Christ almight some documentation would be very helpful
+# Update your instance create command to do this
+gcloud compute instances update-container instance-bearclave-sev-snp \
+    --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
+    --container-privileged \
+    --zone=us-central1-a \
+    --project=bearclave
+
+gcloud compute instances create vm1 \
+  --zone=us-central1-a \
+  --confidential-compute \
+  --shielded-secure-boot \
+  --tags=tee-vm \
+  --project $OPERATOR_PROJECT_ID \
+  --maintenance-policy=TERMINATE \
+  --scopes=cloud-platform  \
+  --image-project=confidential-space-images \
+  --image=confidential-space-231201 \
+  --network=teenetwork \
+  --service-account=operator-svc-account@$OPERATOR_PROJECT_ID.iam.gserviceaccount.com \
+  --metadata ^~^tee-image-reference=$IMAGE_HASH~tee-restart-policy=Never~tee-container-log-redirect=true~tee-signed-image-repos=us-central1-docker.pkg.dev/$BUILDER_PROJECT_ID/repo1/tee
+
+```
+
+
+```golang
+	//if len(userdata) > AMD_SEV_USERDATA_SIZE {
+	//	return nil, fmt.Errorf(
+	//		"userdata must be less than %d bytes",
+	//		AMD_SEV_USERDATA_SIZE,
+	//	)
+	//}
+	//attestation := []byte("in sev-snp attester: ")
+	//attestation = append(attestation, userdata...)
+	//return attestation, nil
+
+	//sevQP, err := client.GetQuoteProvider()
+	//if err != nil {
+	//	return nil, fmt.Errorf("getting quote provider: %w", err)
+	//}
+	//
+	//if !sevQP.IsSupported() {
+	//	return nil, fmt.Errorf("SEV is not supported")
+	//}
+	//
+	//var reportData [64]byte
+	//copy(reportData[:], userdata)
+	//attestation, err := sevQP.GetRawQuote(reportData)
+	//if err != nil {
+	//	return nil, fmt.Errorf("getting quote: %w", err)
+	//}
+	//return attestation, nil
 ```
