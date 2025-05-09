@@ -159,6 +159,7 @@ up in future PRs as I continue to refine the sev and tdx implementations.
 4. why do i have to run my container in privileged mode? Is this true? Try unprivileged again now that you
    know the code is working
 5. Figure out how to actually set up google cloud IAM and other things correctly at some point...
+5. Add unit tests for nitro and sev attester by saving an attestation string and using as testdata
 
 ## Tutorial/Code links
 [confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
