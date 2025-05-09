@@ -29,11 +29,11 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	//attester, err := sdk.MakeAttester(config)
-	//if err != nil {
-	//	logger.Error("making attester", slog.String("error", err.Error()))
-	//	return
-	//}
+	attester, err := sdk.MakeAttester(config.Platform)
+	if err != nil {
+		logger.Error("making attester", slog.String("error", err.Error()))
+		return
+	}
 
 	transporter, err := sdk.MakeTransporter(
 		config.Platform,
@@ -55,15 +55,15 @@ func main() {
 			return
 		}
 
-		//logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
-		//attestation, err := attester.Attest(userdata)
-		//if err != nil {
-		//	logger.Error("attesting userdata", slog.String("error", err.Error()))
-		//	return
-		//}
+		logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
+		attestation, err := attester.Attest(userdata)
+		if err != nil {
+			logger.Error("attesting userdata", slog.String("error", err.Error()))
+			return
+		}
 
-		attestation := []byte("Hello from the enclave! Received userdata: ")
-		attestation = append(attestation, userdata...)
+		//attestation := []byte("Hello from the enclave! Received userdata: ")
+		//attestation = append(attestation, userdata...)
 		err = transporter.Send(ctx, attestation)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
