@@ -151,11 +151,12 @@ up in future PRs as I continue to refine the sev and tdx implementations.
 
 ## TODOs
 1. Figure out how to see enclave logging output---some sort of google confidential VM debug mode?
+- [monitor and debug workloads](https://cloud.google.com/confidential-computing/confidential-space/docs/monitor-debug)
+- [redirect to serial](https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads#tee-container-log-redirect)
+- 
 2. clean up these notes
-3. figure out attestation and verification for sev/sev-np
-4. why do i have to run my container in privileged mode? Is this true? Try unprivileged again now that you
-   know the code is working
-5. Figure out how to actually set up google cloud IAM and other things correctly at some point...
+3. Do i have to run container as privileged?
+4. Figure out how to actually set up google cloud IAM and other things correctly at some point...
 5. Add unit tests for nitro and sev attester by saving an attestation string and using as testdata
 
 ## Tutorial/Code links
@@ -249,6 +250,14 @@ gcloud compute instances update-container instance-bearclave-sev-snp \
     --container-privileged \
     --zone=us-central1-a \
     --project=bearclave
+
+# Add this metadata tag to redirect tee workload stdout/stderr to the serial console for
+# debugging purposes. You will have to restart your instance afterwards
+gcloud compute instances add-metadata instance-bearclave-sev-snp \
+    --metadata tee-container-log-redirect=true \
+    --zone=us-central1-a \
+    --project=bearclave
+
 
 gcloud compute instances create vm1 \
   --zone=us-central1-a \
