@@ -2,6 +2,7 @@ package sev
 
 import (
 	"fmt"
+
 	"github.com/google/go-sev-guest/client"
 )
 
