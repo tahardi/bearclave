@@ -1,8 +1,8 @@
 #!/bin/bash
-/app/enclave --config /app/enclave-config.yaml 2>&1 &
+/app/enclave --config /app/enclave-config.yaml 2>&1 | sed 's/^/[enclave] /' &
 ENCLAVE_PID=$!
 
-/app/enclave-proxy --config /app/proxy-config.yaml 2>&1 &
+/app/enclave-proxy --config /app/proxy-config.yaml 2>&1 | sed 's/^/[enclave-proxy] /' &
 PROXY_PID=$!
 
 # Handle process termination
