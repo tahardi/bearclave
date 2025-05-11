@@ -150,12 +150,13 @@ Below is a very rough draft of notes, tips, links compiled during my initial GCP
 up in future PRs as I continue to refine the sev and tdx implementations.
 
 ## TODOs
-1. Figure out how to see enclave logging output---some sort of google confidential VM debug mode?
-- [monitor and debug workloads](https://cloud.google.com/confidential-computing/confidential-space/docs/monitor-debug)
-- [redirect to serial](https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads#tee-container-log-redirect)
-- 
+1. We can view debug logging
 2. clean up these notes
+   3. https://computingpost.medium.com/how-to-use-tini-init-system-in-docker-containers-69283d0099ed tini for init
+   4. https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads#tee-container-log-redirect
+   5. https://cloud.google.com/confidential-computing/confidential-space/docs/monitor-debug
 3. Do i have to run container as privileged?
+4. clean up artifact registry and docker images on build instance?
 4. Figure out how to actually set up google cloud IAM and other things correctly at some point...
 5. Add unit tests for nitro and sev attester by saving an attestation string and using as testdata
 
@@ -226,24 +227,30 @@ docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 # Maybe how you create an AMD_SEV_SNP instance? According to AI assistant you can't actually
 # create an sev-snp-enabled instance via the web GUI
 gcloud compute instances create-with-container instance-bearclave-sev-snp \
+    --project=bearclave \
     --zone=us-central1-a \
     --machine-type=n2d-standard-2 \
     --confidential-compute-type=SEV_SNP \
-    --maintenance-policy=TERMINATE \
     --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:a824652361384b513af405e25c8f4c5c258d193c56b249ed70391befc0e2b43f \
-    --project=bearclave \
+    --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
+    --container-privileged \
     --tags=http-server \
+    --metadata tee-container-log-redirect=true \
     --scopes=cloud-platform \
+    --maintenance-policy=TERMINATE \
     --shielded-secure-boot
+
+# push image to google artifact registry for use in confidential VM
+@docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 
 # update the image for a running instance
 gcloud compute instances update-container instance-bearclave-sev-snp \
     --zone=us-central1-a \
     --project=bearclave \
-    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:ca1a3a51b96bd9b9047d337b7c333f4f427ffd4852f93d26ed6d244ed0781195
+    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:2b5c7d7bd2461aa1c88e2b36bcbf61f5ae6cc9588315ca5a0fb0e720b57937d0
 
 # God fucking dammit you have to mount `/dev/sev-guest` to the guest VM since that is not
-# done by default... Christ almight some documentation would be very helpful
+# done by default... Christ almighty some documentation would be very helpful
 # Update your instance create command to do this
 gcloud compute instances update-container instance-bearclave-sev-snp \
     --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
@@ -251,26 +258,11 @@ gcloud compute instances update-container instance-bearclave-sev-snp \
     --zone=us-central1-a \
     --project=bearclave
 
-# Add this metadata tag to redirect tee workload stdout/stderr to the serial console for
-# debugging purposes. You will have to restart your instance afterwards
-gcloud compute instances add-metadata instance-bearclave-sev-snp \
-    --metadata tee-container-log-redirect=true \
-    --zone=us-central1-a \
-    --project=bearclave
+# To debug enclave programs ssh into your confidential VM and list
+# the docker logs for the container
+gcloud compute ssh instance-bearclave-sev-snp --zone=us-central1-a
+docker logs $(docker ps -q)
 
-
-gcloud compute instances create vm1 \
-  --zone=us-central1-a \
-  --confidential-compute \
-  --shielded-secure-boot \
-  --tags=tee-vm \
-  --project $OPERATOR_PROJECT_ID \
-  --maintenance-policy=TERMINATE \
-  --scopes=cloud-platform  \
-  --image-project=confidential-space-images \
-  --image=confidential-space-231201 \
-  --network=teenetwork \
-  --service-account=operator-svc-account@$OPERATOR_PROJECT_ID.iam.gserviceaccount.com \
-  --metadata ^~^tee-image-reference=$IMAGE_HASH~tee-restart-policy=Never~tee-container-log-redirect=true~tee-signed-image-repos=us-central1-docker.pkg.dev/$BUILDER_PROJECT_ID/repo1/tee
-
+# this will hang and output logs in real-time
+docker logs -f $(docker ps -q)
 ```
