@@ -24,10 +24,9 @@ tidy:
 .PHONY: test-unit
 test-unit: tidy test-internal-unit
 
-# TODO: Add '-race' back once you've removed BoltDB
 .PHONY: test-internal-unit
 test-internal-unit:
-	@go test -v -count=1 ./internal/...
+	@go test -v -count=1 -race ./internal/...
 
 .PHONY: test-examples
 test-examples: hello-world-example
