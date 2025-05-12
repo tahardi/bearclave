@@ -243,8 +243,13 @@ gcloud compute instances create-with-container instance-bearclave-sev-snp \
     --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:a824652361384b513af405e25c8f4c5c258d193c56b249ed70391befc0e2b43f \
     --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
     --tags=http-server \
+    --metadata tee-container-log-redirect=true \
     --scopes=cloud-platform \
+    --maintenance-policy=TERMINATE \
     --shielded-secure-boot
+
+# push image to google artifact registry for use in confidential VM
+@docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 
 # update the image for a running instance
 gcloud compute instances update-container instance-bearclave-sev-snp \
@@ -253,7 +258,7 @@ gcloud compute instances update-container instance-bearclave-sev-snp \
     --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:d7214f758098275b254228345d46d2071b76b3c06aab5f198de1e58097370ba1
 
 # God fucking dammit you have to mount `/dev/sev-guest` to the guest VM since that is not
-# done by default... Christ almight some documentation would be very helpful
+# done by default... Christ almighty some documentation would be very helpful
 # Update your instance create command to do this
 gcloud compute instances update-container instance-bearclave-sev-snp \
     --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
