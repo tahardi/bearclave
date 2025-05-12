@@ -6,7 +6,9 @@ SHELL := bash
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
+################################################################################
 # Unsafe Demo
+################################################################################
 .PHONY: unsafe-hello-world
 unsafe-hello-world:
 	@-make --no-print-directory unsafe-start-processes
@@ -24,7 +26,9 @@ unsafe-start-processes:
 unsafe-stop-processes:
 	@-process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
 
+################################################################################
 # Build Binaries
+################################################################################
 enclave/bin/enclave: $(shell find ./enclave -type f -name '*.go')
 	@cd ./enclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave
 
@@ -38,40 +42,9 @@ enclave: enclave/bin/enclave
 enclave-proxy: enclave-proxy/bin/enclave-proxy
 nonclave: nonclave/bin/nonclave
 
-# GCP AMD SEV-SNP
-gcp_project_id=bearclave
-gcp_zone=us-central1-a
-gcp_instance_name=instance-bearclave-sev-snp
-gcp_artifact_registry=us-east1-docker.pkg.dev/$(gcp_project_id)/bearclave
-sev_enclave_image_name=hello-world-enclave-sev
-sev_enclave_image_tag=$(gcp_artifact_registry)/$(sev_enclave_image_name)
-
-.PHONY: sev-build-enclave-image
-sev-build-enclave-image: enclave enclave-proxy
-	@docker build \
-		-f ./sev.Dockerfile \
-		-t $(sev_enclave_image_name) \
-		-t $(sev_enclave_image_tag) \
-		--build-arg CONFIG_FILE=sev-config.yaml \
-		.
-
-.PHONY: sev-push-enclave-image
-sev-push-enclave-image: sev-build-enclave-image
-	@docker push $(sev_enclave_image_tag)
-
-.PHONY: sev-run-enclave-image
-sev-run-enclave-image: sev-push-enclave-image
-	@echo "Retrieving the most recent image SHA for $(sev_enclave_image_name)..."
-	@sha=$(shell gcloud container images list-tags $(sev_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format='value(digest)') && \
-	echo "Most recent image SHA: $$sha" && \
-	echo "Updating GCP instance to use the new image with SHA $$sha..." && \
-	gcloud compute instances update-container $(gcp_instance_name) \
-		--zone $(gcp_zone) \
-		--container-image "$(sev_enclave_image_tag)@$$sha" && \
-	echo "Restarting GCP instance $(gcp_instance_name)..." && \
-	gcloud compute instances reset $(gcp_instance_name) --zone $(gcp_zone)
-
+################################################################################
 # AWS Nitro-Enclave
+################################################################################
 .PHONY: nitro-build-enclave-image
 nitro-build-enclave-image: enclave
 	@docker build \
@@ -104,7 +77,99 @@ nitro-describe-enclave-eif: nitro-build-enclave-eif
 .PHONY: console-enclave-eif
 console-enclave-eif:
 
+################################################################################
+# GCP AMD SEV-SNP
+################################################################################
+sev_gcp_project_id=bearclave
+sev_gcp_zone=us-central1-a
+sev_gcp_instance_name=instance-bearclave-sev-snp
+sev_gcp_artifact_registry=us-east1-docker.pkg.dev/$(sev_gcp_project_id)/bearclave
+sev_enclave_image_name=hello-world-enclave-sev
+sev_enclave_image_tag=$(sev_gcp_artifact_registry)/$(sev_enclave_image_name)
+
+.PHONY: sev-build-enclave-image
+sev-build-enclave-image: enclave enclave-proxy
+	@docker build \
+		-f ./sev.Dockerfile \
+		-t $(sev_enclave_image_name) \
+		-t $(sev_enclave_image_tag) \
+		--build-arg CONFIG_FILE=sev-config.yaml \
+		.
+
+.PHONY: sev-push-enclave-image
+sev-push-enclave-image: sev-build-enclave-image
+	@docker push $(sev_enclave_image_tag)
+
+.PHONY: sev-run-enclave-image
+sev-run-enclave-image: sev-push-enclave-image
+	@echo "Retrieving the most recent image SHA for $(sev_enclave_image_name)..."
+	@sha=$(shell gcloud container images list-tags $(sev_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format='value(digest)') && \
+	echo "Most recent image SHA: $$sha" && \
+	echo "Updating GCP instance to use the new image with SHA $$sha..." && \
+	gcloud compute instances update-container $(sev_gcp_instance_name) \
+		--zone $(sev_gcp_zone) \
+		--container-image "$(sev_enclave_image_tag)@$$sha" && \
+	echo "Restarting GCP instance $(sev_gcp_instance_name)..." && \
+	gcloud compute instances reset $(sev_gcp_instance_name) --zone $(sev_gcp_zone)
+
+.PHONY: sev-start-instance
+sev-start-instance:
+	@gcloud compute instances start $(sev_gcp_instance_name) \
+		--zone=$(sev_gcp_zone)
+
+.PHONY: sev-stop-instance
+sev-stop-instance:
+	@gcloud compute instances stop $(sev_gcp_instance_name) \
+		--zone=$(sev_gcp_zone)
+
+################################################################################
+# GCP Intel TDX
+################################################################################
+tdx_gcp_project_id=bearclave
+tdx_gcp_zone=us-central1-a
+tdx_gcp_instance_name=instance-bearclave-tdx
+tdx_gcp_artifact_registry=us-east1-docker.pkg.dev/$(tdx_gcp_project_id)/bearclave
+tdx_enclave_image_name=hello-world-enclave-tdx
+tdx_enclave_image_tag=$(tdx_gcp_artifact_registry)/$(tdx_enclave_image_name)
+
+.PHONY: tdx-build-enclave-image
+tdx-build-enclave-image: enclave enclave-proxy
+	@docker build \
+		-f ./tdx.Dockerfile \
+		-t $(tdx_enclave_image_name) \
+		-t $(tdx_enclave_image_tag) \
+		--build-arg CONFIG_FILE=tdx-config.yaml \
+		.
+
+.PHONY: tdx-push-enclave-image
+tdx-push-enclave-image: tdx-build-enclave-image
+	@docker push $(tdx_enclave_image_tag)
+
+.PHONY: tdx-run-enclave-image
+tdx-run-enclave-image: tdx-push-enclave-image
+	@echo "Retrieving the most recent image SHA for $(tdx_enclave_image_name)..."
+	@sha=$(shell gcloud container images list-tags $(tdx_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format='value(digest)') && \
+	echo "Most recent image SHA: $$sha" && \
+	echo "Updating GCP instance to use the new image with SHA $$sha..." && \
+	gcloud compute instances update-container $(tdx_gcp_instance_name) \
+		--zone $(tdx_gcp_zone) \
+		--container-image "$(tdx_enclave_image_tag)@$$sha" && \
+	echo "Restarting GCP instance $(tdx_gcp_instance_name)..." && \
+	gcloud compute instances reset $(tdx_gcp_instance_name) --zone $(tdx_gcp_zone)
+
+.PHONY: tdx-start-instance
+tdx-start-instance:
+	@gcloud compute instances start $(tdx_gcp_instance_name) \
+		--zone=$(tdx_gcp_zone)
+
+.PHONY: tdx-stop-instance
+tdx-stop-instance:
+	@gcloud compute instances stop $(tdx_gcp_instance_name) \
+		--zone=$(tdx_gcp_zone)
+
+################################################################################
 # Clean
+################################################################################
 .PHONY: clean
 clean:
 	rm -rf ./enclave/bin

@@ -24,18 +24,14 @@ func (n *Attester) Attest(userdata []byte) ([]byte, error) {
 
 	tdxQP, err := client.GetQuoteProvider()
 	if err != nil {
-		return nil, fmt.Errorf("getting quote provider: %w", err)
-	}
-
-	if err = tdxQP.IsSupported(); err != nil {
-		return nil, fmt.Errorf("TDX is not supported: %w", err)
+		return nil, fmt.Errorf("getting tdx quote provider: %w", err)
 	}
 
 	var reportData [64]byte
 	copy(reportData[:], userdata)
 	attestation, err := tdxQP.GetRawQuote(reportData)
 	if err != nil {
-		return nil, fmt.Errorf("getting quote: %w", err)
+		return nil, fmt.Errorf("getting tdx quote: %w", err)
 	}
 	return attestation, nil
 }

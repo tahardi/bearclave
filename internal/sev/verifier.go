@@ -18,12 +18,12 @@ func NewVerifier() (*Verifier, error) {
 func (n *Verifier) Verify(attestation []byte) ([]byte, error) {
 	pbAttestation, err := abi.ReportCertsToProto(attestation)
 	if err != nil {
-		return nil, fmt.Errorf("converting attestation to proto: %w", err)
+		return nil, fmt.Errorf("converting sev attestation to proto: %w", err)
 	}
 
 	err = verify.SnpAttestation(pbAttestation, verify.DefaultOptions())
 	if err != nil {
-		return nil, fmt.Errorf("verifying attestation: %w", err)
+		return nil, fmt.Errorf("verifying sev attestation: %w", err)
 	}
 	return pbAttestation.Report.GetReportData(), nil
 }
