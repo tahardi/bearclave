@@ -78,6 +78,47 @@ offers:
 
 ---
 
+## Getting Started
+
+### 1. Install Dependencies
+
+Bearclave has been tested on **Ubuntu 24.04.1 LTS**. To get started, install the
+following dependencies:
+
+- **Golang (version 1.23.3 or higher):**  
+  Install Go from the official website:  
+  [https://go.dev/dl/](https://go.dev/dl/)
+
+- **golangci-lint:**  
+  Install golangci-lint for running code linting checks:  
+  [https://golangci-lint.run/usage/install/](https://golangci-lint.run/usage/install/)
+
+- **Docker:**  
+  Install Docker for managing containerized applications:  
+  [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
+
+- **process-compose:**  
+  Install process-compose for managing process groups via YAML files:  
+  [https://github.com/F1bonacc1/process-compose](https://github.com/F1bonacc1/process-compose)
+
+Please ensure that all tools are properly installed and added to your system's
+`PATH` for seamless setup.
+
+### 2. Clone the Repository
+
+Clone the Bearclave repository and navigate to its directory:
+```bash
+git clone [https://github.com/your-username/bearclave.git](https://github.com/your-username/bearclave.git) && cd bearclave
+```
+
+### 3. Build and Deploy Examples
+
+Follow the deployment examples in the `Makefile` for your platform of choice
+(e.g., AWS or GCP). Refer to the [Platform-Specific Guides](#additional-resources)
+for details on platform-specific configurations.
+
+---
+
 ## Additional Resources
 
 For platform-specific details and examples, refer to the following:
@@ -85,20 +126,6 @@ For platform-specific details and examples, refer to the following:
   Nitro Enclaves.
 - **[Google Cloud Platform (GCP)](GCP.md):** Notes and insights on deploying
   SEV-SNP and TDX workloads on GCP.
-
----
-
-## Getting Started
-
-To begin exploring Bearclave:
-1. Clone the repository and install dependencies.
-2. Follow the deployment examples in the `Makefile` for your platform of choice
-   (e.g., AWS or GCP).
-3. Refer to the additional documentation files ([AWS.md](AWS.md) and
-   [GCP.md](GCP.md)) for detailed setup and configuration instructions.
-
-For technical contributions or troubleshooting, please check the repository
-issues or contact the maintainers.
 
 ---
 
