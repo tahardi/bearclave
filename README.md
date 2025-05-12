@@ -34,8 +34,8 @@ bridges this gap by expanding the capabilities of TEE-based applications.
 
 ## What Is Bearclave?
 
-Bearclave is a repository designed to provide developers with tools to navigate
-the challenges of building and deploying TEE-based applications. Here's what it
+Bearclave is a set of tools and modules designed to help developers build and 
+deploy TEE-based Golang applications. Here's what it
 offers:
 
 ### Key Features:
