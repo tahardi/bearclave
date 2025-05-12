@@ -150,14 +150,11 @@ Below is a very rough draft of notes, tips, links compiled during my initial GCP
 up in future PRs as I continue to refine the sev and tdx implementations.
 
 ## TODOs
-1. Figure out how to see enclave logging output---some sort of google confidential VM debug mode?
-- [monitor and debug workloads](https://cloud.google.com/confidential-computing/confidential-space/docs/monitor-debug)
-- [redirect to serial](https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads#tee-container-log-redirect)
-- 
-2. clean up these notes
-3. Do i have to run container as privileged?
+2. clean up readme - move AWS and GCP to separate files
+3. Do I have to run container as privileged?
 4. Figure out how to actually set up google cloud IAM and other things correctly at some point...
 5. Add unit tests for nitro and sev attester by saving an attestation string and using as testdata
+6. Rename enclave-proxy and unsafe
 
 ## Tutorial/Code links
 [confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
@@ -189,9 +186,19 @@ confidential spaces apps
 
 [ncc confidential spaces security review](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.nccgroup.com/media/edukzwst/_ncc_group_googleinc_e004374_confidentialspacereport_public_v10.pdf)
 
+- [monitor and debug workloads](https://cloud.google.com/confidential-computing/confidential-space/docs/monitor-debug)
+- [redirect to serial](https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads#tee-container-log-redirect)
+-
+
 # Confidential VM Setup & Deployment
-- setup gcloud cli tool: currently using this in conjunction with the web console though I may ultimately move to
-just the cli tool
+- Sign up for a google cloud account (currently giving $300 in free credit
+for three months)
+- setup [gcloud cli tool](https://cloud.google.com/sdk/docs/install)
+  - recommend using gcloud cli tool for instance creation and image deployment
+  as there are options that are hard/impossible to set via the web console
+  - install and run `gcloud init`
+  - sign in to your google account
+  - choose the project you want gcloud to work with
 
 - You can add a personal ssh key to the VM instance. Note that when you deploy your container as a confidential VM it
 only allows you to log into the guest confidential VM in read-only mode---you cannot ssh into the host instance! For
@@ -206,8 +213,10 @@ Commands for pushing your image to google's Artifact Registry so you can pull th
 
 ```bash
 gcloud init
+# I think this is only needed if you want to switch accounts?
 gcloud auth login
-gcloud config set account `403490793521-compute@developer.gserviceaccount.com`
+
+gcloud config set account 403490793521-compute@developer.gserviceaccount.com
 gcloud auth configure-docker us-east1-docker.pkg.dev
 #
 gcloud artifacts repositories add-iam-policy-binding bearclave \
@@ -215,23 +224,24 @@ gcloud artifacts repositories add-iam-policy-binding bearclave \
   --member=serviceAccount:403490793521-compute@developer.gserviceaccount.com \
   --role=roles/artifactregistry.writer
 
-# Why do I have to tag it this way? Push fails if I dont...
+# If you don't tag with the full registry storage path docker push will default
+# to docker hub and not store in the Google Artifact Registry
 docker tag hello-world-enclave-sev us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
-
-# Is the tag what tells it where to push or is that bc I logged into the registry earlier?
 docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 ```
 
 ```bash
-# Maybe how you create an AMD_SEV_SNP instance? According to AI assistant you can't actually
+# According to AI assistant you can't actually
 # create an sev-snp-enabled instance via the web GUI
 gcloud compute instances create-with-container instance-bearclave-sev-snp \
+    --project=bearclave \
     --zone=us-central1-a \
     --machine-type=n2d-standard-2 \
     --confidential-compute-type=SEV_SNP \
     --maintenance-policy=TERMINATE \
+    --container-privileged \
     --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:a824652361384b513af405e25c8f4c5c258d193c56b249ed70391befc0e2b43f \
-    --project=bearclave \
+    --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
     --tags=http-server \
     --scopes=cloud-platform \
     --shielded-secure-boot
@@ -240,7 +250,7 @@ gcloud compute instances create-with-container instance-bearclave-sev-snp \
 gcloud compute instances update-container instance-bearclave-sev-snp \
     --zone=us-central1-a \
     --project=bearclave \
-    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:ca1a3a51b96bd9b9047d337b7c333f4f427ffd4852f93d26ed6d244ed0781195
+    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:d7214f758098275b254228345d46d2071b76b3c06aab5f198de1e58097370ba1
 
 # God fucking dammit you have to mount `/dev/sev-guest` to the guest VM since that is not
 # done by default... Christ almight some documentation would be very helpful
@@ -251,26 +261,6 @@ gcloud compute instances update-container instance-bearclave-sev-snp \
     --zone=us-central1-a \
     --project=bearclave
 
-# Add this metadata tag to redirect tee workload stdout/stderr to the serial console for
-# debugging purposes. You will have to restart your instance afterwards
-gcloud compute instances add-metadata instance-bearclave-sev-snp \
-    --metadata tee-container-log-redirect=true \
-    --zone=us-central1-a \
-    --project=bearclave
-
-
-gcloud compute instances create vm1 \
-  --zone=us-central1-a \
-  --confidential-compute \
-  --shielded-secure-boot \
-  --tags=tee-vm \
-  --project $OPERATOR_PROJECT_ID \
-  --maintenance-policy=TERMINATE \
-  --scopes=cloud-platform  \
-  --image-project=confidential-space-images \
-  --image=confidential-space-231201 \
-  --network=teenetwork \
-  --service-account=operator-svc-account@$OPERATOR_PROJECT_ID.iam.gserviceaccount.com \
-  --metadata ^~^tee-image-reference=$IMAGE_HASH~tee-restart-policy=Never~tee-container-log-redirect=true~tee-signed-image-repos=us-central1-docker.pkg.dev/$BUILDER_PROJECT_ID/repo1/tee
-
+gcloud compute ssh instance-bearclave-sev-snp
+docker logs -f $(docker ps -q)
 ```
