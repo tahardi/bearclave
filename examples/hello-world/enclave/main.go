@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/tahardi/bearclave"
 	"log/slog"
 	"os"
 
@@ -30,8 +29,7 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := bearclave.NewSEVAttester()
-	//attester, err := sdk.MakeAttester(config.Platform)
+	attester, err := sdk.MakeAttester(config.Platform)
 	if err != nil {
 		logger.Error("making attester", slog.String("error", err.Error()))
 		return
@@ -49,7 +47,7 @@ func main() {
 	}
 
 	for {
-		logger.Info("Waiting to receive userdata from non-enclave...")
+		logger.Info("waiting to receive userdata from enclave-proxy...")
 		ctx := context.Background()
 		userdata, err := transporter.Receive(ctx)
 		if err != nil {
@@ -57,13 +55,14 @@ func main() {
 			return
 		}
 
-		logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
+		logger.Info("attesting userdata", slog.String("userdata", string(userdata)))
 		attestation, err := attester.Attest(userdata)
 		if err != nil {
 			logger.Error("attesting userdata", slog.String("error", err.Error()))
 			return
 		}
 
+		logger.Info("sending attestation to enclave-proxy...")
 		err = transporter.Send(ctx, attestation)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))

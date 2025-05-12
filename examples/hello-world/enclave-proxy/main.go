@@ -52,13 +52,14 @@ func MakeAttestUserDataHandler(transporter bearclave.Transporter, logger *slog.L
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		logger.Info("Sending userdata to enclave...", slog.String("userdata", string(req.Data)))
+		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
 		err = transporter.Send(ctx, req.Data)
 		if err != nil {
 			writeError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
 		}
 
+		logger.Info("waiting for attestation from enclave...")
 		attestation, err := transporter.Receive(ctx)
 		if err != nil {
 			writeError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
