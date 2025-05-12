@@ -151,10 +151,10 @@ up in future PRs as I continue to refine the sev and tdx implementations.
 
 ## TODOs
 2. clean up readme - move AWS and GCP to separate files
-3. Do I have to run container as privileged?
 4. Figure out how to actually set up google cloud IAM and other things correctly at some point...
 5. Add unit tests for nitro and sev attester by saving an attestation string and using as testdata
 6. Rename enclave-proxy and unsafe
+7. update attestation interface to take userdata [64]byte?
 
 ## Tutorial/Code links
 [confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
@@ -233,17 +233,21 @@ docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
 ```bash
 # According to AI assistant you can't actually
 # create an sev-snp-enabled instance via the web GUI
-gcloud compute instances create-with-container instance-bearclave-sev-snp \
+# sev-snp n2d-standard-* (2,4) type SEV_SNP
+# intel tdx c3-standard-* (e.g., c3-standard-4 $0.20/hr, c3-standard-8 $0.40/hr)
+gcloud compute instances create-with-container instance-bearclave-tdx \
     --project=bearclave \
     --zone=us-central1-a \
-    --machine-type=n2d-standard-2 \
-    --confidential-compute-type=SEV_SNP \
+    --machine-type=c3-standard-4 \
+    --confidential-compute-type=TDX \
     --maintenance-policy=TERMINATE \
     --container-privileged \
-    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:a824652361384b513af405e25c8f4c5c258d193c56b249ed70391befc0e2b43f \
-    --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
+    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-tdx@sha256:73267a52b7e026cf63e1e8d680af8985f7cb9d252a09175ea8bf024069e01221 \
+    # Why is this needed if /sys/kernel/config/tsm/report is used for making attestation?
+    --container-mount-host-path mount-path=/dev/tdx-guest,host-path=/dev/tdx-guest \
+    # Need to mount this for generating tdx attestation report
+    --container-mount-host-path mount-path=/sys/kernel/config,host-path=/sys/kernel/config \
     --tags=http-server \
-    --metadata tee-container-log-redirect=true \
     --scopes=cloud-platform \
     --maintenance-policy=TERMINATE \
     --shielded-secure-boot

@@ -24,14 +24,14 @@ func (n *Attester) Attest(userdata []byte) ([]byte, error) {
 
 	sevQP, err := client.GetQuoteProvider()
 	if err != nil {
-		return nil, fmt.Errorf("getting quote provider: %w", err)
+		return nil, fmt.Errorf("getting sev quote provider: %w", err)
 	}
 
 	var reportData [64]byte
 	copy(reportData[:], userdata)
 	attestation, err := sevQP.GetRawQuote(reportData)
 	if err != nil {
-		return nil, fmt.Errorf("getting quote: %w", err)
+		return nil, fmt.Errorf("getting sev quote: %w", err)
 	}
 	return attestation, nil
 }

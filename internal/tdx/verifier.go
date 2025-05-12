@@ -17,12 +17,12 @@ func NewVerifier() (*Verifier, error) {
 func (n *Verifier) Verify(attestation []byte) ([]byte, error) {
 	pbAttestation, err := abi.QuoteToProto(attestation)
 	if err != nil {
-		return nil, fmt.Errorf("converting attestation to proto: %w", err)
+		return nil, fmt.Errorf("converting tdx attestation to proto: %w", err)
 	}
 
 	err = verify.TdxQuote(pbAttestation, verify.DefaultOptions())
 	if err != nil {
-		return nil, fmt.Errorf("verifying attestation: %w", err)
+		return nil, fmt.Errorf("verifying tdx attestation: %w", err)
 	}
 
 	quoteV4, ok := pbAttestation.(*pb.QuoteV4)
