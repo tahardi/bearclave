@@ -1,7 +1,7 @@
 #!/bin/bash
-# Run our enclave and proxy in the background and capture both their STDOUT and STDERR output.
-# Prepend each line of output with the program name for better readability as both the
-# enclave and proxy output will intermingle in the terminal.
+# Run our enclave and enclave-proxy programs in the background. Capture their
+# STDOUT and STDERR output and prepend each line with the program name for
+# better readability as their outputs are intermingled.
 /app/enclave --config /app/enclave-config.yaml 2>&1 | awk '{ print "[enclave] " $0; fflush(); }' &
 ENCLAVE_PID=$!
 

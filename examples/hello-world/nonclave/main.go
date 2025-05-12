@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
+
+	"github.com/tahardi/bearclave/examples/hello-world/sdk"
 )
 
 type GatewayClient struct {
@@ -90,14 +91,21 @@ func (c *GatewayClient) Do(
 }
 
 var host string
+var port int
 var platform string
 
 func main() {
 	flag.StringVar(
 		&host,
 		"host",
-		"http://127.0.0.1:8080",
-		"The hostname of the enclave gateway to connect to (default: http://127.0.0.1:8080)",
+		"127.0.0.1",
+		"The hostname of the enclave gateway to connect to (default: 127.0.0.1)",
+	)
+	flag.IntVar(
+		&port,
+		"port",
+		8080,
+		"The port of the enclave gateway to connect to (default: 8080)",
 	)
 	flag.StringVar(
 		&platform,
@@ -108,8 +116,12 @@ func main() {
 	)
 	flag.Parse()
 
+	url := fmt.Sprintf("http://%s:%d", host, port)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	logger.Info("nonclave configuration", slog.String("host", host), slog.String("platform", platform))
+	logger.Info("nonclave configuration",
+		slog.String("platform", platform),
+		slog.String("url", url),
+	)
 
 	verifier, err := sdk.MakeVerifier(sdk.Platform(platform))
 	if err != nil {
@@ -118,7 +130,7 @@ func main() {
 	}
 
 	want := []byte("Hello, world!")
-	client := NewGatewayClient(host)
+	client := NewGatewayClient(url)
 	attestation, err := client.AttestUserData(want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))

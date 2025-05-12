@@ -47,7 +47,7 @@ func main() {
 	}
 
 	for {
-		logger.Info("Waiting to receive userdata from enclave-proxy...")
+		logger.Info("waiting to receive userdata from enclave-proxy...")
 		ctx := context.Background()
 		userdata, err := transporter.Receive(ctx)
 		if err != nil {
@@ -55,14 +55,14 @@ func main() {
 			return
 		}
 
-		logger.Info("Attesting userdata", slog.String("userdata", string(userdata)))
+		logger.Info("attesting userdata", slog.String("userdata", string(userdata)))
 		attestation, err := attester.Attest(userdata)
 		if err != nil {
 			logger.Error("attesting userdata", slog.String("error", err.Error()))
 			return
 		}
 
-		logger.Info("Sending attestation to enclave-proxy...")
+		logger.Info("sending attestation to enclave-proxy...")
 		err = transporter.Send(ctx, attestation)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
