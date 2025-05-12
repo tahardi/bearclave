@@ -108,7 +108,7 @@ Please ensure that all tools are properly installed and added to your system's
 
 Clone the Bearclave repository and navigate to its directory:
 ```bash
-git clone [https://github.com/your-username/bearclave.git](https://github.com/your-username/bearclave.git) && cd bearclave
+git clone https://github.com/tahardi/bearclave.git && cd bearclave
 ```
 
 ### 3. Build and Deploy Examples
