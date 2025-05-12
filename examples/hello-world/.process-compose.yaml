@@ -2,7 +2,7 @@ processes:
   enclave:
     description: The Enclave Application
     command: go run ./enclave/main.go --config ./enclave/unsafe-config.yaml
-    ready_log_line: "Waiting to receive"
+    ready_log_line: "waiting to receive"
     availability:
       exit_on_end: true
   enclave-proxy:
