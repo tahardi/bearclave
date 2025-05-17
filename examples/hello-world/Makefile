@@ -2,28 +2,28 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
-.DEFAULT_GOAL := unsafe-hello-world
+.DEFAULT_GOAL := notee-hello-world
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
 ################################################################################
-# Unsafe Demo
+# No TEE Demo
 ################################################################################
-.PHONY: unsafe-hello-world
-unsafe-hello-world:
-	@-make --no-print-directory unsafe-start-processes
-	@-make --no-print-directory unsafe-stop-processes
+.PHONY: notee-hello-world
+notee-hello-world:
+	@-make --no-print-directory notee-start-processes
+	@-make --no-print-directory notee-stop-processes
 
 # Make sure your process-compose port does not conflict with
 # the ports used by enclave, proxy, or nonclave processes
 # https://github.com/F1bonacc1/process-compose
 PROCESS_COMPOSE_PORT=8083
-.PHONY: unsafe-start-processes
-unsafe-start-processes:
+.PHONY: notee-start-processes
+notee-start-processes:
 	@-process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml 2> /dev/null
 
-.PHONY: unsafe-stop-processes
-unsafe-stop-processes:
+.PHONY: notee-stop-processes
+notee-stop-processes:
 	@-process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
 
 ################################################################################
