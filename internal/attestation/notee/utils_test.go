@@ -1,4 +1,4 @@
-package unsafe_test
+package notee_test
 
 import (
 	"crypto/ecdsa"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tahardi/bearclave/internal/unsafe"
+	"github.com/tahardi/bearclave/internal/attestation/notee"
 )
 
 func newTestPrivateKey(t *testing.T) *ecdsa.PrivateKey {
@@ -25,7 +25,7 @@ func TestECDSASign(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		signature, err := unsafe.ECDSASign(privateKey, data)
+		signature, err := notee.ECDSASign(privateKey, data)
 
 		// then
 		assert.NoError(t, err)
@@ -40,7 +40,7 @@ func TestECDSAVerify(t *testing.T) {
 		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
 		require.NoError(t, err)
 
-		signature, err := unsafe.ECDSASign(privateKey, data)
+		signature, err := notee.ECDSASign(privateKey, data)
 		require.NoError(t, err)
 
 		publicKey := append(
@@ -49,7 +49,7 @@ func TestECDSAVerify(t *testing.T) {
 		)
 
 		// when
-		ok := unsafe.ECDSAVerify(publicKey, data, signature)
+		ok := notee.ECDSAVerify(publicKey, data, signature)
 
 		// then
 		assert.True(t, ok)
@@ -59,7 +59,7 @@ func TestECDSAVerify(t *testing.T) {
 		// given
 		data := []byte("Hello, World!")
 		privateKey := newTestPrivateKey(t)
-		signature, err := unsafe.ECDSASign(privateKey, data)
+		signature, err := notee.ECDSASign(privateKey, data)
 		require.NoError(t, err)
 
 		wrongPrivateKey := newTestPrivateKey(t)
@@ -69,7 +69,7 @@ func TestECDSAVerify(t *testing.T) {
 		)
 
 		// when
-		ok := unsafe.ECDSAVerify(wrongPublicKey, data, signature)
+		ok := notee.ECDSAVerify(wrongPublicKey, data, signature)
 
 		// then
 		assert.False(t, ok)
@@ -79,7 +79,7 @@ func TestECDSAVerify(t *testing.T) {
 		// given
 		data := []byte("Hello, World!")
 		privateKey := newTestPrivateKey(t)
-		signature, err := unsafe.ECDSASign(privateKey, data)
+		signature, err := notee.ECDSASign(privateKey, data)
 		require.NoError(t, err)
 
 		publicKey := append(
@@ -88,7 +88,7 @@ func TestECDSAVerify(t *testing.T) {
 		)
 
 		// when
-		ok := unsafe.ECDSAVerify(publicKey, []byte("wrong data"), signature)
+		ok := notee.ECDSAVerify(publicKey, []byte("wrong data"), signature)
 
 		// then
 		assert.False(t, ok)
@@ -104,7 +104,7 @@ func TestECDSAVerify(t *testing.T) {
 		)
 
 		// when
-		ok := unsafe.ECDSAVerify(publicKey, data, []byte("wrong signature"))
+		ok := notee.ECDSAVerify(publicKey, data, []byte("wrong signature"))
 
 		// then
 		assert.False(t, ok)

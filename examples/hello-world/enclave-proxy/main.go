@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/tahardi/bearclave"
-	"github.com/tahardi/bearclave/examples/hello-world/sdk"
+	"github.com/tahardi/bearclave/internal/ipc"
+	"github.com/tahardi/bearclave/internal/setup"
 )
 
 func writeError(w http.ResponseWriter, err error) {
@@ -40,7 +40,7 @@ type AttestUserDataResponse struct {
 	Attestation []byte `json:"attestation"`
 }
 
-func MakeAttestUserDataHandler(transporter bearclave.Transporter, logger *slog.Logger) http.HandlerFunc {
+func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := AttestUserDataRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -53,14 +53,14 @@ func MakeAttestUserDataHandler(transporter bearclave.Transporter, logger *slog.L
 		defer cancel()
 
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
-		err = transporter.Send(ctx, req.Data)
+		err = communicator.Send(ctx, req.Data)
 		if err != nil {
 			writeError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
 		}
 
 		logger.Info("waiting for attestation from enclave...")
-		attestation, err := transporter.Receive(ctx)
+		attestation, err := communicator.Receive(ctx)
 		if err != nil {
 			writeError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
 			return
@@ -75,21 +75,21 @@ func main() {
 	flag.StringVar(
 		&configFile,
 		"config",
-		sdk.DefaultConfigFile,
+		setup.DefaultConfigFile,
 		"The Trusted Computing platform to use. Options: "+
 			"nitro, sev, tdx, unsafe (default: unsafe)",
 	)
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config, err := sdk.LoadConfig(configFile)
+	config, err := setup.LoadConfig(configFile)
 	if err != nil {
 		logger.Error("loading config", slog.String("error", err.Error()))
 		return
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	transporter, err := sdk.MakeTransporter(
+	communicator, err := ipc.NewIPC(
 		config.Platform,
 		config.SendCID,
 		config.SendPort,
@@ -101,7 +101,7 @@ func main() {
 	}
 
 	serverMux := http.NewServeMux()
-	serverMux.Handle("POST "+"/attest-user-data", MakeAttestUserDataHandler(transporter, logger))
+	serverMux.Handle("POST "+"/attest-user-data", MakeAttestUserDataHandler(communicator, logger))
 
 	// TODO: Do I want to set other options? Take in port from config?
 	server := &http.Server{

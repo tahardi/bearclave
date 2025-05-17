@@ -1,4 +1,4 @@
-package unsafe
+package notee
 
 import (
 	"crypto/ecdsa"

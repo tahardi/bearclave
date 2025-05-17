@@ -1,4 +1,4 @@
-package sock
+package sockets
 
 import (
 	"context"
@@ -7,35 +7,33 @@ import (
 	"net"
 )
 
-type Transporter struct {
+type IPC struct {
 	receiveListener net.Listener
 	sendAddr        string
 }
 
-func NewTransporter(sendPort int, receivePort int) (*Transporter, error) {
+func NewIPC(sendPort int, receivePort int) (*IPC, error) {
 	sendAddr := fmt.Sprintf("127.0.0.1:%d", sendPort)
 	receiveAddr := fmt.Sprintf("127.0.0.1:%d", receivePort)
-	//sendAddr := fmt.Sprintf("0.0.0.0:%d", sendPort)
-	//receiveAddr := fmt.Sprintf("0.0.0.0:%d", receivePort)
 	receiveListener, err := net.Listen("tcp", receiveAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set up TCP listener on %s: %w", receiveAddr, err)
 	}
 
-	return &Transporter{
+	return &IPC{
 		sendAddr:        sendAddr,
 		receiveListener: receiveListener,
 	}, nil
 }
 
-func (c *Transporter) Close() error {
+func (c *IPC) Close() error {
 	if c.receiveListener != nil {
 		c.receiveListener.Close()
 	}
 	return nil
 }
 
-func (c *Transporter) Send(ctx context.Context, data []byte) error {
+func (c *IPC) Send(ctx context.Context, data []byte) error {
 	errChan := make(chan error, 1)
 	go func() {
 		conn, err := net.Dial("tcp", c.sendAddr)
@@ -66,7 +64,7 @@ func (c *Transporter) Send(ctx context.Context, data []byte) error {
 	}
 }
 
-func (c *Transporter) Receive(ctx context.Context) ([]byte, error) {
+func (c *IPC) Receive(ctx context.Context) ([]byte, error) {
 	dataChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
 	go func() {
