@@ -1,4 +1,4 @@
-package unsafe_test
+package notee_test
 
 import (
 	"encoding/json"
@@ -6,20 +6,20 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tahardi/bearclave/internal/unsafe"
+	"github.com/tahardi/bearclave/internal/attestation/notee"
 )
 
 func TestVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("hello world")
-		attester, err := unsafe.NewAttester()
+		attester, err := notee.NewAttester()
 		require.NoError(t, err)
 
 		attestation, err := attester.Attest(want)
 		require.NoError(t, err)
 
-		verifier, err := unsafe.NewVerifier()
+		verifier, err := notee.NewVerifier()
 		require.NoError(t, err)
 
 		// when
@@ -34,7 +34,7 @@ func TestVerifier_Verify(t *testing.T) {
 		// given
 		attestation := []byte("invalid attestation")
 
-		verifier, err := unsafe.NewVerifier()
+		verifier, err := notee.NewVerifier()
 		require.NoError(t, err)
 
 		// when
@@ -46,7 +46,7 @@ func TestVerifier_Verify(t *testing.T) {
 
 	t.Run("error - invalid signature", func(t *testing.T) {
 		// given
-		attestation := unsafe.Attestation{
+		attestation := notee.Attestation{
 			Userdata:  []byte("hello world"),
 			Publickey: []byte("public key"),
 			Signature: []byte("invalid signature"),
@@ -54,7 +54,7 @@ func TestVerifier_Verify(t *testing.T) {
 		attestationBytes, err := json.Marshal(attestation)
 		require.NoError(t, err)
 
-		verifier, err := unsafe.NewVerifier()
+		verifier, err := notee.NewVerifier()
 		require.NoError(t, err)
 
 		// when

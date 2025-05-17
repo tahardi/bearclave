@@ -10,7 +10,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/tahardi/bearclave/examples/hello-world/sdk"
+	"github.com/tahardi/bearclave/internal/attestation"
+	"github.com/tahardi/bearclave/internal/setup"
 )
 
 type GatewayClient struct {
@@ -110,9 +111,9 @@ func main() {
 	flag.StringVar(
 		&platform,
 		"platform",
-		"unsafe",
+		"notee",
 		"The Trusted Computing platform the enclave is running on. Options: "+
-			"nitro, sev, tdx, unsafe (default: unsafe)",
+			"nitro, sev, tdx, notee (default: notee)",
 	)
 	flag.Parse()
 
@@ -123,7 +124,7 @@ func main() {
 		slog.String("url", url),
 	)
 
-	verifier, err := sdk.MakeVerifier(sdk.Platform(platform))
+	verifier, err := attestation.NewVerifier(setup.Platform(platform))
 	if err != nil {
 		logger.Error("making verifier", slog.String("error", err.Error()))
 		return
@@ -131,13 +132,13 @@ func main() {
 
 	want := []byte("Hello, world!")
 	client := NewGatewayClient(url)
-	attestation, err := client.AttestUserData(want)
+	att, err := client.AttestUserData(want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))
 		return
 	}
 
-	got, err := verifier.Verify(attestation)
+	got, err := verifier.Verify(att)
 	if err != nil {
 		logger.Error("verifying attestation", slog.String("error", err.Error()))
 		return

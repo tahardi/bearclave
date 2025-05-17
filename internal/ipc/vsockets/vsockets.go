@@ -1,4 +1,4 @@
-package vsock
+package vsockets
 
 import (
 	"context"
@@ -8,34 +8,34 @@ import (
 	"github.com/mdlayher/vsock"
 )
 
-type Transporter struct {
+type IPC struct {
 	sendContextID   uint32
 	sendPort        uint32
 	receiveListener *vsock.Listener
 }
 
-func NewTransporter(
+func NewIPC(
 	sendContextID int,
 	sendPort int,
 	receivePort int,
-) (*Transporter, error) {
+) (*IPC, error) {
 	receiveListener, err := vsock.Listen(uint32(receivePort), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set up vsock listener: %w", err)
 	}
 
-	return &Transporter{
+	return &IPC{
 		sendContextID:   uint32(sendContextID),
 		sendPort:        uint32(sendPort),
 		receiveListener: receiveListener,
 	}, nil
 }
 
-func (c *Transporter) Close() error {
+func (c *IPC) Close() error {
 	return fmt.Errorf("not implemented")
 }
 
-func (c *Transporter) Send(ctx context.Context, data []byte) error {
+func (c *IPC) Send(ctx context.Context, data []byte) error {
 	errChan := make(chan error, 1)
 	go func() {
 		conn, err := vsock.Dial(c.sendContextID, c.sendPort, nil)
@@ -66,7 +66,7 @@ func (c *Transporter) Send(ctx context.Context, data []byte) error {
 	}
 }
 
-func (c *Transporter) Receive(ctx context.Context) ([]byte, error) {
+func (c *IPC) Receive(ctx context.Context) ([]byte, error) {
 	dataChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
 	go func() {

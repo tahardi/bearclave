@@ -1,4 +1,4 @@
-package sdk
+package setup
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ type Config struct {
 
 func LoadConfig(configFile string) (*Config, error) {
 	config := &Config{
-		Platform:    Unsafe,
+		Platform:    NoTEE,
 		SendCID:     3,
 		SendPort:    8081,
 		ReceivePort: 8082,

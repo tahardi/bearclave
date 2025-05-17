@@ -1,4 +1,4 @@
-package unsafe_test
+package notee_test
 
 import (
 	"encoding/json"
@@ -6,14 +6,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tahardi/bearclave/internal/unsafe"
+	"github.com/tahardi/bearclave/internal/attestation/notee"
 )
 
 func TestAttester_Attest(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		privateKey := newTestPrivateKey(t)
-		attester, err := unsafe.NewAttesterWithPrivateKey(privateKey)
+		attester, err := notee.NewAttesterWithPrivateKey(privateKey)
 		require.NoError(t, err)
 
 		publicKey := append(
