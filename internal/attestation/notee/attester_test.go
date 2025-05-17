@@ -24,7 +24,7 @@ func TestAttester_Attest(t *testing.T) {
 		// ECDSA signatures are not deterministic, so we can't
 		// test that the signature is equal to a specific value
 		userdata := []byte("hello world")
-		want := unsafe.Attestation{
+		want := notee.Attestation{
 			Userdata:  userdata,
 			Publickey: publicKey,
 		}
@@ -33,7 +33,7 @@ func TestAttester_Attest(t *testing.T) {
 		attestationBytes, err := attester.Attest(userdata)
 		require.NoError(t, err)
 
-		got := unsafe.Attestation{}
+		got := notee.Attestation{}
 		err = json.Unmarshal(attestationBytes, &got)
 
 		// then
