@@ -23,7 +23,7 @@ To start developing with Nitro Enclaves, you must launch and configure an EC2
 instance that supports Nitro Enclaves. Note that THIS WILL COST MONEY. In fact,
 developing on any cloud-based TEE platform is going to cost money. That said,
 the smallest nitro-enabled instances only run around $0.17/hr. Coupled with the
-Bearclave "unsafe" platform, you should be able to develop and test your enclave
+Bearclave "No TEE" platform, you should be able to develop and test your enclave
 application for $5–10/month as long as you are diligent about turning off your
 instances when done.
 
