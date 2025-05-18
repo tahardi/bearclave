@@ -1,0 +1,14 @@
+dir: "mocks"
+mockname: "{{.InterfaceName}}"
+outpkg: "mocks"
+filename: "{{.InterfaceName}}.go"
+packages:
+  github.com/tahardi/bearclave/internal/attestation:
+    config:
+    interfaces:
+      Attester:
+      Verifier:
+  github.com/tahardi/bearclave/internal/ipc:
+    config:
+    interfaces:
+      IPC:

@@ -7,7 +7,7 @@ SHELL := bash
 .SUFFIXES:
 
 .PHONY: pre-pr
-pre-pr: tidy lint test-unit
+pre-pr: tidy mock lint test-unit test-examples
 
 .PHONY: lint
 lint:
@@ -16,6 +16,11 @@ lint:
 .PHONY: lint-fix
 lint-fix:
 	@golangci-lint run --config .golangci.yaml --fix
+
+.PHONY: mock
+mock: tidy
+	@rm -rf mocks
+	@mockery --quiet --config=.mockery.yaml
 
 .PHONY: tidy
 tidy:
@@ -29,11 +34,15 @@ test-internal-unit:
 	@go test -v -count=1 -race ./internal/...
 
 .PHONY: test-examples
-test-examples: hello-world-example
+test-examples: hello-world-example hello-http-example
 
 .PHONY: hello-world-example
 hello-world-example:
 	@make -C ./examples/hello-world/
+
+.PHONY: hello-http-example
+hello-http-example:
+	@make -C ./examples/hello-http/
 
 .PHONY: clean
 clean:
