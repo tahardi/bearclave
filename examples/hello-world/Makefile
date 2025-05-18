@@ -50,7 +50,7 @@ nitro-build-enclave-image: enclave
 	@docker build \
 		-f ./nitro.Dockerfile \
 		-t hello-world-enclave-nitro \
-		--build-arg CONFIG_FILE=enclave/nitro-config.yaml \
+		--build-arg CONFIG_FILE=configs/nitro-config.yaml \
 		.
 
 .PHONY: nitro-build-enclave-eif
@@ -93,7 +93,7 @@ sev-build-enclave-image: enclave enclave-proxy
 		-f ./sev.Dockerfile \
 		-t $(sev_enclave_image_name) \
 		-t $(sev_enclave_image_tag) \
-		--build-arg CONFIG_FILE=sev-config.yaml \
+		--build-arg CONFIG_FILE=configs/sev-config.yaml \
 		.
 
 .PHONY: sev-push-enclave-image
@@ -111,6 +111,13 @@ sev-run-enclave-image: sev-push-enclave-image
 		--container-image "$(sev_enclave_image_tag)@$$sha" && \
 	echo "Restarting GCP instance $(sev_gcp_instance_name)..." && \
 	gcloud compute instances reset $(sev_gcp_instance_name) --zone $(sev_gcp_zone)
+
+.PHONY: sev-run-nonclave
+sev-run-nonclave:
+	@ip=$$(gcloud compute instances describe $(sev_gcp_instance_name) \
+		--zone $(sev_gcp_zone) \
+		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
+	go run ./nonclave/main.go --platform sev --host $$ip
 
 .PHONY: sev-start-instance
 sev-start-instance:
@@ -138,7 +145,7 @@ tdx-build-enclave-image: enclave enclave-proxy
 		-f ./tdx.Dockerfile \
 		-t $(tdx_enclave_image_name) \
 		-t $(tdx_enclave_image_tag) \
-		--build-arg CONFIG_FILE=tdx-config.yaml \
+		--build-arg CONFIG_FILE=configs/tdx-config.yaml \
 		.
 
 .PHONY: tdx-push-enclave-image
@@ -156,6 +163,13 @@ tdx-run-enclave-image: tdx-push-enclave-image
 		--container-image "$(tdx_enclave_image_tag)@$$sha" && \
 	echo "Restarting GCP instance $(tdx_gcp_instance_name)..." && \
 	gcloud compute instances reset $(tdx_gcp_instance_name) --zone $(tdx_gcp_zone)
+
+.PHONY: tdx-run-nonclave
+tdx-run-nonclave:
+	@ip=$$(gcloud compute instances describe $(tdx_gcp_instance_name) \
+		--zone $(tdx_gcp_zone) \
+		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
+	go run ./nonclave/main.go --platform tdx --host $$ip
 
 .PHONY: tdx-start-instance
 tdx-start-instance:

@@ -5,11 +5,8 @@ RUN apk add --no-cache tini bash
 
 WORKDIR /app
 
-ARG ENCLAVE_CONFIG_FILE=enclave/tdx-config.yaml
-ARG PROXY_CONFIG_FILE=enclave-proxy/tdx-config.yaml
-
-COPY ./${ENCLAVE_CONFIG_FILE} ./enclave-config.yaml
-COPY ./${PROXY_CONFIG_FILE} ./proxy-config.yaml
+ARG CONFIG_FILE=configs/tdx-config.yaml
+COPY ./${CONFIG_FILE} ./config.yaml
 COPY ./enclave/bin/enclave .
 COPY ./enclave-proxy/bin/enclave-proxy .
 COPY ./tdx-run.sh .

@@ -11,6 +11,8 @@ import (
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
+const serviceName = "enclave"
+
 var configFile string
 
 func main() {
@@ -37,14 +39,20 @@ func main() {
 		return
 	}
 
+	ipcConfig, exists := config.IPC[serviceName]
+	if !exists {
+		logger.Error("missing IPC config", slog.String("service", serviceName))
+		return
+	}
+
 	communicator, err := ipc.NewIPC(
 		config.Platform,
-		config.SendCID,
-		config.SendPort,
-		config.ReceivePort,
+		ipcConfig.SendCID,
+		ipcConfig.SendPort,
+		ipcConfig.ReceivePort,
 	)
 	if err != nil {
-		logger.Error("making communicator", slog.String("error", err.Error()))
+		logger.Error("making ipc", slog.String("error", err.Error()))
 		return
 	}
 

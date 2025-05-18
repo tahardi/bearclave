@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -30,18 +31,26 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	proxy, err := networking.NewProxy(
-		config.Platform,
-		config.SendPort,
-		config.SendCID,
-	)
-	if err != nil {
-		logger.Error("making proxy server", slog.String("error", err.Error()))
+	proxyConfig := config.Proxy
+	serverConfig, exists := config.Server[proxyConfig.Service]
+	if !exists {
+		logger.Error("missing server config", slog.String("service", proxyConfig.Service))
 		return
 	}
 
+	proxy, err := networking.NewProxy(
+		config.Platform,
+		serverConfig.CID,
+		serverConfig.Port,
+	)
+	if err != nil {
+		logger.Error("making proxy", slog.String("error", err.Error()))
+		return
+	}
+
+	proxyAddr := fmt.Sprintf("0.0.0.0:%d", proxyConfig.Port)
 	server := &http.Server{
-		Addr:    "0.0.0.0:8080",
+		Addr:    proxyAddr,
 		Handler: proxy.Handler(),
 	}
 

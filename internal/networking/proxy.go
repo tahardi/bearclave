@@ -18,12 +18,12 @@ type Proxy struct {
 
 func NewProxy(
 	platform setup.Platform,
-	port int,
 	cid int,
+	port int,
 ) (*Proxy, error) {
 	switch platform {
 	case setup.Nitro:
-		return NewVSocketProxy(port, cid)
+		return NewVSocketProxy(cid, port)
 	case setup.SEV:
 		return NewSocketProxy(port)
 	case setup.TDX:
@@ -39,7 +39,7 @@ func NewSocketProxy(port int) (*Proxy, error) {
 	return NewProxyWithTransport(port, &http.Transport{})
 }
 
-func NewVSocketProxy(port int, cid int) (*Proxy, error) {
+func NewVSocketProxy(cid int, port int) (*Proxy, error) {
 	vsockDialer := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		conn, err := vsock.Dial(uint32(cid), uint32(port), nil)
 		if err != nil {

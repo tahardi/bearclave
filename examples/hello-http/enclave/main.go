@@ -61,6 +61,8 @@ func MakeAttestUserDataHandler(
 	}
 }
 
+const serviceName = "enclave-server"
+
 var configFile string
 
 func main() {
@@ -69,7 +71,7 @@ func main() {
 		"config",
 		setup.DefaultConfigFile,
 		"The Trusted Computing platform to use. Options: "+
-			"nitro, sev, tdx, unsafe (default: unsafe)",
+			"nitro, sev, tdx, notee (default: notee)",
 	)
 	flag.Parse()
 
@@ -90,9 +92,15 @@ func main() {
 	serverMux := http.NewServeMux()
 	serverMux.Handle("POST "+"/attest-user-data", MakeAttestUserDataHandler(attester, logger))
 
+	serverConfig, exists := config.Server[serviceName]
+	if !exists {
+		logger.Error("missing server config", slog.String("service", serviceName))
+		return
+	}
+
 	server, err := networking.NewServer(
 		config.Platform,
-		config.ReceivePort,
+		serverConfig.Port,
 		serverMux,
 	)
 	if err != nil {

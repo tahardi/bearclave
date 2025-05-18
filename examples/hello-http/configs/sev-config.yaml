@@ -1,0 +1,8 @@
+platform: "sev"
+server:
+  "enclave-server":
+    cid: 4
+    port: 8082
+proxy:
+  port: 8080
+  service: "enclave-server"

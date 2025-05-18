@@ -8,26 +8,34 @@ import (
 	"github.com/spf13/viper"
 )
 
-const DefaultConfigFile = "Hardcoded Defaults"
+const DefaultConfigFile = "./configs/notee-config.yaml"
 
 type Config struct {
-	Platform    Platform `mapstructure:"platform"`
-	SendCID     int      `mapstructure:"send_cid"`
-	SendPort    int      `mapstructure:"send_port"`
-	ReceivePort int      `mapstructure:"receive_port"`
+	Platform Platform          `mapstructure:"platform"`
+	IPC      map[string]IPC    `mapstructure:"ipc"`
+	Server   map[string]Server `mapstructure:"server"`
+	Proxy    Proxy             `mapstructure:"proxy"`
+}
+
+// TODO: Update to have cid, port, and service
+type IPC struct {
+	SendCID     int `mapstructure:"send_cid"`
+	SendPort    int `mapstructure:"send_port"`
+	ReceivePort int `mapstructure:"receive_port"`
+}
+
+type Server struct {
+	CID  int `mapstructure:"cid"`
+	Port int `mapstructure:"port"`
+}
+
+type Proxy struct {
+	Port    int    `mapstructure:"port"`
+	Service string `mapstructure:"service"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {
-	config := &Config{
-		Platform:    NoTEE,
-		SendCID:     3,
-		SendPort:    8081,
-		ReceivePort: 8082,
-	}
-	if configFile == DefaultConfigFile {
-		return config, nil
-	}
-
+	config := &Config{}
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		return nil, fmt.Errorf("config file %s does not exist", configFile)
 	}

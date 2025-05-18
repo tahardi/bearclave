@@ -1,7 +1,7 @@
 FROM alpine:latest
 WORKDIR /app
 
-ARG CONFIG_FILE=enclave/nitro-config.yaml
+ARG CONFIG_FILE=configs/nitro-config.yaml
 COPY ./${CONFIG_FILE} ./config.yaml
 COPY ./enclave/bin/enclave .
 
