@@ -1,3 +1,0 @@
-platform: "unsafe"
-send_port: "8082"
-receive_port: "8081"
