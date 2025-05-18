@@ -9,7 +9,6 @@ import (
 	"net/url"
 
 	"github.com/mdlayher/vsock"
-
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
