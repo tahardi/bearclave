@@ -50,7 +50,7 @@ nitro-build-enclave-image: enclave
 	@docker build \
 		-f ./nitro.Dockerfile \
 		-t hello-world-enclave-nitro \
-		--build-arg CONFIG_FILE=enclave/nitro-config.yaml \
+		--build-arg CONFIG_FILE=configs/nitro-config.yaml \
 		.
 
 .PHONY: nitro-build-enclave-eif
@@ -93,7 +93,7 @@ sev-build-enclave-image: enclave enclave-proxy
 		-f ./sev.Dockerfile \
 		-t $(sev_enclave_image_name) \
 		-t $(sev_enclave_image_tag) \
-		--build-arg CONFIG_FILE=sev-config.yaml \
+		--build-arg CONFIG_FILE=configs/sev-config.yaml \
 		.
 
 .PHONY: sev-push-enclave-image
@@ -138,7 +138,7 @@ tdx-build-enclave-image: enclave enclave-proxy
 		-f ./tdx.Dockerfile \
 		-t $(tdx_enclave_image_name) \
 		-t $(tdx_enclave_image_tag) \
-		--build-arg CONFIG_FILE=tdx-config.yaml \
+		--build-arg CONFIG_FILE=configs/tdx-config.yaml \
 		.
 
 .PHONY: tdx-push-enclave-image

@@ -1,3 +1,0 @@
-platform: "notee"
-send_port: "8081"
-receive_port: "8082"

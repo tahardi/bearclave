@@ -2,10 +2,10 @@
 # Run our enclave and enclave-proxy programs in the background. Capture their
 # STDOUT and STDERR output and prepend each line with the program name for
 # better readability as their outputs are intermingled.
-/app/enclave --config /app/enclave-config.yaml 2>&1 | awk '{ print "[enclave] " $0; fflush(); }' &
+/app/enclave --config /app/config.yaml 2>&1 | awk '{ print "[enclave] " $0; fflush(); }' &
 ENCLAVE_PID=$!
 
-/app/enclave-proxy --config /app/proxy-config.yaml 2>&1 | awk '{ print "[enclave-proxy] " $0; fflush(); }' &
+/app/enclave-proxy --config /app/config.yaml 2>&1 | awk '{ print "[enclave-proxy] " $0; fflush(); }' &
 PROXY_PID=$!
 
 # Wait for either process to exit

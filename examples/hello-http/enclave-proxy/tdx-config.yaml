@@ -1,6 +1,0 @@
-platform: "tdx"
-
-# On Intel TDX the proxy runs within the VM as well. Meaning, vsock
-# is not used so we don't need to bother setting a CID.
-send_port: "8082"
-receive_port: "8081"

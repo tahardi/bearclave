@@ -1,13 +1,13 @@
 processes:
   enclave:
     description: The Enclave Application
-    command: go run ./enclave/main.go --config ./enclave/notee-config.yaml
+    command: go run ./enclave/main.go --config ./configs/notee-config.yaml
     ready_log_line: "Enclave server started"
     availability:
       exit_on_end: true
   enclave-proxy:
     description: The Enclave-Proxy Application
-    command: go run ./enclave-proxy/main.go --config ./enclave-proxy/notee-config.yaml
+    command: go run ./enclave-proxy/main.go --config ./configs/notee-config.yaml
     ready_log_line: "Proxy server started"
     availability:
       exit_on_end: true

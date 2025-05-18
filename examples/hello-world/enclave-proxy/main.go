@@ -69,6 +69,8 @@ func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.H
 	}
 }
 
+const serviceName = "enclave-proxy"
+
 var configFile string
 
 func main() {
@@ -89,23 +91,29 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
+	ipcConfig, exists := config.IPC[serviceName]
+	if !exists {
+		logger.Error("missing IPC config", slog.String("service", serviceName))
+		return
+	}
+
 	communicator, err := ipc.NewIPC(
 		config.Platform,
-		config.SendCID,
-		config.SendPort,
-		config.ReceivePort,
+		ipcConfig.SendCID,
+		ipcConfig.SendPort,
+		ipcConfig.ReceivePort,
 	)
 	if err != nil {
-		logger.Error("making transporter", slog.String("error", err.Error()))
+		logger.Error("making ipc", slog.String("error", err.Error()))
 		return
 	}
 
 	serverMux := http.NewServeMux()
 	serverMux.Handle("POST "+"/attest-user-data", MakeAttestUserDataHandler(communicator, logger))
 
-	// TODO: Do I want to set other options? Take in port from config?
+	proxyAddr := fmt.Sprintf("0.0.0.0:%d", config.Proxy.Port)
 	server := &http.Server{
-		Addr:    "0.0.0.0:8080",
+		Addr:    proxyAddr,
 		Handler: serverMux,
 	}
 
