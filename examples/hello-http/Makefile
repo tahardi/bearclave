@@ -112,6 +112,13 @@ sev-run-enclave-image: sev-push-enclave-image
 	echo "Restarting GCP instance $(sev_gcp_instance_name)..." && \
 	gcloud compute instances reset $(sev_gcp_instance_name) --zone $(sev_gcp_zone)
 
+.PHONY: sev-run-nonclave
+sev-run-nonclave:
+	@ip=$$(gcloud compute instances describe $(sev_gcp_instance_name) \
+		--zone $(sev_gcp_zone) \
+		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
+	go run ./nonclave/main.go --platform sev --host $$ip
+
 .PHONY: sev-start-instance
 sev-start-instance:
 	@gcloud compute instances start $(sev_gcp_instance_name) \
@@ -121,6 +128,10 @@ sev-start-instance:
 sev-stop-instance:
 	@gcloud compute instances stop $(sev_gcp_instance_name) \
 		--zone=$(sev_gcp_zone)
+
+.PHONY: sev-ssh-instance
+sev-ssh-instance:
+	@gcloud compute ssh $(sev_gcp_instance_name)
 
 ################################################################################
 # GCP Intel TDX
@@ -157,6 +168,13 @@ tdx-run-enclave-image: tdx-push-enclave-image
 	echo "Restarting GCP instance $(tdx_gcp_instance_name)..." && \
 	gcloud compute instances reset $(tdx_gcp_instance_name) --zone $(tdx_gcp_zone)
 
+.PHONY: tdx-run-nonclave
+tdx-run-nonclave:
+	@ip=$$(gcloud compute instances describe $(tdx_gcp_instance_name) \
+		--zone $(tdx_gcp_zone) \
+		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
+	go run ./nonclave/main.go --platform tdx --host $$ip
+
 .PHONY: tdx-start-instance
 tdx-start-instance:
 	@gcloud compute instances start $(tdx_gcp_instance_name) \
@@ -166,6 +184,10 @@ tdx-start-instance:
 tdx-stop-instance:
 	@gcloud compute instances stop $(tdx_gcp_instance_name) \
 		--zone=$(tdx_gcp_zone)
+
+.PHONY: tdx-ssh-instance
+tdx-ssh-instance:
+	@gcloud compute ssh $(tdx_gcp_instance_name)
 
 ################################################################################
 # Clean
