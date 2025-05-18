@@ -2,94 +2,15 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"os"
 
 	"github.com/tahardi/bearclave/internal/attestation"
+	"github.com/tahardi/bearclave/internal/networking"
 	"github.com/tahardi/bearclave/internal/setup"
 )
-
-type GatewayClient struct {
-	host   string
-	client *http.Client
-}
-
-func NewGatewayClient(host string) *GatewayClient {
-	// TODO: Check configuration - should I set a timeout?
-	client := &http.Client{}
-	return NewGatewayClientWithClient(host, client)
-}
-
-func NewGatewayClientWithClient(
-	host string,
-	client *http.Client,
-) *GatewayClient {
-	return &GatewayClient{
-		host:   host,
-		client: client,
-	}
-}
-
-type AttestUserDataRequest struct {
-	Data []byte `json:"data"`
-}
-type AttestUserDataResponse struct {
-	Attestation []byte `json:"attestation"`
-}
-
-func (c *GatewayClient) AttestUserData(data []byte) ([]byte, error) {
-	attestUserDataRequest := AttestUserDataRequest{Data: data}
-	attestUserDataResponse := AttestUserDataResponse{}
-	err := c.Do("POST", "/attest-user-data", attestUserDataRequest, &attestUserDataResponse)
-	if err != nil {
-		return nil, fmt.Errorf("doing attest user data request: %w", err)
-	}
-	return attestUserDataResponse.Attestation, nil
-}
-
-func (c *GatewayClient) Do(
-	method string,
-	api string,
-	apiReq any,
-	apiResp any,
-) error {
-	bodyBytes, err := json.Marshal(apiReq)
-	if err != nil {
-		return fmt.Errorf("marshaling request body: %w", err)
-	}
-
-	url := c.host + api
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("sending request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err = io.ReadAll(resp.Body)
-	switch {
-	case err != nil:
-		return fmt.Errorf("reading response body: %w", err)
-	case resp.StatusCode != http.StatusOK:
-		return fmt.Errorf("received non-200 response: %s", string(bodyBytes))
-	}
-
-	err = json.Unmarshal(bodyBytes, apiResp)
-	if err != nil {
-		return fmt.Errorf("unmarshaling response: %w", err)
-	}
-	return nil
-}
 
 var host string
 var port int
@@ -131,7 +52,7 @@ func main() {
 	}
 
 	want := []byte("Hello, world!")
-	client := NewGatewayClient(url)
+	client := networking.NewClient(url)
 	att, err := client.AttestUserData(want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))

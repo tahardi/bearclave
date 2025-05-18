@@ -11,41 +11,16 @@ import (
 	"time"
 
 	"github.com/tahardi/bearclave/internal/ipc"
+	"github.com/tahardi/bearclave/internal/networking"
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
-func writeError(w http.ResponseWriter, err error) {
-	http.Error(w, err.Error(), http.StatusInternalServerError)
-}
-
-func writeResponse(w http.ResponseWriter, out any) {
-	data, err := json.Marshal(out)
-	if err != nil {
-		writeError(w, fmt.Errorf("marshaling response: %w", err))
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(data)
-	if err != nil {
-		writeError(w, fmt.Errorf("writing response: %w", err))
-		return
-	}
-}
-
-type AttestUserDataRequest struct {
-	Data []byte `json:"data"`
-}
-type AttestUserDataResponse struct {
-	Attestation []byte `json:"attestation"`
-}
-
 func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := AttestUserDataRequest{}
+		req := networking.AttestUserDataRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-			writeError(w, fmt.Errorf("decoding request: %w", err))
+			networking.WriteError(w, fmt.Errorf("decoding request: %w", err))
 			return
 		}
 
@@ -55,17 +30,19 @@ func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.H
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
 		err = communicator.Send(ctx, req.Data)
 		if err != nil {
-			writeError(w, fmt.Errorf("sending userdata to enclave: %w", err))
+			networking.WriteError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
 		}
 
 		logger.Info("waiting for attestation from enclave...")
 		attestation, err := communicator.Receive(ctx)
 		if err != nil {
-			writeError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
+			networking.WriteError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
 			return
 		}
-		writeResponse(w, AttestUserDataResponse{Attestation: attestation})
+
+		resp := networking.AttestUserDataResponse{Attestation: attestation}
+		networking.WriteResponse(w, resp)
 	}
 }
 
@@ -109,7 +86,10 @@ func main() {
 	}
 
 	serverMux := http.NewServeMux()
-	serverMux.Handle("POST "+"/attest-user-data", MakeAttestUserDataHandler(communicator, logger))
+	serverMux.Handle(
+		"POST "+networking.AttestUserDataPath,
+		MakeAttestUserDataHandler(communicator, logger),
+	)
 
 	proxyAddr := fmt.Sprintf("0.0.0.0:%d", config.Proxy.Port)
 	server := &http.Server{
