@@ -50,7 +50,7 @@ nitro-build-enclave-image: enclave
 	@docker build \
 		-f ./nitro.Dockerfile \
 		-t hello-http-enclave-nitro \
-		--build-arg CONFIG_FILE=nitro-config.yaml \
+		--build-arg CONFIG_FILE=enclave/nitro-config.yaml \
 		.
 
 .PHONY: nitro-build-enclave-eif
