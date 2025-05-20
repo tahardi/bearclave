@@ -11,8 +11,7 @@ SHELL := bash
 ################################################################################
 .PHONY: notee-hello-http
 notee-hello-http:
-	@-make --no-print-directory notee-start-processes
-	@-make --no-print-directory notee-stop-processes
+	@make --no-print-directory notee-start-processes
 
 # Make sure your process-compose port does not conflict with
 # the ports used by enclave, proxy, or nonclave processes
@@ -20,11 +19,11 @@ notee-hello-http:
 PROCESS_COMPOSE_PORT=8083
 .PHONY: notee-start-processes
 notee-start-processes:
-	@-process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml 2> /dev/null
+	@process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml 2> /dev/null
 
 .PHONY: notee-stop-processes
 notee-stop-processes:
-	@-process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
+	@process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
 
 ################################################################################
 # Build Binaries
