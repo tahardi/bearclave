@@ -51,7 +51,7 @@ func main() {
 	proxyAddr := fmt.Sprintf("0.0.0.0:%d", proxyConfig.Port)
 	server := &http.Server{
 		Addr:    proxyAddr,
-		Handler: proxy.Handler(),
+		Handler: proxy,
 	}
 
 	logger.Info("Proxy server started", slog.String("addr", server.Addr))

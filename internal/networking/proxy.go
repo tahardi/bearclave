@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/mdlayher/vsock"
+
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
@@ -71,6 +72,6 @@ func NewProxyWithTransport(
 	}, nil
 }
 
-func (p *Proxy) Handler() http.Handler {
-	return p.proxy
+func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.proxy.ServeHTTP(w, r)
 }
