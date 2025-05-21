@@ -7,7 +7,8 @@ WORKDIR /app
 
 ARG CONFIG_FILE=configs/tdx-config.yaml
 COPY ./${CONFIG_FILE} ./config.yaml
-COPY ./enclave/bin/enclave .
+COPY ./enclave-server-1/bin/enclave-server-1 .
+COPY ./enclave-server-2/bin/enclave-server-2 .
 COPY ./enclave-proxy/bin/enclave-proxy .
 COPY ./tdx-run.sh .
 RUN chmod +x ./tdx-run.sh
