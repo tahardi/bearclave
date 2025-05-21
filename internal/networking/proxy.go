@@ -156,7 +156,7 @@ func NewVSocketMultiProxy(
 
 	proxies := make(map[string]*Proxy, len(ports))
 	for i, route := range routes {
-		proxy, err := NewVSocketProxy(route, ports[i], cids[i])
+		proxy, err := NewVSocketProxy(route, cids[i], ports[i])
 		if err != nil {
 			return nil, fmt.Errorf(
 				"failed to create proxy for route '%s' and cid,port (%d,%d): %w",
