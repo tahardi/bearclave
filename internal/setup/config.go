@@ -25,13 +25,14 @@ type IPC struct {
 }
 
 type Server struct {
-	CID  int `mapstructure:"cid"`
-	Port int `mapstructure:"port"`
+	CID   int    `mapstructure:"cid"`
+	Port  int    `mapstructure:"port"`
+	Route string `mapstructure:"route"`
 }
 
 type Proxy struct {
-	Port    int    `mapstructure:"port"`
-	Service string `mapstructure:"service"`
+	Port     int      `mapstructure:"port"`
+	Services []string `mapstructure:"services"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {
