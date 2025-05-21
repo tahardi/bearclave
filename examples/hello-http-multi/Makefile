@@ -106,7 +106,7 @@ sev-push-enclave-image: sev-build-enclave-image
 .PHONY: sev-run-enclave-image
 sev-run-enclave-image: sev-push-enclave-image
 	@echo "Retrieving the most recent image SHA for $(sev_enclave_image_name)..."
-	@sha=$(shell gcloud container images list-tags $(sev_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format='value(digest)') && \
+	@sha=$(shell gcloud container images list-tags $(sev_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format=json | jq -r '.[0].digest') && \
 	echo "Most recent image SHA: $$sha" && \
 	echo "Updating GCP instance to use the new image with SHA $$sha..." && \
 	gcloud compute instances update-container $(sev_gcp_instance_name) \
@@ -120,7 +120,7 @@ sev-run-nonclave:
 	@ip=$$(gcloud compute instances describe $(sev_gcp_instance_name) \
 		--zone $(sev_gcp_zone) \
 		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
-	go run ./nonclave/main.go --platform sev --host $$ip
+	go run ./nonclave/main.go --config ./configs/sev-config.yaml --host $$ip
 
 .PHONY: sev-start-instance
 sev-start-instance:
@@ -162,7 +162,7 @@ tdx-push-enclave-image: tdx-build-enclave-image
 .PHONY: tdx-run-enclave-image
 tdx-run-enclave-image: tdx-push-enclave-image
 	@echo "Retrieving the most recent image SHA for $(tdx_enclave_image_name)..."
-	@sha=$(shell gcloud container images list-tags $(tdx_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format='value(digest)') && \
+	@sha=$(shell gcloud container images list-tags $(tdx_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format=json | jq -r '.[0].digest') && \
 	echo "Most recent image SHA: $$sha" && \
 	echo "Updating GCP instance to use the new image with SHA $$sha..." && \
 	gcloud compute instances update-container $(tdx_gcp_instance_name) \
@@ -176,7 +176,7 @@ tdx-run-nonclave:
 	@ip=$$(gcloud compute instances describe $(tdx_gcp_instance_name) \
 		--zone $(tdx_gcp_zone) \
 		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
-	go run ./nonclave/main.go --platform tdx --host $$ip
+	go run ./nonclave/main.go --config ./configs/sev-config.yaml --host $$ip
 
 .PHONY: tdx-start-instance
 tdx-start-instance:
