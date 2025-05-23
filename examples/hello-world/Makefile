@@ -45,6 +45,10 @@ nonclave: nonclave/bin/nonclave
 ################################################################################
 # AWS Nitro-Enclave
 ################################################################################
+nitro_aws_profile=personal
+nitro_aws_region=us-east-2
+nitro_aws_instance_name=tahardi-bearclave
+
 .PHONY: nitro-build-enclave-image
 nitro-build-enclave-image: enclave
 	@docker build \
@@ -73,9 +77,49 @@ nitro-run-enclave-eif: nitro-build-enclave-eif
 nitro-describe-enclave-eif: nitro-build-enclave-eif
 	@nitro-cli describe-eif --eif-path ./enclave/bin/enclave.eif
 
-# TODO: nitro-cli describe-enclaves then extract EnclaveID field for use in console cmd
-.PHONY: console-enclave-eif
-console-enclave-eif:
+.PHONY: nitro-start-instance
+nitro-start-instance:
+	@instance_id=$$(aws ec2 describe-instances \
+		--profile $(nitro_aws_profile) \
+		--no-cli-pager \
+		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
+		--query "Reservations[].Instances[].InstanceId" \
+		--output text) && \
+	aws ec2 start-instances \
+		--profile $(nitro_aws_profile) \
+		--no-cli-pager \
+		--region=$(nitro_aws_region) \
+		--instance-ids $$instance_id
+
+.PHONY: nitro-stop-instance
+nitro-stop-instance:
+	@instance_id=$$(aws ec2 describe-instances \
+		--profile $(nitro_aws_profile) \
+		--no-cli-pager \
+		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
+		--query "Reservations[].Instances[].InstanceId" \
+		--output text) && \
+	aws ec2 stop-instances \
+		--profile $(nitro_aws_profile) \
+		--no-cli-pager \
+		--region=$(nitro_aws_region) \
+		--instance-ids $$instance_id
+
+.PHONY: nitro-ssh-instance
+nitro-ssh-instance:
+	@public_dns=$$(aws ec2 describe-instances \
+		--profile $(nitro_aws_profile) \
+		--no-cli-pager \
+		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
+		--query "Reservations[].Instances[].PublicDnsName" \
+		--output text); \
+	if [ -z "$$public_dns" ]; then \
+		echo "Error: No public DNS name found for instance $(nitro_aws_instance_name)"; \
+		exit 1; \
+	fi; \
+	echo "Updating ~/.ssh/config with Public DNS: $$public_dns"; \
+	sed -i.bak "/^Host ec2-bearclave$$/,/^Host /{s|^\([[:space:]]*Hostname[[:space:]]\).*|\1$$public_dns|}" ~/.ssh/config; \
+	ssh ec2-bearclave
 
 ################################################################################
 # GCP AMD SEV-SNP
