@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/tahardi/bearclave/internal/attestation"
+	"github.com/tahardi/bearclave/examples/hello-http-multi/examples"
 	"github.com/tahardi/bearclave/internal/networking"
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
-const serviceName = "enclave-server"
+const serviceName = "enclave-server-2"
 
 var configFile string
 
@@ -33,25 +33,16 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := attestation.NewAttester(config.Platform)
-	if err != nil {
-		logger.Error("making attester", slog.String("error", err.Error()))
-		return
-	}
-
 	serverConfig, exists := config.Server[serviceName]
 	if !exists {
-		logger.Error(
-			"missing server config",
-			slog.String("service", serviceName),
-		)
+		logger.Error("missing server config", slog.String("service", serviceName))
 		return
 	}
 
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
-		"POST "+networking.AttestUserDataPath,
-		networking.MakeAttestUserDataHandler(attester, logger),
+		"GET "+examples.HelloMultipleServersPath,
+		examples.MakeHelloMultipleServersHandler(logger, serviceName),
 	)
 
 	server, err := networking.NewServer(
@@ -64,11 +55,8 @@ func main() {
 		return
 	}
 
-	logger.Info("Enclave server started", slog.String("addr", server.Addr()))
+	logger.Info("Enclave server 2 started", slog.String("addr", server.Addr()))
 	if err = server.Serve(); err != nil {
-		logger.Error(
-			"Enclave server error",
-			slog.String("error", err.Error()),
-		)
+		logger.Error("Enclave server error", slog.String("error", err.Error()))
 	}
 }

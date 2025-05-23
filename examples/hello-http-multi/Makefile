@@ -16,7 +16,7 @@ notee-hello-http:
 # Make sure your process-compose port does not conflict with
 # the ports used by enclave, proxy, or nonclave processes
 # https://github.com/F1bonacc1/process-compose
-PROCESS_COMPOSE_PORT=8083
+PROCESS_COMPOSE_PORT=8081
 .PHONY: notee-start-processes
 notee-start-processes:
 	@process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml 2> /dev/null
@@ -29,8 +29,11 @@ notee-stop-processes:
 ################################################################################
 # Build Binaries
 ################################################################################
-enclave/bin/enclave: $(shell find ./enclave -type f -name '*.go')
-	@cd ./enclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave
+enclave-server-1/bin/enclave-server-1: $(shell find ./enclave-server-1 -type f -name '*.go')
+	@cd ./enclave-server-1 && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave-server-1
+
+enclave-server-2/bin/enclave-server-2: $(shell find ./enclave-server-2 -type f -name '*.go')
+	@cd ./enclave-server-2 && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave-server-2
 
 enclave-proxy/bin/enclave-proxy: $(shell find ./enclave-proxy -type f -name '*.go')
 	@cd ./enclave-proxy && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/enclave-proxy
@@ -38,7 +41,8 @@ enclave-proxy/bin/enclave-proxy: $(shell find ./enclave-proxy -type f -name '*.g
 nonclave/bin/nonclave: $(shell find ./nonclave -type f -name '*.go')
 	@cd ./nonclave && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/nonclave
 
-enclave: enclave/bin/enclave
+enclave-server-1: enclave-server-1/bin/enclave-server-1
+enclave-server-2: enclave-server-2/bin/enclave-server-2
 enclave-proxy: enclave-proxy/bin/enclave-proxy
 nonclave: nonclave/bin/nonclave
 
@@ -46,18 +50,18 @@ nonclave: nonclave/bin/nonclave
 # AWS Nitro-Enclave
 ################################################################################
 .PHONY: nitro-build-enclave-image
-nitro-build-enclave-image: enclave
+nitro-build-enclave-image: enclave-server-1 enclave-server-2
 	@docker build \
 		-f ./nitro.Dockerfile \
-		-t hello-http-enclave-nitro \
+		-t hello-http-multi-enclave-nitro \
 		--build-arg CONFIG_FILE=configs/nitro-config.yaml \
 		.
 
 .PHONY: nitro-build-enclave-eif
 nitro-build-enclave-eif: nitro-build-enclave-image
 	@nitro-cli build-enclave \
-		--docker-uri hello-http-enclave-nitro:latest \
-		--output-file ./enclave/bin/enclave.eif
+		--docker-uri hello-http-multi-enclave-nitro:latest \
+		--output-file ./enclaves.eif
 
 .PHONY: nitro-run-enclave-eif
 nitro-run-enclave-eif: nitro-build-enclave-eif
@@ -65,13 +69,13 @@ nitro-run-enclave-eif: nitro-build-enclave-eif
 		--cpu-count 2 \
 		--memory 512 \
 		--enclave-cid 4 \
-		--eif-path ./enclave/bin/enclave.eif \
+		--eif-path ./enclaves.eif \
 		--debug-mode \
 		--attach-console
 
 .PHONY: nitro-describe-enclave-eif
 nitro-describe-enclave-eif: nitro-build-enclave-eif
-	@nitro-cli describe-eif --eif-path ./enclave/bin/enclave.eif
+	@nitro-cli describe-eif --eif-path ./enclaves.eif
 
 # TODO: nitro-cli describe-enclaves then extract EnclaveID field for use in console cmd
 .PHONY: console-enclave-eif
@@ -84,11 +88,11 @@ sev_gcp_project_id=bearclave
 sev_gcp_zone=us-central1-a
 sev_gcp_instance_name=instance-bearclave-sev-snp
 sev_gcp_artifact_registry=us-east1-docker.pkg.dev/$(sev_gcp_project_id)/bearclave
-sev_enclave_image_name=hello-http-enclave-sev
+sev_enclave_image_name=hello-http-multi-enclave-sev
 sev_enclave_image_tag=$(sev_gcp_artifact_registry)/$(sev_enclave_image_name)
 
 .PHONY: sev-build-enclave-image
-sev-build-enclave-image: enclave enclave-proxy
+sev-build-enclave-image: enclave-server-1 enclave-server-2 enclave-proxy
 	@docker build \
 		-f ./sev.Dockerfile \
 		-t $(sev_enclave_image_name) \
@@ -117,7 +121,7 @@ sev-run-nonclave:
 	@ip=$$(gcloud compute instances describe $(sev_gcp_instance_name) \
 		--zone $(sev_gcp_zone) \
 		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
-	go run ./nonclave/main.go --platform sev --host $$ip
+	go run ./nonclave/main.go --config ./configs/sev-config.yaml --host $$ip
 
 .PHONY: sev-start-instance
 sev-start-instance:
@@ -140,11 +144,11 @@ tdx_gcp_project_id=bearclave
 tdx_gcp_zone=us-central1-a
 tdx_gcp_instance_name=instance-bearclave-tdx
 tdx_gcp_artifact_registry=us-east1-docker.pkg.dev/$(tdx_gcp_project_id)/bearclave
-tdx_enclave_image_name=hello-http-enclave-tdx
+tdx_enclave_image_name=hello-http-multi-enclave-tdx
 tdx_enclave_image_tag=$(tdx_gcp_artifact_registry)/$(tdx_enclave_image_name)
 
 .PHONY: tdx-build-enclave-image
-tdx-build-enclave-image: enclave enclave-proxy
+tdx-build-enclave-image: enclave-server-1 enclave-server-2 enclave-proxy
 	@docker build \
 		-f ./tdx.Dockerfile \
 		-t $(tdx_enclave_image_name) \
@@ -173,7 +177,7 @@ tdx-run-nonclave:
 	@ip=$$(gcloud compute instances describe $(tdx_gcp_instance_name) \
 		--zone $(tdx_gcp_zone) \
 		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
-	go run ./nonclave/main.go --platform tdx --host $$ip
+	go run ./nonclave/main.go --config ./configs/sev-config.yaml --host $$ip
 
 .PHONY: tdx-start-instance
 tdx-start-instance:
@@ -194,6 +198,7 @@ tdx-ssh-instance:
 ################################################################################
 .PHONY: clean
 clean:
-	rm -rf ./enclave/bin
+	rm -rf ./enclave-server-1/bin
+	rm -rf ./enclave-server-2/bin
 	rm -rf ./enclave-proxy/bin
 	rm -rf ./nonclave/bin

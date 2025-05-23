@@ -1,0 +1,15 @@
+platform: "tdx"
+server:
+  "enclave-server-1":
+    cid: 4
+    port: 8082
+    route: "/v1"
+  "enclave-server-2":
+    cid: 4
+    port: 8083
+    route: "/v2"
+proxy:
+  port: 8080
+  services:
+    - "enclave-server-1"
+    - "enclave-server-2"

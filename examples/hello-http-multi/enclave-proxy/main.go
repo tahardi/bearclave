@@ -37,20 +37,25 @@ func main() {
 		return
 	}
 
-	serverConfig, exists := config.Server[proxyConfig.Services[0]]
-	if !exists {
-		logger.Error(
-			"missing server config",
-			slog.String("service", proxyConfig.Services[0]),
-		)
-		return
+	routes := make([]string, len(proxyConfig.Services))
+	cids := make([]int, len(proxyConfig.Services))
+	ports := make([]int, len(proxyConfig.Services))
+	for i, service := range proxyConfig.Services {
+		serverConfig, exists := config.Server[service]
+		if !exists {
+			logger.Error("missing server config", slog.String("service", service))
+			return
+		}
+		routes[i] = serverConfig.Route
+		cids[i] = serverConfig.CID
+		ports[i] = serverConfig.Port
 	}
 
-	proxy, err := networking.NewProxy(
+	proxy, err := networking.NewMultiProxy(
 		config.Platform,
-		serverConfig.Route,
-		serverConfig.CID,
-		serverConfig.Port,
+		routes,
+		cids,
+		ports,
 	)
 	if err != nil {
 		logger.Error("making proxy", slog.String("error", err.Error()))
@@ -65,9 +70,6 @@ func main() {
 
 	logger.Info("Proxy server started", slog.String("addr", server.Addr))
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Error(
-			"Proxy server error",
-			slog.String("error", err.Error()),
-		)
+		logger.Error("Proxy server error", slog.String("error", err.Error()))
 	}
 }

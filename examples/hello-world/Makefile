@@ -24,6 +24,7 @@ notee-start-processes:
 .PHONY: notee-stop-processes
 notee-stop-processes:
 	@process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
+	@kill -9 $$(lsof -t -i :${PROCESS_COMPOSE_PORT}) || true
 
 ################################################################################
 # Build Binaries
@@ -102,7 +103,7 @@ sev-push-enclave-image: sev-build-enclave-image
 .PHONY: sev-run-enclave-image
 sev-run-enclave-image: sev-push-enclave-image
 	@echo "Retrieving the most recent image SHA for $(sev_enclave_image_name)..."
-	@sha=$(shell gcloud container images list-tags $(sev_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format='value(digest)') && \
+	@sha=$(shell gcloud container images list-tags $(sev_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format=json | jq -r '.[0].digest') && \
 	echo "Most recent image SHA: $$sha" && \
 	echo "Updating GCP instance to use the new image with SHA $$sha..." && \
 	gcloud compute instances update-container $(sev_gcp_instance_name) \
@@ -154,7 +155,7 @@ tdx-push-enclave-image: tdx-build-enclave-image
 .PHONY: tdx-run-enclave-image
 tdx-run-enclave-image: tdx-push-enclave-image
 	@echo "Retrieving the most recent image SHA for $(tdx_enclave_image_name)..."
-	@sha=$(shell gcloud container images list-tags $(tdx_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format='value(digest)') && \
+	@sha=$(shell gcloud container images list-tags $(tdx_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format=json | jq -r '.[0].digest') && \
 	echo "Most recent image SHA: $$sha" && \
 	echo "Updating GCP instance to use the new image with SHA $$sha..." && \
 	gcloud compute instances update-container $(tdx_gcp_instance_name) \
