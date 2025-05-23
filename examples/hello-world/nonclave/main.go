@@ -13,39 +13,40 @@ import (
 )
 
 var host string
-var port int
-var platform string
+var configFile string
 
 func main() {
+	flag.StringVar(
+		&configFile,
+		"config",
+		setup.DefaultConfigFile,
+		"The Trusted Computing platform to use. Options: "+
+			"nitro, sev, tdx, notee (default: notee)",
+	)
 	flag.StringVar(
 		&host,
 		"host",
 		"127.0.0.1",
 		"The hostname of the enclave gateway to connect to (default: 127.0.0.1)",
 	)
-	flag.IntVar(
-		&port,
-		"port",
-		8080,
-		"The port of the enclave gateway to connect to (default: 8080)",
-	)
-	flag.StringVar(
-		&platform,
-		"platform",
-		"notee",
-		"The Trusted Computing platform the enclave is running on. Options: "+
-			"nitro, sev, tdx, notee (default: notee)",
-	)
 	flag.Parse()
 
-	url := fmt.Sprintf("http://%s:%d", host, port)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	logger.Info("nonclave configuration",
-		slog.String("platform", platform),
-		slog.String("url", url),
-	)
+	config, err := setup.LoadConfig(configFile)
+	if err != nil {
+		logger.Error("loading config", slog.String("error", err.Error()))
+		return
+	}
+	logger.Info("loaded config", slog.Any(configFile, config))
 
-	verifier, err := attestation.NewVerifier(setup.Platform(platform))
+	proxyConfig := config.Proxy
+	if len(proxyConfig.Services) == 0 {
+		logger.Error("missing proxy services")
+		return
+	}
+	url := fmt.Sprintf("http://%s:%d", host, proxyConfig.Port)
+
+	verifier, err := attestation.NewVerifier(config.Platform)
 	if err != nil {
 		logger.Error("making verifier", slog.String("error", err.Error()))
 		return
