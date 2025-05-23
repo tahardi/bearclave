@@ -24,6 +24,7 @@ notee-start-processes:
 .PHONY: notee-stop-processes
 notee-stop-processes:
 	@process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
+	@kill -9 $$(lsof -t -i :${PROCESS_COMPOSE_PORT}) || true
 
 ################################################################################
 # Build Binaries

@@ -41,7 +41,10 @@ func main() {
 
 	serverConfig, exists := config.Server[serviceName]
 	if !exists {
-		logger.Error("missing server config", slog.String("service", serviceName))
+		logger.Error(
+			"missing server config",
+			slog.String("service", serviceName),
+		)
 		return
 	}
 
@@ -63,6 +66,9 @@ func main() {
 
 	logger.Info("Enclave server started", slog.String("addr", server.Addr()))
 	if err = server.Serve(); err != nil {
-		logger.Error("Enclave server error", slog.String("error", err.Error()))
+		logger.Error(
+			"Enclave server error",
+			slog.String("error", err.Error()),
+		)
 	}
 }

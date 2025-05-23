@@ -32,14 +32,23 @@ func main() {
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	proxyConfig := config.Proxy
-	serverConfig, exists := config.Server[proxyConfig.Service]
+	if len(proxyConfig.Services) == 0 {
+		logger.Error("missing proxy services")
+		return
+	}
+
+	serverConfig, exists := config.Server[proxyConfig.Services[0]]
 	if !exists {
-		logger.Error("missing server config", slog.String("service", proxyConfig.Service))
+		logger.Error(
+			"missing server config",
+			slog.String("service", proxyConfig.Services[0]),
+		)
 		return
 	}
 
 	proxy, err := networking.NewProxy(
 		config.Platform,
+		serverConfig.Route,
 		serverConfig.CID,
 		serverConfig.Port,
 	)
@@ -56,6 +65,9 @@ func main() {
 
 	logger.Info("Proxy server started", slog.String("addr", server.Addr))
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Error("Proxy server error", slog.String("error", err.Error()))
+		logger.Error(
+			"Proxy server error",
+			slog.String("error", err.Error()),
+		)
 	}
 }
