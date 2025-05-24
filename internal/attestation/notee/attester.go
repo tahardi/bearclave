@@ -24,8 +24,8 @@ func NewAttester() (*Attester, error) {
 
 func NewAttesterWithPrivateKey(privateKey *ecdsa.PrivateKey) (*Attester, error) {
 	publicKey := append(
-		privateKey.PublicKey.X.Bytes(),
-		privateKey.PublicKey.Y.Bytes()...,
+		privateKey.X.Bytes(),
+		privateKey.Y.Bytes()...,
 	)
 	return &Attester{privateKey: privateKey, publicKey: publicKey}, nil
 }

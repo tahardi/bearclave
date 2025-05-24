@@ -65,8 +65,8 @@ func TestECDSAVerify(t *testing.T) {
 
 		wrongPrivateKey := newTestPrivateKey(t)
 		wrongPublicKey := append(
-			wrongPrivateKey.PublicKey.X.Bytes(),
-			wrongPrivateKey.PublicKey.Y.Bytes()...,
+			wrongPrivateKey.X.Bytes(),
+			wrongPrivateKey.Y.Bytes()...,
 		)
 
 		// when
@@ -84,8 +84,8 @@ func TestECDSAVerify(t *testing.T) {
 		require.NoError(t, err)
 
 		publicKey := append(
-			privateKey.PublicKey.X.Bytes(),
-			privateKey.PublicKey.Y.Bytes()...,
+			privateKey.X.Bytes(),
+			privateKey.Y.Bytes()...,
 		)
 
 		// when
@@ -100,8 +100,8 @@ func TestECDSAVerify(t *testing.T) {
 		data := []byte("Hello, World!")
 		privateKey := newTestPrivateKey(t)
 		publicKey := append(
-			privateKey.PublicKey.X.Bytes(),
-			privateKey.PublicKey.Y.Bytes()...,
+			privateKey.X.Bytes(),
+			privateKey.Y.Bytes()...,
 		)
 
 		// when
