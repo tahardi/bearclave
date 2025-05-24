@@ -18,8 +18,8 @@ func TestAttester_Attest(t *testing.T) {
 		require.NoError(t, err)
 
 		publicKey := append(
-			privateKey.PublicKey.X.Bytes(),
-			privateKey.PublicKey.Y.Bytes()...,
+			privateKey.X.Bytes(),
+			privateKey.Y.Bytes()...,
 		)
 
 		// ECDSA signatures are not deterministic, so we can't

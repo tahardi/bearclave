@@ -45,8 +45,8 @@ func TestECDSAVerify(t *testing.T) {
 		require.NoError(t, err)
 
 		publicKey := append(
-			privateKey.PublicKey.X.Bytes(),
-			privateKey.PublicKey.Y.Bytes()...,
+			privateKey.X.Bytes(),
+			privateKey.Y.Bytes()...,
 		)
 
 		// when
