@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/mdlayher/vsock"
+
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
