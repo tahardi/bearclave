@@ -1,7 +1,9 @@
-dir: "mocks"
-mockname: "{{.InterfaceName}}"
-outpkg: "mocks"
-filename: "{{.InterfaceName}}.go"
+dir: mocks
+filename: '{{.InterfaceName}}.go'
+structname: '{{.InterfaceName}}'
+pkgname: mocks
+formatter: goimports
+log-level: info
 packages:
   github.com/tahardi/bearclave/internal/attestation:
     config:

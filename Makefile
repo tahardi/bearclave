@@ -9,18 +9,18 @@ SHELL := bash
 .PHONY: pre-pr
 pre-pr: tidy mock lint test-unit test-examples
 
+lint_modfile=golangci-lint.mod
 .PHONY: lint
 lint:
-	@golangci-lint run --config .golangci.yaml
+	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml
 
 .PHONY: lint-fix
 lint-fix:
-	@golangci-lint run --config .golangci.yaml --fix
+	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml --fix
 
 .PHONY: mock
 mock: tidy
-	@rm -rf mocks
-	@mockery --quiet --config=.mockery.yaml
+	@go tool mockery --config=.mockery.yaml
 
 .PHONY: tidy
 tidy:
