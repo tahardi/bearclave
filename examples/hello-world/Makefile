@@ -11,18 +11,18 @@ SHELL := bash
 ################################################################################
 .PHONY: notee-hello-world
 notee-hello-world:
-	@make --no-print-directory notee-start-processes
+	@make --no-print-directory notee-processes-start
 
 # Make sure your process-compose port does not conflict with
 # the ports used by enclave, proxy, or nonclave processes
 # https://github.com/F1bonacc1/process-compose
-PROCESS_COMPOSE_PORT=8083
-.PHONY: notee-start-processes
-notee-start-processes:
+PROCESS_COMPOSE_PORT=8081
+.PHONY: notee-processes-start
+notee-processes-start:
 	@process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml 2> /dev/null
 
-.PHONY: notee-stop-processes
-notee-stop-processes:
+.PHONY: notee-processes-stop
+notee-processes-stop:
 	@process-compose down --port=${PROCESS_COMPOSE_PORT} 2> /dev/null
 	@kill -9 $$(lsof -t -i :${PROCESS_COMPOSE_PORT}) || true
 
@@ -49,22 +49,22 @@ nitro_aws_profile=personal
 nitro_aws_region=us-east-2
 nitro_aws_instance_name=tahardi-bearclave
 
-.PHONY: nitro-build-enclave-image
-nitro-build-enclave-image: enclave
+.PHONY: nitro-enclave-build-image
+nitro-enclave-build-image: enclave
 	@docker build \
 		-f ./nitro.Dockerfile \
 		-t hello-world-enclave-nitro \
 		--build-arg CONFIG_FILE=configs/nitro-config.yaml \
 		.
 
-.PHONY: nitro-build-enclave-eif
-nitro-build-enclave-eif: nitro-build-enclave-image
+.PHONY: nitro-enclave-build-eif
+nitro-enclave-build-eif: nitro-enclave-build-image
 	@nitro-cli build-enclave \
 		--docker-uri hello-world-enclave-nitro:latest \
 		--output-file ./enclave/bin/enclave.eif
 
-.PHONY: nitro-run-enclave-eif
-nitro-run-enclave-eif: nitro-build-enclave-eif
+.PHONY: nitro-enclave-run-eif
+nitro-enclave-run-eif: nitro-enclave-build-eif
 	@nitro-cli run-enclave \
 		--cpu-count 2 \
 		--memory 512 \
@@ -73,12 +73,16 @@ nitro-run-enclave-eif: nitro-build-enclave-eif
 		--debug-mode \
 		--attach-console
 
-.PHONY: nitro-describe-enclave-eif
-nitro-describe-enclave-eif: nitro-build-enclave-eif
+.PHONY: nitro-enclave-describe-eif
+nitro-enclave-describe-eif: nitro-enclave-build-eif
 	@nitro-cli describe-eif --eif-path ./enclave/bin/enclave.eif
 
-.PHONY: nitro-start-instance
-nitro-start-instance:
+.PHONY: nitro-enclave-terminate-eifs
+nitro-enclave-terminate-eifs:
+	@nitro-cli terminate-enclave --all
+
+.PHONY: nitro-instance-start
+nitro-instance-start:
 	@instance_id=$$(aws ec2 describe-instances \
 		--profile $(nitro_aws_profile) \
 		--no-cli-pager \
@@ -91,8 +95,8 @@ nitro-start-instance:
 		--region=$(nitro_aws_region) \
 		--instance-ids $$instance_id
 
-.PHONY: nitro-stop-instance
-nitro-stop-instance:
+.PHONY: nitro-instance-stop
+nitro-instance-stop:
 	@instance_id=$$(aws ec2 describe-instances \
 		--profile $(nitro_aws_profile) \
 		--no-cli-pager \
@@ -105,8 +109,8 @@ nitro-stop-instance:
 		--region=$(nitro_aws_region) \
 		--instance-ids $$instance_id
 
-.PHONY: nitro-ssh-instance
-nitro-ssh-instance:
+.PHONY: nitro-instance-ssh
+nitro-instance-ssh:
 	@public_dns=$$(aws ec2 describe-instances \
 		--profile $(nitro_aws_profile) \
 		--no-cli-pager \
@@ -121,6 +125,19 @@ nitro-ssh-instance:
 	sed -i.bak "/^Host ec2-bearclave$$/,/^Host /{s|^\([[:space:]]*Hostname[[:space:]]\).*|\1$$public_dns|}" ~/.ssh/config; \
 	ssh ec2-bearclave
 
+.PHONY: nitro-instance-ip
+nitro-instance-ip:
+	@public_dns=$$(aws ec2 describe-instances \
+		--profile $(nitro_aws_profile) \
+		--no-cli-pager \
+		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
+		--query "Reservations[].Instances[].PublicDnsName" \
+		--output text); \
+	if [ -z "$$public_dns" ]; then \
+		echo "Error: No public DNS name found for instance $(nitro_aws_instance_name)"; \
+		exit 1; \
+	fi; \
+
 ################################################################################
 # GCP AMD SEV-SNP
 ################################################################################
@@ -131,8 +148,8 @@ sev_gcp_artifact_registry=us-east1-docker.pkg.dev/$(sev_gcp_project_id)/bearclav
 sev_enclave_image_name=hello-world-enclave-sev
 sev_enclave_image_tag=$(sev_gcp_artifact_registry)/$(sev_enclave_image_name)
 
-.PHONY: sev-build-enclave-image
-sev-build-enclave-image: enclave enclave-proxy
+.PHONY: sev-enclave-build-image
+sev-enclave-build-image: enclave enclave-proxy
 	@docker build \
 		-f ./sev.Dockerfile \
 		-t $(sev_enclave_image_name) \
@@ -140,12 +157,12 @@ sev-build-enclave-image: enclave enclave-proxy
 		--build-arg CONFIG_FILE=configs/sev-config.yaml \
 		.
 
-.PHONY: sev-push-enclave-image
-sev-push-enclave-image: sev-build-enclave-image
+.PHONY: sev-enclave-push-image
+sev-enclave-push-image: sev-enclave-build-image
 	@docker push $(sev_enclave_image_tag)
 
-.PHONY: sev-run-enclave-image
-sev-run-enclave-image: sev-push-enclave-image
+.PHONY: sev-enclave-run-image
+sev-enclave-run-image: sev-enclave-push-image
 	@echo "Retrieving the most recent image SHA for $(sev_enclave_image_name)..."
 	@sha=$(shell gcloud container images list-tags $(sev_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format=json | jq -r '.[0].digest') && \
 	echo "Most recent image SHA: $$sha" && \
@@ -156,22 +173,26 @@ sev-run-enclave-image: sev-push-enclave-image
 	echo "Restarting GCP instance $(sev_gcp_instance_name)..." && \
 	gcloud compute instances reset $(sev_gcp_instance_name) --zone $(sev_gcp_zone)
 
-.PHONY: sev-run-nonclave
-sev-run-nonclave:
+.PHONY: sev-nonclave-run
+sev-nonclave-run:
 	@ip=$$(gcloud compute instances describe $(sev_gcp_instance_name) \
 		--zone $(sev_gcp_zone) \
 		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
 	go run ./nonclave/main.go --platform sev --host $$ip
 
-.PHONY: sev-start-instance
-sev-start-instance:
+.PHONY: sev-instance-start
+sev-instance-start:
 	@gcloud compute instances start $(sev_gcp_instance_name) \
 		--zone=$(sev_gcp_zone)
 
-.PHONY: sev-stop-instance
-sev-stop-instance:
+.PHONY: sev-instance-stop
+sev-instance-stop:
 	@gcloud compute instances stop $(sev_gcp_instance_name) \
 		--zone=$(sev_gcp_zone)
+
+.PHONY: sev-instance-ssh
+sev-instance-ssh:
+	@gcloud compute ssh $(sev_gcp_instance_name)
 
 ################################################################################
 # GCP Intel TDX
@@ -183,8 +204,8 @@ tdx_gcp_artifact_registry=us-east1-docker.pkg.dev/$(tdx_gcp_project_id)/bearclav
 tdx_enclave_image_name=hello-world-enclave-tdx
 tdx_enclave_image_tag=$(tdx_gcp_artifact_registry)/$(tdx_enclave_image_name)
 
-.PHONY: tdx-build-enclave-image
-tdx-build-enclave-image: enclave enclave-proxy
+.PHONY: tdx-enclave-build-image
+tdx-enclave-build-image: enclave enclave-proxy
 	@docker build \
 		-f ./tdx.Dockerfile \
 		-t $(tdx_enclave_image_name) \
@@ -192,12 +213,12 @@ tdx-build-enclave-image: enclave enclave-proxy
 		--build-arg CONFIG_FILE=configs/tdx-config.yaml \
 		.
 
-.PHONY: tdx-push-enclave-image
-tdx-push-enclave-image: tdx-build-enclave-image
+.PHONY: tdx-enclave-push-image
+tdx-enclave-push-image: tdx-enclave-build-image
 	@docker push $(tdx_enclave_image_tag)
 
-.PHONY: tdx-run-enclave-image
-tdx-run-enclave-image: tdx-push-enclave-image
+.PHONY: tdx-enclave-run-image
+tdx-enclave-run-image: tdx-enclave-push-image
 	@echo "Retrieving the most recent image SHA for $(tdx_enclave_image_name)..."
 	@sha=$(shell gcloud container images list-tags $(tdx_enclave_image_tag) --sort-by="~TIMESTAMP" --limit=1 --format=json | jq -r '.[0].digest') && \
 	echo "Most recent image SHA: $$sha" && \
@@ -208,22 +229,26 @@ tdx-run-enclave-image: tdx-push-enclave-image
 	echo "Restarting GCP instance $(tdx_gcp_instance_name)..." && \
 	gcloud compute instances reset $(tdx_gcp_instance_name) --zone $(tdx_gcp_zone)
 
-.PHONY: tdx-run-nonclave
-tdx-run-nonclave:
+.PHONY: tdx-nonclave-run
+tdx-nonclave-run:
 	@ip=$$(gcloud compute instances describe $(tdx_gcp_instance_name) \
 		--zone $(tdx_gcp_zone) \
 		--format='get(networkInterfaces[0].accessConfigs[0].natIP)') && \
 	go run ./nonclave/main.go --platform tdx --host $$ip
 
-.PHONY: tdx-start-instance
-tdx-start-instance:
+.PHONY: tdx-instance-start
+tdx-instance-start:
 	@gcloud compute instances start $(tdx_gcp_instance_name) \
 		--zone=$(tdx_gcp_zone)
 
-.PHONY: tdx-stop-instance
-tdx-stop-instance:
+.PHONY: tdx-instance-stop
+tdx-instance-stop:
 	@gcloud compute instances stop $(tdx_gcp_instance_name) \
 		--zone=$(tdx_gcp_zone)
+
+.PHONY: tdx-instance-ssh
+tdx-instance-ssh:
+	@gcloud compute ssh $(tdx_gcp_instance_name)
 
 ################################################################################
 # Clean
