@@ -28,7 +28,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", err)
+		logger.Error("loading config", slog.Any("error", err))
 		return
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))

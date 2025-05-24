@@ -46,7 +46,7 @@ func NewVSocketProxy(route string, cid int, port int) (*Proxy, error) {
 	vsockDialer := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		conn, err := vsock.Dial(uint32(cid), uint32(port), nil)
 		if err != nil {
-			return nil, fmt.Errorf("failed to dial vsock: %v", err)
+			return nil, fmt.Errorf("dialing vsock: %v", err)
 		}
 		return conn, nil
 	}
@@ -65,7 +65,7 @@ func NewProxyWithTransport(
 	addr := fmt.Sprintf("http://127.0.0.1:%d", port)
 	targetURL, err := url.Parse(addr)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse target URL: %w", err)
+		return nil, fmt.Errorf("parsing target URL: %w", err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
@@ -127,7 +127,7 @@ func NewSocketMultiProxy(routes []string, ports []int) (*MultiProxy, error) {
 		proxy, err := NewSocketProxy(route, ports[i])
 		if err != nil {
 			return nil, fmt.Errorf(
-				"failed to create proxy for route '%s' and port %d: %w",
+				"creating proxy for route '%s' and port %d: %w",
 				route,
 				ports[i],
 				err,
@@ -159,7 +159,7 @@ func NewVSocketMultiProxy(
 		proxy, err := NewVSocketProxy(route, cids[i], ports[i])
 		if err != nil {
 			return nil, fmt.Errorf(
-				"failed to create proxy for route '%s' and cid,port (%d,%d): %w",
+				"creating proxy for route '%s' and cid,port (%d,%d): %w",
 				route,
 				cids[i],
 				ports[i],
@@ -178,6 +178,5 @@ func (m *MultiProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	http.Error(w, "No matching route found", http.StatusNotFound)
 }

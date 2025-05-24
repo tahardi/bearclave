@@ -9,18 +9,23 @@ SHELL := bash
 .PHONY: pre-pr
 pre-pr: tidy mock lint test-unit test-examples
 
+# https://golangci-lint.run/welcome/install/#install-from-sources
+# They do not recommend using golangci-lint via go tool directive
+# as there are still bugs, but I want to try out go tool and work
+# uses an old version of golangci-lint. So, I don't mind guinea
+# pigging go tool and using a new version of golangci-lint in here
+lint_modfile=golangci-lint.mod
 .PHONY: lint
 lint:
-	@golangci-lint run --config .golangci.yaml
+	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml
 
 .PHONY: lint-fix
 lint-fix:
-	@golangci-lint run --config .golangci.yaml --fix
+	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml --fix
 
 .PHONY: mock
 mock: tidy
-	@rm -rf mocks
-	@mockery --quiet --config=.mockery.yaml
+	@go tool mockery --config=.mockery.yaml
 
 .PHONY: tidy
 tidy:
