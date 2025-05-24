@@ -34,7 +34,10 @@ test-internal-unit:
 	@go test -v -count=1 -race ./internal/...
 
 .PHONY: test-examples
-test-examples: hello-world-example hello-http-example
+test-examples: \
+	hello-world-example \
+	hello-http-example \
+	hello-http-multi-example
 
 .PHONY: hello-world-example
 hello-world-example:
@@ -43,6 +46,10 @@ hello-world-example:
 .PHONY: hello-http-example
 hello-http-example:
 	@make -C ./examples/hello-http/
+
+.PHONY: hello-http-multi-example
+hello-http-multi-example:
+	@make -C ./examples/hello-http-multi/
 
 .PHONY: clean
 clean:
