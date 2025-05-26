@@ -14,7 +14,7 @@ pre-pr: tidy mock lint test-unit test-examples
 # as there are still bugs, but I want to try out go tool and work
 # uses an old version of golangci-lint. So, I don't mind guinea
 # pigging go tool and using a new version of golangci-lint in here
-lint_modfile=golangci-lint.mod
+lint_modfile=modfiles/golangci-lint.mod
 .PHONY: lint
 lint:
 	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml
