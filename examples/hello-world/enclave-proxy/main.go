@@ -10,9 +10,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/tahardi/bearclave/internal/ipc"
-	"github.com/tahardi/bearclave/internal/networking"
-	"github.com/tahardi/bearclave/internal/setup"
+	"github.com/tahardi/bearclave/pkg/ipc"
+	"github.com/tahardi/bearclave/pkg/networking"
+	"github.com/tahardi/bearclave/pkg/setup"
 )
 
 func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.HandlerFunc {

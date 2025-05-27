@@ -19,3 +19,11 @@ func MakeAttestUserDataHandler(
 ) http.HandlerFunc {
 	return networking.MakeAttestUserDataHandler(attester, logger)
 }
+
+func WriteError(w http.ResponseWriter, err error) {
+	networking.WriteError(w, err)
+}
+
+func WriteResponse(w http.ResponseWriter, out any) {
+	networking.WriteResponse(w, out)
+}
