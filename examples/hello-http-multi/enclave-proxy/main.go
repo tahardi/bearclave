@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/tahardi/bearclave/internal/networking"
-	"github.com/tahardi/bearclave/internal/setup"
+	"github.com/tahardi/bearclave/pkg/networking"
+	"github.com/tahardi/bearclave/pkg/setup"
 )
 
 var configFile string

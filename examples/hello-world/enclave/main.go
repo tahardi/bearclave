@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/tahardi/bearclave/internal/attestation"
-	"github.com/tahardi/bearclave/internal/ipc"
-	"github.com/tahardi/bearclave/internal/setup"
+	"github.com/tahardi/bearclave/pkg/attestation"
+	"github.com/tahardi/bearclave/pkg/ipc"
+	"github.com/tahardi/bearclave/pkg/setup"
 )
 
 const serviceName = "enclave"

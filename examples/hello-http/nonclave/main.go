@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/tahardi/bearclave/internal/attestation"
-	"github.com/tahardi/bearclave/internal/networking"
-	"github.com/tahardi/bearclave/internal/setup"
+	"github.com/tahardi/bearclave/pkg/attestation"
+	"github.com/tahardi/bearclave/pkg/networking"
+	"github.com/tahardi/bearclave/pkg/setup"
 )
 
 var host string

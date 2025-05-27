@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/tahardi/bearclave/internal/networking"
+	"github.com/tahardi/bearclave/pkg/networking"
 )
 
 const HelloMultipleServersPath = "/hello-multiple-servers"
