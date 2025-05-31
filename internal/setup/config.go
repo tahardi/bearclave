@@ -10,7 +10,6 @@ import (
 
 const DefaultConfigFile = "./configs/notee-config.yaml"
 
-// TODO: Make IPC and Server plural?
 type Config struct {
 	Platform Platform          `mapstructure:"platform"`
 	IPCs     map[string]IPC    `mapstructure:"ipcs"`
@@ -29,10 +28,8 @@ type Server struct {
 	Route string `mapstructure:"route"`
 }
 
-// TODO: Make services a standalone array so all can use?
 type Proxy struct {
-	Port     int      `mapstructure:"port"`
-	Services []string `mapstructure:"services"`
+	Port int `mapstructure:"port"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {

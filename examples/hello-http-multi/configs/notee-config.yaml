@@ -10,6 +10,3 @@ servers:
     route: "/v2"
 proxy:
   port: 8080
-  services:
-    - "enclave-server-1"
-    - "enclave-server-2"
