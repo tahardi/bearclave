@@ -7,10 +7,6 @@ import (
 
 type IPC = ipc.IPC
 
-func NewIPC(
-	platform setup.Platform,
-	cid int,
-	port int,
-) (IPC, error) {
-	return ipc.NewIPC(platform, cid, port)
+func NewIPC(platform setup.Platform, endpoint string) (IPC, error) {
+	return ipc.NewIPC(platform, endpoint)
 }

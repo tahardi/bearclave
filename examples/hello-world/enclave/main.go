@@ -46,11 +46,7 @@ func main() {
 		return
 	}
 
-	communicator, err := ipc.NewIPC(
-		config.Platform,
-		enclaveIPC.CID,
-		enclaveIPC.Port,
-	)
+	communicator, err := ipc.NewIPC(config.Platform, enclaveIPC.Endpoint)
 	if err != nil {
 		logger.Error("making ipc", slog.String("error", err.Error()))
 		return
@@ -78,7 +74,7 @@ func main() {
 		}
 
 		logger.Info("sending attestation to enclave-proxy...")
-		err = communicator.Send(ctx, proxyIPC.CID, proxyIPC.Port, att)
+		err = communicator.Send(ctx, proxyIPC.Endpoint, att)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
 			return

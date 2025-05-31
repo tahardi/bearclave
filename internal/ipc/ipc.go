@@ -11,24 +11,20 @@ import (
 
 type IPC interface {
 	Close() error
-	Send(ctx context.Context, cid int, port int, data []byte) (err error)
+	Send(ctx context.Context, endpoint string, data []byte) (err error)
 	Receive(ctx context.Context) (data []byte, err error)
 }
 
-func NewIPC(
-	platform setup.Platform,
-	cid int,
-	port int,
-) (IPC, error) {
+func NewIPC(platform setup.Platform, endpoint string) (IPC, error) {
 	switch platform {
 	case setup.Nitro:
-		return vsockets.NewIPC(cid, port)
+		return vsockets.NewIPC(endpoint)
 	case setup.SEV:
-		return sockets.NewIPC(port)
+		return sockets.NewIPC(endpoint)
 	case setup.TDX:
-		return sockets.NewIPC(port)
+		return sockets.NewIPC(endpoint)
 	case setup.NoTEE:
-		return sockets.NewIPC(port)
+		return sockets.NewIPC(endpoint)
 	default:
 		return nil, fmt.Errorf("unsupported platform '%s'", platform)
 	}

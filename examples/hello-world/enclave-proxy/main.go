@@ -17,7 +17,7 @@ import (
 
 func MakeAttestUserDataHandler(
 	communicator ipc.IPC,
-	enclaveIPC setup.IPC,
+	enclaveEndpoint string,
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +32,7 @@ func MakeAttestUserDataHandler(
 		defer cancel()
 
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
-		err = communicator.Send(ctx, enclaveIPC.CID, enclaveIPC.Port, req.Data)
+		err = communicator.Send(ctx, enclaveEndpoint, req.Data)
 		if err != nil {
 			networking.WriteError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
@@ -79,11 +79,7 @@ func main() {
 		return
 	}
 
-	communicator, err := ipc.NewIPC(
-		config.Platform,
-		proxyIPC.CID,
-		proxyIPC.Port,
-	)
+	communicator, err := ipc.NewIPC(config.Platform, proxyIPC.Endpoint)
 	if err != nil {
 		logger.Error("making ipc", slog.String("error", err.Error()))
 		return
@@ -98,7 +94,7 @@ func main() {
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
 		"POST "+networking.AttestUserDataPath,
-		MakeAttestUserDataHandler(communicator, enclaveIPC, logger),
+		MakeAttestUserDataHandler(communicator, enclaveIPC.Endpoint, logger),
 	)
 
 	proxyAddr := fmt.Sprintf("0.0.0.0:%d", config.Proxy.Port)

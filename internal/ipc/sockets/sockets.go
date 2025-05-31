@@ -11,13 +11,12 @@ type IPC struct {
 	receiveListener net.Listener
 }
 
-func NewIPC(port int) (*IPC, error) {
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	receiveListener, err := net.Listen("tcp", addr)
+func NewIPC(endpoint string) (*IPC, error) {
+	receiveListener, err := net.Listen("tcp", endpoint)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"initializing TCP listener on '%s': %w",
-			addr,
+			endpoint,
 			err,
 		)
 	}
@@ -34,13 +33,12 @@ func (i *IPC) Close() error {
 	return nil
 }
 
-func (i *IPC) Send(ctx context.Context, _ int, port int, data []byte) error {
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+func (i *IPC) Send(ctx context.Context, endpoint string, data []byte) error {
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := net.Dial("tcp", addr)
+		conn, err := net.Dial("tcp", endpoint)
 		if err != nil {
-			errChan <- fmt.Errorf("dialing '%s': %w", addr, err)
+			errChan <- fmt.Errorf("dialing '%s': %w", endpoint, err)
 			return
 		}
 		defer conn.Close()

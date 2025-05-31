@@ -9,45 +9,44 @@ import (
 )
 
 type IPC struct {
-	addr            string
 	receiveListener *vsock.Listener
 }
 
-func NewIPC(
-	cid int,
-	port int,
-) (*IPC, error) {
-	addr := fmt.Sprintf("%d:%d", cid, port)
-	receiveListener, err := vsock.ListenContextID(uint32(cid), uint32(port), nil)
+func NewIPC(endpoint string) (*IPC, error) {
+	cid, port, err := ParseEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	receiveListener, err := vsock.ListenContextID(cid, port, nil)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"initializing vsock listener on '%s': %w",
-			addr,
+			endpoint,
 			err,
 		)
 	}
 
 	return &IPC{
-		addr:            addr,
 		receiveListener: receiveListener,
 	}, nil
-}
-
-func (i *IPC) Addr() string {
-	return i.addr
 }
 
 func (i *IPC) Close() error {
 	return fmt.Errorf("not implemented")
 }
 
-func (i *IPC) Send(ctx context.Context, cid int, port int, data []byte) error {
-	addr := fmt.Sprintf("%d:%d", cid, port)
+func (i *IPC) Send(ctx context.Context, endpoint string, data []byte) error {
+	cid, port, err := ParseEndpoint(endpoint)
+	if err != nil {
+		return err
+	}
+
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := vsock.Dial(uint32(cid), uint32(port), nil)
+		conn, err := vsock.Dial(cid, port, nil)
 		if err != nil {
-			errChan <- fmt.Errorf("dialing '%s': %w", addr, err)
+			errChan <- fmt.Errorf("dialing '%s': %w", endpoint, err)
 			return
 		}
 		defer conn.Close()
@@ -108,4 +107,16 @@ func (i *IPC) Receive(ctx context.Context) ([]byte, error) {
 	case data := <-dataChan:
 		return data, nil
 	}
+}
+
+func ParseEndpoint(endpoint string) (uint32, uint32, error) {
+	var cid, port int
+	n, err := fmt.Sscanf(endpoint, "%d:%d", &cid, &port)
+	switch {
+	case err != nil:
+		return 0, 0, fmt.Errorf("parsing endpoint '%s': %w", endpoint, err)
+	case n != 2:
+		return 0, 0, fmt.Errorf("invalid endpoint '%s'", endpoint)
+	}
+	return uint32(cid), uint32(port), nil
 }

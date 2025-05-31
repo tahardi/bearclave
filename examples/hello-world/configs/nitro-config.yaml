@@ -1,10 +1,8 @@
 platform: "nitro"
 ipcs:
   "enclave":
-    cid: "4"
-    port: "8083"
+    endpoint: "4:8083"
   "enclave-proxy":
-    cid: "3"
-    port: "8082"
+    endpoint: "3:8082"
 proxy:
   port: 8080

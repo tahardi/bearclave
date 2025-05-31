@@ -18,8 +18,7 @@ type Config struct {
 }
 
 type IPC struct {
-	CID  int `mapstructure:"cid"`
-	Port int `mapstructure:"port"`
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 type Server struct {
