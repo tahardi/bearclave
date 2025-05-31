@@ -9,9 +9,8 @@ type IPC = ipc.IPC
 
 func NewIPC(
 	platform setup.Platform,
-	sendCID int,
-	sendPort int,
-	receivePort int,
+	cid int,
+	port int,
 ) (IPC, error) {
-	return ipc.NewIPC(platform, sendCID, sendPort, receivePort)
+	return ipc.NewIPC(platform, cid, port)
 }

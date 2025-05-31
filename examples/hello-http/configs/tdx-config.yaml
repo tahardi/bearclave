@@ -1,5 +1,5 @@
 platform: "nitro"
-server:
+servers:
   "enclave-server":
     cid: 4
     port: 8082

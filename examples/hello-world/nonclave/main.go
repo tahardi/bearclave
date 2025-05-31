@@ -40,10 +40,6 @@ func main() {
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	proxyConfig := config.Proxy
-	if len(proxyConfig.Services) == 0 {
-		logger.Error("missing proxy services")
-		return
-	}
 	url := fmt.Sprintf("http://%s:%d", host, proxyConfig.Port)
 
 	verifier, err := attestation.NewVerifier(config.Platform)

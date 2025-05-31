@@ -15,7 +15,11 @@ import (
 	"github.com/tahardi/bearclave/pkg/setup"
 )
 
-func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.HandlerFunc {
+func MakeAttestUserDataHandler(
+	communicator ipc.IPC,
+	enclaveIPC setup.IPC,
+	logger *slog.Logger,
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := networking.AttestUserDataRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -28,7 +32,7 @@ func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.H
 		defer cancel()
 
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
-		err = communicator.Send(ctx, req.Data)
+		err = communicator.Send(ctx, enclaveIPC.CID, enclaveIPC.Port, req.Data)
 		if err != nil {
 			networking.WriteError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
@@ -46,7 +50,8 @@ func MakeAttestUserDataHandler(communicator ipc.IPC, logger *slog.Logger) http.H
 	}
 }
 
-const serviceName = "enclave-proxy"
+const enclaveName = "enclave"
+const proxyName = "enclave-proxy"
 
 var configFile string
 
@@ -68,27 +73,32 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	ipcConfig, exists := config.IPC[serviceName]
+	proxyIPC, exists := config.IPCs[proxyName]
 	if !exists {
-		logger.Error("missing IPC config", slog.String("service", serviceName))
+		logger.Error("missing IPC config", slog.String("service", proxyName))
 		return
 	}
 
 	communicator, err := ipc.NewIPC(
 		config.Platform,
-		ipcConfig.SendCID,
-		ipcConfig.SendPort,
-		ipcConfig.ReceivePort,
+		proxyIPC.CID,
+		proxyIPC.Port,
 	)
 	if err != nil {
 		logger.Error("making ipc", slog.String("error", err.Error()))
 		return
 	}
 
+	enclaveIPC, exists := config.IPCs[enclaveName]
+	if !exists {
+		logger.Error("missing IPC config", slog.String("service", enclaveName))
+		return
+	}
+
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
 		"POST "+networking.AttestUserDataPath,
-		MakeAttestUserDataHandler(communicator, logger),
+		MakeAttestUserDataHandler(communicator, enclaveIPC, logger),
 	)
 
 	proxyAddr := fmt.Sprintf("0.0.0.0:%d", config.Proxy.Port)

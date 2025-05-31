@@ -10,18 +10,17 @@ import (
 
 const DefaultConfigFile = "./configs/notee-config.yaml"
 
+// TODO: Make IPC and Server plural?
 type Config struct {
 	Platform Platform          `mapstructure:"platform"`
-	IPC      map[string]IPC    `mapstructure:"ipc"`
-	Server   map[string]Server `mapstructure:"server"`
+	IPCs     map[string]IPC    `mapstructure:"ipcs"`
+	Servers  map[string]Server `mapstructure:"servers"`
 	Proxy    Proxy             `mapstructure:"proxy"`
 }
 
-// TODO: Update to have cid, port, and service
 type IPC struct {
-	SendCID     int `mapstructure:"send_cid"`
-	SendPort    int `mapstructure:"send_port"`
-	ReceivePort int `mapstructure:"receive_port"`
+	CID  int `mapstructure:"cid"`
+	Port int `mapstructure:"port"`
 }
 
 type Server struct {
@@ -30,6 +29,7 @@ type Server struct {
 	Route string `mapstructure:"route"`
 }
 
+// TODO: Make services a standalone array so all can use?
 type Proxy struct {
 	Port     int      `mapstructure:"port"`
 	Services []string `mapstructure:"services"`

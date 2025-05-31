@@ -60,7 +60,7 @@ func main() {
 
 	urls := make([]string, len(proxyConfig.Services))
 	for i, service := range proxyConfig.Services {
-		serverConfig, exists := config.Server[service]
+		serverConfig, exists := config.Servers[service]
 		if !exists {
 			logger.Error("missing server config", slog.String("service", service))
 			return

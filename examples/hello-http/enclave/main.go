@@ -39,7 +39,7 @@ func main() {
 		return
 	}
 
-	serverConfig, exists := config.Server[serviceName]
+	serverConfig, exists := config.Servers[serviceName]
 	if !exists {
 		logger.Error(
 			"missing server config",

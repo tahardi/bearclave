@@ -37,7 +37,7 @@ func main() {
 		return
 	}
 
-	serverConfig, exists := config.Server[proxyConfig.Services[0]]
+	serverConfig, exists := config.Servers[proxyConfig.Services[0]]
 	if !exists {
 		logger.Error(
 			"missing server config",

@@ -1,5 +1,5 @@
 platform: "sev"
-server:
+servers:
   "enclave-server-1":
     cid: 4
     port: 8082
