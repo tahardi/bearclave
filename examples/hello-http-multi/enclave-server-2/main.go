@@ -33,7 +33,7 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	serverConfig, exists := config.Server[serviceName]
+	serverConfig, exists := config.Servers[serviceName]
 	if !exists {
 		logger.Error("missing server config", slog.String("service", serviceName))
 		return

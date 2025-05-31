@@ -1,10 +1,8 @@
 platform: "nitro"
-server:
+servers:
   "enclave-server":
     cid: 4
     port: 8082
     route: ""
 proxy:
   port: 8080
-  services:
-    - "enclave-server"

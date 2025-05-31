@@ -11,7 +11,8 @@ import (
 	"github.com/tahardi/bearclave/pkg/setup"
 )
 
-const serviceName = "enclave"
+const enclaveName = "enclave"
+const proxyName = "enclave-proxy"
 
 var configFile string
 
@@ -39,21 +40,21 @@ func main() {
 		return
 	}
 
-	ipcConfig, exists := config.IPC[serviceName]
+	enclaveIPC, exists := config.IPCs[enclaveName]
 	if !exists {
-		logger.Error("missing IPC config", slog.String("service", serviceName))
+		logger.Error("missing IPC config", slog.String("service", enclaveName))
 		return
 	}
 
-	communicator, err := ipc.NewIPC(
-		config.Platform,
-		ipcConfig.SendCID,
-		ipcConfig.SendPort,
-		ipcConfig.ReceivePort,
-	)
+	communicator, err := ipc.NewIPC(config.Platform, enclaveIPC.Endpoint)
 	if err != nil {
 		logger.Error("making ipc", slog.String("error", err.Error()))
 		return
+	}
+
+	proxyIPC, exists := config.IPCs[proxyName]
+	if !exists {
+		logger.Error("missing IPC config", slog.String("service", proxyName))
 	}
 
 	for {
@@ -73,7 +74,7 @@ func main() {
 		}
 
 		logger.Info("sending attestation to enclave-proxy...")
-		err = communicator.Send(ctx, att)
+		err = communicator.Send(ctx, proxyIPC.Endpoint, att)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
 			return

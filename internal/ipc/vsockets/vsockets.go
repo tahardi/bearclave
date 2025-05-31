@@ -9,38 +9,44 @@ import (
 )
 
 type IPC struct {
-	sendContextID   uint32
-	sendPort        uint32
 	receiveListener *vsock.Listener
 }
 
-func NewIPC(
-	sendContextID int,
-	sendPort int,
-	receivePort int,
-) (*IPC, error) {
-	receiveListener, err := vsock.Listen(uint32(receivePort), nil)
+func NewIPC(endpoint string) (*IPC, error) {
+	cid, port, err := ParseEndpoint(endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to set up vsock listener: %w", err)
+		return nil, err
+	}
+
+	receiveListener, err := vsock.ListenContextID(cid, port, nil)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"initializing vsock listener on '%s': %w",
+			endpoint,
+			err,
+		)
 	}
 
 	return &IPC{
-		sendContextID:   uint32(sendContextID),
-		sendPort:        uint32(sendPort),
 		receiveListener: receiveListener,
 	}, nil
 }
 
-func (c *IPC) Close() error {
+func (i *IPC) Close() error {
 	return fmt.Errorf("not implemented")
 }
 
-func (c *IPC) Send(ctx context.Context, data []byte) error {
+func (i *IPC) Send(ctx context.Context, endpoint string, data []byte) error {
+	cid, port, err := ParseEndpoint(endpoint)
+	if err != nil {
+		return err
+	}
+
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := vsock.Dial(c.sendContextID, c.sendPort, nil)
+		conn, err := vsock.Dial(cid, port, nil)
 		if err != nil {
-			errChan <- fmt.Errorf("failed to connect to %v: %w", c.sendPort, err)
+			errChan <- fmt.Errorf("dialing '%s': %w", endpoint, err)
 			return
 		}
 		defer conn.Close()
@@ -50,7 +56,7 @@ func (c *IPC) Send(ctx context.Context, data []byte) error {
 		n, writeErr := conn.Write([]byte(base64Data))
 		switch {
 		case writeErr != nil:
-			errChan <- fmt.Errorf("failed to write data: %w", writeErr)
+			errChan <- fmt.Errorf("writing data: %w", writeErr)
 		case n != len(base64Data):
 			errChan <- fmt.Errorf("failed to write all data: %w", writeErr)
 		default:
@@ -66,13 +72,13 @@ func (c *IPC) Send(ctx context.Context, data []byte) error {
 	}
 }
 
-func (c *IPC) Receive(ctx context.Context) ([]byte, error) {
+func (i *IPC) Receive(ctx context.Context) ([]byte, error) {
 	dataChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := c.receiveListener.Accept()
+		conn, err := i.receiveListener.Accept()
 		if err != nil {
-			errChan <- fmt.Errorf("failed to accept connection: %w", err)
+			errChan <- fmt.Errorf("accepting connection: %w", err)
 			return
 		}
 		defer conn.Close()
@@ -80,14 +86,14 @@ func (c *IPC) Receive(ctx context.Context) ([]byte, error) {
 		buf := make([]byte, 10000)
 		n, readErr := conn.Read(buf)
 		if readErr != nil {
-			errChan <- fmt.Errorf("failed to read data: %w", readErr)
+			errChan <- fmt.Errorf("reading data: %w", readErr)
 			return
 		}
 
 		base64Data := buf[:n]
 		data, err := base64.StdEncoding.DecodeString(string(base64Data))
 		if err != nil {
-			errChan <- fmt.Errorf("failed to decode data: %w", err)
+			errChan <- fmt.Errorf("decoding data: %w", err)
 			return
 		}
 		dataChan <- data
@@ -101,4 +107,16 @@ func (c *IPC) Receive(ctx context.Context) ([]byte, error) {
 	case data := <-dataChan:
 		return data, nil
 	}
+}
+
+func ParseEndpoint(endpoint string) (uint32, uint32, error) {
+	var cid, port int
+	n, err := fmt.Sscanf(endpoint, "%d:%d", &cid, &port)
+	switch {
+	case err != nil:
+		return 0, 0, fmt.Errorf("parsing endpoint '%s': %w", endpoint, err)
+	case n != 2:
+		return 0, 0, fmt.Errorf("invalid endpoint '%s'", endpoint)
+	}
+	return uint32(cid), uint32(port), nil
 }

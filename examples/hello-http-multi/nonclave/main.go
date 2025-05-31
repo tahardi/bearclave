@@ -52,23 +52,15 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	proxyConfig := config.Proxy
-	if len(proxyConfig.Services) == 0 {
-		logger.Error("missing proxy services")
-		return
-	}
-
-	urls := make([]string, len(proxyConfig.Services))
-	for i, service := range proxyConfig.Services {
-		serverConfig, exists := config.Server[service]
-		if !exists {
-			logger.Error("missing server config", slog.String("service", service))
-			return
-		}
-		urls[i] = fmt.Sprintf("http://%s:%d%s",
-			host,
-			proxyConfig.Port,
-			serverConfig.Route,
+	urls := make([]string, 0)
+	for _, server := range config.Servers {
+		urls = append(
+			urls,
+			fmt.Sprintf("http://%s:%d%s",
+				host,
+				config.Proxy.Port,
+				server.Route,
+			),
 		)
 	}
 

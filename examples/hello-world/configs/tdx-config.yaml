@@ -1,12 +1,8 @@
 platform: "tdx"
-ipc:
+ipcs:
   "enclave":
-    send_cid: "3"
-    send_port: "8082"
-    receive_port: "8083"
+    endpoint: "127.0.0.1:8083"
   "enclave-proxy":
-    send_cid: "4"
-    send_port: "8083"
-    receive_port: "8082"
+    endpoint: "127.0.0.1:8082"
 proxy:
   port: 8080

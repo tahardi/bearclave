@@ -12,16 +12,13 @@ const DefaultConfigFile = "./configs/notee-config.yaml"
 
 type Config struct {
 	Platform Platform          `mapstructure:"platform"`
-	IPC      map[string]IPC    `mapstructure:"ipc"`
-	Server   map[string]Server `mapstructure:"server"`
+	IPCs     map[string]IPC    `mapstructure:"ipcs"`
+	Servers  map[string]Server `mapstructure:"servers"`
 	Proxy    Proxy             `mapstructure:"proxy"`
 }
 
-// TODO: Update to have cid, port, and service
 type IPC struct {
-	SendCID     int `mapstructure:"send_cid"`
-	SendPort    int `mapstructure:"send_port"`
-	ReceivePort int `mapstructure:"receive_port"`
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 type Server struct {
@@ -31,8 +28,7 @@ type Server struct {
 }
 
 type Proxy struct {
-	Port     int      `mapstructure:"port"`
-	Services []string `mapstructure:"services"`
+	Port int `mapstructure:"port"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {

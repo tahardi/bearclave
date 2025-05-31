@@ -31,24 +31,13 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	proxyConfig := config.Proxy
-	if len(proxyConfig.Services) == 0 {
-		logger.Error("missing proxy services")
-		return
-	}
-
-	routes := make([]string, len(proxyConfig.Services))
-	cids := make([]int, len(proxyConfig.Services))
-	ports := make([]int, len(proxyConfig.Services))
-	for i, service := range proxyConfig.Services {
-		serverConfig, exists := config.Server[service]
-		if !exists {
-			logger.Error("missing server config", slog.String("service", service))
-			return
-		}
-		routes[i] = serverConfig.Route
-		cids[i] = serverConfig.CID
-		ports[i] = serverConfig.Port
+	routes := make([]string, 0)
+	cids := make([]int, 0)
+	ports := make([]int, 0)
+	for _, server := range config.Servers {
+		routes = append(routes, server.Route)
+		cids = append(cids, server.CID)
+		ports = append(ports, server.Port)
 	}
 
 	proxy, err := networking.NewMultiProxy(
@@ -62,7 +51,7 @@ func main() {
 		return
 	}
 
-	proxyAddr := fmt.Sprintf("0.0.0.0:%d", proxyConfig.Port)
+	proxyAddr := fmt.Sprintf("0.0.0.0:%d", config.Proxy.Port)
 	server := &http.Server{
 		Addr:    proxyAddr,
 		Handler: proxy,

@@ -39,21 +39,16 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	proxyConfig := config.Proxy
-	if len(proxyConfig.Services) == 0 {
-		logger.Error("missing proxy services")
-		return
-	}
-	url := fmt.Sprintf("http://%s:%d", host, proxyConfig.Port)
-
-	verifier, err := attestation.NewVerifier(setup.Platform(config.Platform))
+	verifier, err := attestation.NewVerifier(config.Platform)
 	if err != nil {
 		logger.Error("making verifier", slog.String("error", err.Error()))
 		return
 	}
 
-	want := []byte("Hello, world!")
+	url := fmt.Sprintf("http://%s:%d", host, config.Proxy.Port)
 	client := networking.NewClient(url)
+
+	want := []byte("Hello, world!")
 	att, err := client.AttestUserData(want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))

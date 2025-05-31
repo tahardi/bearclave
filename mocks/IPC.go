@@ -138,16 +138,16 @@ func (_c *IPC_Receive_Call) RunAndReturn(run func(ctx context.Context) ([]byte, 
 }
 
 // Send provides a mock function for the type IPC
-func (_mock *IPC) Send(ctx context.Context, data []byte) error {
-	ret := _mock.Called(ctx, data)
+func (_mock *IPC) Send(ctx context.Context, endpoint string, data []byte) error {
+	ret := _mock.Called(ctx, endpoint, data)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Send")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte) error); ok {
-		r0 = returnFunc(ctx, data)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []byte) error); ok {
+		r0 = returnFunc(ctx, endpoint, data)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -161,14 +161,15 @@ type IPC_Send_Call struct {
 
 // Send is a helper method to define mock.On call
 //   - ctx
+//   - endpoint
 //   - data
-func (_e *IPC_Expecter) Send(ctx interface{}, data interface{}) *IPC_Send_Call {
-	return &IPC_Send_Call{Call: _e.mock.On("Send", ctx, data)}
+func (_e *IPC_Expecter) Send(ctx interface{}, endpoint interface{}, data interface{}) *IPC_Send_Call {
+	return &IPC_Send_Call{Call: _e.mock.On("Send", ctx, endpoint, data)}
 }
 
-func (_c *IPC_Send_Call) Run(run func(ctx context.Context, data []byte)) *IPC_Send_Call {
+func (_c *IPC_Send_Call) Run(run func(ctx context.Context, endpoint string, data []byte)) *IPC_Send_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]byte))
+		run(args[0].(context.Context), args[1].(string), args[2].([]byte))
 	})
 	return _c
 }
@@ -178,7 +179,7 @@ func (_c *IPC_Send_Call) Return(err error) *IPC_Send_Call {
 	return _c
 }
 
-func (_c *IPC_Send_Call) RunAndReturn(run func(ctx context.Context, data []byte) error) *IPC_Send_Call {
+func (_c *IPC_Send_Call) RunAndReturn(run func(ctx context.Context, endpoint string, data []byte) error) *IPC_Send_Call {
 	_c.Call.Return(run)
 	return _c
 }

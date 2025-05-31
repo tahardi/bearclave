@@ -11,7 +11,7 @@ import (
 	"github.com/tahardi/bearclave/pkg/setup"
 )
 
-const serviceName = "enclave-server"
+const enclaveName = "enclave-server"
 
 var configFile string
 
@@ -39,11 +39,11 @@ func main() {
 		return
 	}
 
-	serverConfig, exists := config.Server[serviceName]
+	serverConfig, exists := config.Servers[enclaveName]
 	if !exists {
 		logger.Error(
 			"missing server config",
-			slog.String("service", serviceName),
+			slog.String("service", enclaveName),
 		)
 		return
 	}

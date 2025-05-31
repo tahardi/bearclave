@@ -11,6 +11,8 @@ import (
 	"github.com/tahardi/bearclave/pkg/setup"
 )
 
+const enclaveName = "enclave-server"
+
 var configFile string
 
 func main() {
@@ -31,17 +33,11 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	proxyConfig := config.Proxy
-	if len(proxyConfig.Services) == 0 {
-		logger.Error("missing proxy services")
-		return
-	}
-
-	serverConfig, exists := config.Server[proxyConfig.Services[0]]
+	serverConfig, exists := config.Servers[enclaveName]
 	if !exists {
 		logger.Error(
 			"missing server config",
-			slog.String("service", proxyConfig.Services[0]),
+			slog.String("service", enclaveName),
 		)
 		return
 	}
@@ -57,7 +53,7 @@ func main() {
 		return
 	}
 
-	proxyAddr := fmt.Sprintf("0.0.0.0:%d", proxyConfig.Port)
+	proxyAddr := fmt.Sprintf("0.0.0.0:%d", config.Proxy.Port)
 	server := &http.Server{
 		Addr:    proxyAddr,
 		Handler: proxy,
