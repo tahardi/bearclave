@@ -62,7 +62,7 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 	})
 }
 
-func TestVerifier_Verify(t *testing.T) {
+func TestNoTEEVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("hello world")
