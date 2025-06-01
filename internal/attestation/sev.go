@@ -2,6 +2,7 @@ package attestation
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/go-sev-guest/abi"
 	"github.com/google/go-sev-guest/client"
@@ -50,12 +51,22 @@ func (n *SEVVerifier) Verify(
 	attestation []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
+	opts := VerifyOptions{
+		measurement: nil,
+		timestamp:   time.Now(),
+	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
 	pbAttestation, err := abi.ReportCertsToProto(attestation)
 	if err != nil {
 		return nil, fmt.Errorf("converting sev attestation to proto: %w", err)
 	}
 
-	err = verify.SnpAttestation(pbAttestation, verify.DefaultOptions())
+	snpOptions := verify.DefaultOptions()
+	snpOptions.Now = opts.timestamp
+	err = verify.SnpAttestation(pbAttestation, snpOptions)
 	if err != nil {
 		return nil, fmt.Errorf("verifying sev attestation: %w", err)
 	}

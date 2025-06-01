@@ -59,10 +59,18 @@ func (n *NitroVerifier) Verify(
 	attestation []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
+	opts := VerifyOptions{
+		measurement: nil,
+		timestamp:   time.Now(),
+	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
 	resp, err := nitrite.Verify(
 		attestation,
 		nitrite.VerifyOptions{
-			CurrentTime: time.Now(),
+			CurrentTime: opts.timestamp,
 		},
 	)
 	if err != nil {

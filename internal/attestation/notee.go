@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 )
 
 type NoTEEAttester struct {
@@ -68,6 +69,14 @@ func (n *NoTEEVerifier) Verify(
 	reportBytes []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
+	opts := VerifyOptions{
+		measurement: nil,
+		timestamp:   time.Now(),
+	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
 	report := Report{}
 	err := json.Unmarshal(reportBytes, &report)
 	if err != nil {
