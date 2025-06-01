@@ -6,6 +6,7 @@ package mocks
 
 import (
 	mock "github.com/stretchr/testify/mock"
+	"github.com/tahardi/bearclave/internal/attestation"
 )
 
 // NewVerifier creates a new instance of Verifier. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
@@ -36,8 +37,14 @@ func (_m *Verifier) EXPECT() *Verifier_Expecter {
 }
 
 // Verify provides a mock function for the type Verifier
-func (_mock *Verifier) Verify(attestation []byte) ([]byte, error) {
-	ret := _mock.Called(attestation)
+func (_mock *Verifier) Verify(report []byte, options ...attestation.VerifyOption) ([]byte, error) {
+	var tmpRet mock.Arguments
+	if len(options) > 0 {
+		tmpRet = _mock.Called(report, options)
+	} else {
+		tmpRet = _mock.Called(report)
+	}
+	ret := tmpRet
 
 	if len(ret) == 0 {
 		panic("no return value specified for Verify")
@@ -45,18 +52,18 @@ func (_mock *Verifier) Verify(attestation []byte) ([]byte, error) {
 
 	var r0 []byte
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func([]byte) ([]byte, error)); ok {
-		return returnFunc(attestation)
+	if returnFunc, ok := ret.Get(0).(func([]byte, ...attestation.VerifyOption) ([]byte, error)); ok {
+		return returnFunc(report, options...)
 	}
-	if returnFunc, ok := ret.Get(0).(func([]byte) []byte); ok {
-		r0 = returnFunc(attestation)
+	if returnFunc, ok := ret.Get(0).(func([]byte, ...attestation.VerifyOption) []byte); ok {
+		r0 = returnFunc(report, options...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]byte)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func([]byte) error); ok {
-		r1 = returnFunc(attestation)
+	if returnFunc, ok := ret.Get(1).(func([]byte, ...attestation.VerifyOption) error); ok {
+		r1 = returnFunc(report, options...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -69,14 +76,17 @@ type Verifier_Verify_Call struct {
 }
 
 // Verify is a helper method to define mock.On call
-//   - attestation
-func (_e *Verifier_Expecter) Verify(attestation interface{}) *Verifier_Verify_Call {
-	return &Verifier_Verify_Call{Call: _e.mock.On("Verify", attestation)}
+//   - report
+//   - options
+func (_e *Verifier_Expecter) Verify(report interface{}, options ...interface{}) *Verifier_Verify_Call {
+	return &Verifier_Verify_Call{Call: _e.mock.On("Verify",
+		append([]interface{}{report}, options...)...)}
 }
 
-func (_c *Verifier_Verify_Call) Run(run func(attestation []byte)) *Verifier_Verify_Call {
+func (_c *Verifier_Verify_Call) Run(run func(report []byte, options ...attestation.VerifyOption)) *Verifier_Verify_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		variadicArgs := args[1].([]attestation.VerifyOption)
+		run(args[0].([]byte), variadicArgs...)
 	})
 	return _c
 }
@@ -86,7 +96,7 @@ func (_c *Verifier_Verify_Call) Return(userdata []byte, err error) *Verifier_Ver
 	return _c
 }
 
-func (_c *Verifier_Verify_Call) RunAndReturn(run func(attestation []byte) ([]byte, error)) *Verifier_Verify_Call {
+func (_c *Verifier_Verify_Call) RunAndReturn(run func(report []byte, options ...attestation.VerifyOption) ([]byte, error)) *Verifier_Verify_Call {
 	_c.Call.Return(run)
 	return _c
 }

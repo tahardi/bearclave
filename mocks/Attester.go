@@ -81,8 +81,8 @@ func (_c *Attester_Attest_Call) Run(run func(userdata []byte)) *Attester_Attest_
 	return _c
 }
 
-func (_c *Attester_Attest_Call) Return(attestation []byte, err error) *Attester_Attest_Call {
-	_c.Call.Return(attestation, err)
+func (_c *Attester_Attest_Call) Return(report []byte, err error) *Attester_Attest_Call {
+	_c.Call.Return(report, err)
 	return _c
 }
 

@@ -137,6 +137,7 @@ nitro-instance-ip:
 		echo "Error: No public DNS name found for instance $(nitro_aws_instance_name)"; \
 		exit 1; \
 	fi; \
+	echo "$$public_dns";
 
 ################################################################################
 # GCP AMD SEV-SNP
