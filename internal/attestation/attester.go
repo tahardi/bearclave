@@ -3,28 +3,24 @@ package attestation
 import (
 	"fmt"
 
-	"github.com/tahardi/bearclave/internal/attestation/nitro"
-	"github.com/tahardi/bearclave/internal/attestation/notee"
-	"github.com/tahardi/bearclave/internal/attestation/sev"
-	"github.com/tahardi/bearclave/internal/attestation/tdx"
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
 type Attester interface {
 	// TODO: Update to take [64]byte?
-	Attest(userdata []byte) (attestation []byte, err error)
+	Attest(userdata []byte) (report []byte, err error)
 }
 
 func NewAttester(platform setup.Platform) (Attester, error) {
 	switch platform {
 	case setup.Nitro:
-		return nitro.NewAttester()
+		return NewNitroAttester()
 	case setup.SEV:
-		return sev.NewAttester()
+		return NewSEVAttester()
 	case setup.TDX:
-		return tdx.NewAttester()
+		return NewTDXAttester()
 	case setup.NoTEE:
-		return notee.NewAttester()
+		return NewNoTEEAttester()
 	default:
 		return nil, fmt.Errorf("unsupported platform '%s'", platform)
 	}

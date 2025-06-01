@@ -2,29 +2,44 @@ package attestation
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/tahardi/bearclave/internal/attestation/nitro"
-	"github.com/tahardi/bearclave/internal/attestation/notee"
-	"github.com/tahardi/bearclave/internal/attestation/sev"
-	"github.com/tahardi/bearclave/internal/attestation/tdx"
 	"github.com/tahardi/bearclave/internal/setup"
 )
 
 type Verifier interface {
-	Verify(attestation []byte) (userdata []byte, err error)
+	Verify(report []byte, options ...VerifyOption) (userdata []byte, err error)
 }
 
 func NewVerifier(platform setup.Platform) (Verifier, error) {
 	switch platform {
 	case setup.Nitro:
-		return nitro.NewVerifier()
+		return NewNitroVerifier()
 	case setup.SEV:
-		return sev.NewVerifier()
+		return NewSEVVerifier()
 	case setup.TDX:
-		return tdx.NewVerifier()
+		return NewTDXVerifier()
 	case setup.NoTEE:
-		return notee.NewVerifier()
+		return NewNoTEEVerifier()
 	default:
 		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+	}
+}
+
+type VerifyOption func(*VerifyOptions)
+type VerifyOptions struct {
+	measurement []byte
+	timestamp   time.Time
+}
+
+func WithMeasurement(measurement []byte) VerifyOption {
+	return func(opts *VerifyOptions) {
+		opts.measurement = measurement
+	}
+}
+
+func WithTimestamp(timestamp time.Time) VerifyOption {
+	return func(opts *VerifyOptions) {
+		opts.timestamp = timestamp
 	}
 }

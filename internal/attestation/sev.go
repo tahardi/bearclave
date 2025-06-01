@@ -1,0 +1,63 @@
+package attestation
+
+import (
+	"fmt"
+
+	"github.com/google/go-sev-guest/abi"
+	"github.com/google/go-sev-guest/client"
+	"github.com/google/go-sev-guest/verify"
+)
+
+const AMD_SEV_USERDATA_SIZE = 64
+
+type SEVAttester struct{}
+
+func NewSEVAttester() (*SEVAttester, error) {
+	return &SEVAttester{}, nil
+}
+
+func (n *SEVAttester) Attest(userdata []byte) ([]byte, error) {
+	if len(userdata) > AMD_SEV_USERDATA_SIZE {
+		return nil, fmt.Errorf(
+			"userdata must be less than %d bytes",
+			AMD_SEV_USERDATA_SIZE,
+		)
+	}
+
+	sevQP, err := client.GetQuoteProvider()
+	if err != nil {
+		return nil, fmt.Errorf("getting sev quote provider: %w", err)
+	}
+
+	var reportData [64]byte
+	copy(reportData[:], userdata)
+	attestation, err := sevQP.GetRawQuote(reportData)
+	if err != nil {
+		return nil, fmt.Errorf("getting sev quote: %w", err)
+	}
+	return attestation, nil
+}
+
+type SEVVerifier struct{}
+
+func NewSEVVerifier() (*SEVVerifier, error) {
+	return &SEVVerifier{}, nil
+}
+
+// Only annoying thing is that it always returns a 64 byte slice, even if the
+// userdata is less than 64 bytes.
+func (n *SEVVerifier) Verify(
+	attestation []byte,
+	options ...VerifyOption,
+) ([]byte, error) {
+	pbAttestation, err := abi.ReportCertsToProto(attestation)
+	if err != nil {
+		return nil, fmt.Errorf("converting sev attestation to proto: %w", err)
+	}
+
+	err = verify.SnpAttestation(pbAttestation, verify.DefaultOptions())
+	if err != nil {
+		return nil, fmt.Errorf("verifying sev attestation: %w", err)
+	}
+	return pbAttestation.Report.GetReportData(), nil
+}
