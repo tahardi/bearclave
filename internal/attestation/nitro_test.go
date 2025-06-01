@@ -65,11 +65,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 
 	t.Run("error - expired report", func(t *testing.T) {
 		// given
-		// this is 5 years after the testdata report
-		unixtime := uint64(1906596574295)
-		seconds := int64(unixtime / 1000)
-		nanoseconds := int64((unixtime % 1000) * 1_000_000)
-		timestamp := time.Unix(seconds, nanoseconds)
+		timestamp := time.Unix(0, 0)
 
 		report, err := base64.StdEncoding.DecodeString(nitroAttestationB64)
 		require.NoError(t, err)
@@ -81,6 +77,6 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
 
 		// then
-		assert.ErrorContains(t, err, "certificate has expired")
+		assert.ErrorContains(t, err, "certificate has expired or is not yet valid")
 	})
 }
