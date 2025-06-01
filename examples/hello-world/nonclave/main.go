@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -55,6 +56,9 @@ func main() {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))
 		return
 	}
+
+	b64Att := base64.StdEncoding.EncodeToString(att)
+	logger.Info("attestation", slog.String("attestation", b64Att))
 
 	got, err := verifier.Verify(att)
 	if err != nil {
