@@ -6,12 +6,23 @@ import (
 	crand "crypto/rand"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/tahardi/bearclave/internal/attestation"
 )
+
+func noTEEAttestation(t *testing.T, userdata []byte) ([]byte, string, time.Time) {
+	attester, err := attestation.NewNoTEEAttester()
+	require.NoError(t, err)
+
+	report, err := attester.Attest(userdata)
+	require.NoError(t, err)
+
+	return report, attestation.NoTEEMeasurement, time.Now()
+}
 
 func newTestPrivateKey(t *testing.T) *ecdsa.PrivateKey {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
@@ -66,11 +77,27 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("hello world")
-		attester, err := attestation.NewNoTEEAttester()
+		report, measurement, timestamp := noTEEAttestation(t, want)
+
+		verifier, err := attestation.NewNoTEEVerifier()
 		require.NoError(t, err)
 
-		report, err := attester.Attest(want)
-		require.NoError(t, err)
+		// when
+		got, err := verifier.Verify(
+			report,
+			attestation.WithMeasurement(measurement),
+			attestation.WithTimestamp(timestamp),
+		)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("happy path - no measurement", func(t *testing.T) {
+		// given
+		want := []byte("hello world")
+		report, _, _ := noTEEAttestation(t, want)
 
 		verifier, err := attestation.NewNoTEEVerifier()
 		require.NoError(t, err)
@@ -115,6 +142,42 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.ErrorContains(t, err, "invalid signature")
+	})
+
+	t.Run("error - expired report", func(t *testing.T) {
+		// given
+		want := []byte("hello world")
+		timestamp := time.Unix(0, 0)
+		report, _, _ := noTEEAttestation(t, want)
+
+		verifier, err := attestation.NewNoTEEVerifier()
+		require.NoError(t, err)
+
+		// when
+		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
+
+		// then
+		assert.ErrorContains(t, err, "certificate has expired or is not yet valid")
+	})
+
+	t.Run("error - wrong measurement", func(t *testing.T) {
+		// given
+		want := []byte("hello world")
+		wrongMeasurement := "wrong measurement"
+		report, _, timestamp := noTEEAttestation(t, want)
+
+		verifier, err := attestation.NewNoTEEVerifier()
+		require.NoError(t, err)
+
+		// when
+		_, err = verifier.Verify(
+			report,
+			attestation.WithMeasurement(wrongMeasurement),
+			attestation.WithTimestamp(timestamp),
+		)
+
+		// then
+		assert.ErrorContains(t, err, "measurement mismatch")
 	})
 }
 
