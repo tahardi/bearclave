@@ -16,7 +16,7 @@ func NewVerifier(platform setup.Platform) (Verifier, error) {
 type VerifyOption = attestation.VerifyOption
 type VerifyOptions = attestation.VerifyOptions
 
-func WithMeasurement(measurement []byte) VerifyOption {
+func WithMeasurement(measurement string) VerifyOption {
 	return attestation.WithMeasurement(measurement)
 }
 
