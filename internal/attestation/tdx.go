@@ -1,6 +1,8 @@
 package attestation
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -51,7 +53,7 @@ func (n *TDXVerifier) Verify(
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
-		measurement: nil,
+		measurement: "",
 		timestamp:   time.Now(),
 	}
 	for _, opt := range options {
@@ -74,5 +76,31 @@ func (n *TDXVerifier) Verify(
 	if !ok {
 		return nil, fmt.Errorf("unexpected quote type")
 	}
+
+	err = VerifyMrTD(opts, quoteV4.GetTdQuoteBody())
+	if err != nil {
+		return nil, fmt.Errorf("verifying measurement: %w", err)
+	}
+
 	return quoteV4.GetTdQuoteBody().GetReportData(), nil
+}
+
+func VerifyMrTD(options VerifyOptions, quoteBody *pb.TDQuoteBody) error {
+	if options.measurement == "" {
+		return nil
+	}
+
+	measurement, err := base64.StdEncoding.DecodeString(options.measurement)
+	if err != nil {
+		return fmt.Errorf("decoding measurement: %w", err)
+	}
+
+	if !bytes.Equal(measurement, quoteBody.GetMrTd()) {
+		return fmt.Errorf(
+			"measurement mismatch: expected '%x' got '%x'",
+			measurement,
+			quoteBody.GetMrTd(),
+		)
+	}
+	return nil
 }
