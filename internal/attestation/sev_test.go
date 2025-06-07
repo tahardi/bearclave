@@ -15,6 +15,24 @@ import (
 //go:embed testdata/sev-attestation-b64.txt
 var sevAttestationB64 string
 
+const (
+	sevAttestationMeasurementB64       = "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr"
+	sevAttestationTimestampSeconds     = int64(1748808574)
+	sevAttestationTimestampNanoseconds = int64(295000000)
+)
+
+func sevAttestationFromTestData(t *testing.T) ([]byte, string, time.Time) {
+	report, err := base64.StdEncoding.DecodeString(sevAttestationB64)
+	require.NoError(t, err)
+
+	timestamp := time.Unix(
+		sevAttestationTimestampSeconds,
+		sevAttestationTimestampNanoseconds,
+	)
+
+	return report, sevAttestationMeasurementB64, timestamp
+}
+
 func TestSEV_Interfaces(t *testing.T) {
 	t.Run("Attester", func(t *testing.T) {
 		var _ attestation.Attester = &attestation.SEVAttester{}
@@ -28,15 +46,27 @@ func TestSEVVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
+		report, measurement, timestamp := sevAttestationFromTestData(t)
 
-		// this is the actual timestamp from the testdata report
-		unixtime := uint64(1748808574295)
-		seconds := int64(unixtime / 1000)
-		nanoseconds := int64((unixtime % 1000) * 1_000_000)
-		timestamp := time.Unix(seconds, nanoseconds)
-
-		report, err := base64.StdEncoding.DecodeString(sevAttestationB64)
+		verifier, err := attestation.NewSEVVerifier()
 		require.NoError(t, err)
+
+		// when
+		got, err := verifier.Verify(
+			report,
+			attestation.WithMeasurement(measurement),
+			attestation.WithTimestamp(timestamp),
+		)
+
+		// then
+		assert.NoError(t, err)
+		assert.Contains(t, string(got), string(want))
+	})
+
+	t.Run("happy path - no measurement", func(t *testing.T) {
+		// given
+		want := []byte("Hello, world!")
+		report, _, timestamp := sevAttestationFromTestData(t)
 
 		verifier, err := attestation.NewSEVVerifier()
 		require.NoError(t, err)
@@ -66,9 +96,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 	t.Run("error - expired report", func(t *testing.T) {
 		// given
 		timestamp := time.Unix(0, 0)
-
-		report, err := base64.StdEncoding.DecodeString(sevAttestationB64)
-		require.NoError(t, err)
+		report, _, _ := sevAttestationFromTestData(t)
 
 		verifier, err := attestation.NewSEVVerifier()
 		require.NoError(t, err)
@@ -78,5 +106,43 @@ func TestSEVVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.ErrorContains(t, err, "certificate has expired or is not yet valid")
+	})
+
+	t.Run("error - invalid measurement format", func(t *testing.T) {
+		// given
+		invalidMeasurement := "invalid measurement format"
+		report, _, timestamp := sevAttestationFromTestData(t)
+
+		verifier, err := attestation.NewSEVVerifier()
+		require.NoError(t, err)
+
+		// when
+		_, err = verifier.Verify(
+			report,
+			attestation.WithMeasurement(invalidMeasurement),
+			attestation.WithTimestamp(timestamp),
+		)
+
+		// then
+		assert.ErrorContains(t, err, "decoding measurement")
+	})
+
+	t.Run("error - wrong measurement", func(t *testing.T) {
+		// given
+		wrongMeasurement := "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFss"
+		report, _, timestamp := sevAttestationFromTestData(t)
+
+		verifier, err := attestation.NewSEVVerifier()
+		require.NoError(t, err)
+
+		// when
+		_, err = verifier.Verify(
+			report,
+			attestation.WithMeasurement(wrongMeasurement),
+			attestation.WithTimestamp(timestamp),
+		)
+
+		// then
+		assert.ErrorContains(t, err, "measurement mismatch")
 	})
 }

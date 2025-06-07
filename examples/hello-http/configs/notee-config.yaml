@@ -1,4 +1,7 @@
 platform: "notee"
+attestations:
+  "enclave-server":
+    measurement: "Not a TEE platform. Code measurements are not real."
 servers:
   "enclave-server":
     cid: 4

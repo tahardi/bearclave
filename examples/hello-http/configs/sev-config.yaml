@@ -1,4 +1,7 @@
 platform: "sev"
+attestations:
+  "enclave-server":
+    measurement: "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr"
 servers:
   "enclave-server":
     cid: 4

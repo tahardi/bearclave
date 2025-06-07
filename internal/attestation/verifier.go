@@ -28,11 +28,11 @@ func NewVerifier(platform setup.Platform) (Verifier, error) {
 
 type VerifyOption func(*VerifyOptions)
 type VerifyOptions struct {
-	measurement []byte
+	measurement string
 	timestamp   time.Time
 }
 
-func WithMeasurement(measurement []byte) VerifyOption {
+func WithMeasurement(measurement string) VerifyOption {
 	return func(opts *VerifyOptions) {
 		opts.measurement = measurement
 	}

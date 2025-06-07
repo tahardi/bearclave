@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	NoTEEMeasurement    = "Not a TEE platform. Code measurements are not real."
+	NoTEEValidityPeriod = int64(31536000)
+)
+
 type NoTEEAttester struct {
 	privateKey *ecdsa.PrivateKey
 	publicKey  []byte
@@ -35,9 +40,11 @@ func NewNoTEEAttesterWithPrivateKey(
 }
 
 type Report struct {
-	Userdata  []byte `json:"userdata"`
-	Signature []byte `json:"signature"`
-	Publickey []byte `json:"publickey"`
+	Userdata    []byte `json:"userdata"`
+	Signature   []byte `json:"signature"`
+	Publickey   []byte `json:"publickey"`
+	Timestamp   int64  `json:"timestamp"`
+	Measurement string `json:"measurement"`
 }
 
 func (a *NoTEEAttester) Attest(userdata []byte) ([]byte, error) {
@@ -48,9 +55,11 @@ func (a *NoTEEAttester) Attest(userdata []byte) ([]byte, error) {
 	}
 
 	report := Report{
-		Userdata:  userdata,
-		Signature: signature,
-		Publickey: a.publicKey,
+		Userdata:    userdata,
+		Signature:   signature,
+		Publickey:   a.publicKey,
+		Timestamp:   time.Now().Unix(),
+		Measurement: NoTEEMeasurement,
 	}
 	reportBytes, err := json.Marshal(report)
 	if err != nil {
@@ -70,7 +79,7 @@ func (n *NoTEEVerifier) Verify(
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
-		measurement: nil,
+		measurement: "",
 		timestamp:   time.Now(),
 	}
 	for _, opt := range options {
@@ -87,6 +96,20 @@ func (n *NoTEEVerifier) Verify(
 	if !ECDSAVerify(report.Publickey, userdataHash[:], report.Signature) {
 		return nil, fmt.Errorf("invalid signature")
 	}
+
+	if opts.timestamp.Unix() < report.Timestamp ||
+		opts.timestamp.Unix() > report.Timestamp+NoTEEValidityPeriod {
+		return nil, fmt.Errorf("certificate has expired or is not yet valid")
+	}
+
+	if opts.measurement != "" && opts.measurement != report.Measurement {
+		return nil, fmt.Errorf(
+			"measurement mismatch: expected '%s' got '%s'",
+			opts.measurement,
+			report.Measurement,
+		)
+	}
+
 	return report.Userdata, nil
 }
 

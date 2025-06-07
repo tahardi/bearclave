@@ -1,4 +1,7 @@
 platform: "tdx"
+attestations:
+  "enclave":
+    measurement: "QJwM0+Y9nqVNgXz4UZg6IgExJiZkrIzQLMai4Z/SkdL90MwDXXeJuYKkOpKkQkyZ"
 ipcs:
   "enclave":
     endpoint: "127.0.0.1:8083"

@@ -1,4 +1,7 @@
-platform: "nitro"
+platform: "tdx"
+attestations:
+  "enclave-server":
+    measurement: "QJwM0+Y9nqVNgXz4UZg6IgExJiZkrIzQLMai4Z/SkdL90MwDXXeJuYKkOpKkQkyZ"
 servers:
   "enclave-server":
     cid: 4

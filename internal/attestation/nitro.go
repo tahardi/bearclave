@@ -1,6 +1,8 @@
 package attestation
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -60,14 +62,14 @@ func (n *NitroVerifier) Verify(
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
-		measurement: nil,
+		measurement: "",
 		timestamp:   time.Now(),
 	}
 	for _, opt := range options {
 		opt(&opts)
 	}
 
-	resp, err := nitrite.Verify(
+	result, err := nitrite.Verify(
 		attestation,
 		nitrite.VerifyOptions{
 			CurrentTime: opts.timestamp,
@@ -77,5 +79,38 @@ func (n *NitroVerifier) Verify(
 		return nil, fmt.Errorf("verifying attestation: %w", err)
 	}
 
-	return resp.Document.UserData, nil
+	err = VerifyPCRs(opts, result.Document)
+	if err != nil {
+		return nil, fmt.Errorf("verifying pcrs: %w", err)
+	}
+
+	return result.Document.UserData, nil
+}
+
+func VerifyPCRs(options VerifyOptions, document *nitrite.Document) error {
+	if options.measurement == "" {
+		return nil
+	}
+
+	var expected map[uint][]byte
+	err := json.Unmarshal([]byte(options.measurement), &expected)
+	if err != nil {
+		return fmt.Errorf("unmarshaling pcrs: %w", err)
+	}
+
+	for pcr, expectedVal := range expected {
+		gotVal, ok := document.PCRs[pcr]
+		if !ok {
+			return fmt.Errorf("missing pcr %d", pcr)
+		}
+		if !bytes.Equal(expectedVal, gotVal) {
+			return fmt.Errorf(
+				"pcr %d mismatch: expected '%x', got '%x'",
+				pcr,
+				expectedVal,
+				gotVal,
+			)
+		}
+	}
+	return nil
 }

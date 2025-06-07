@@ -11,10 +11,15 @@ import (
 const DefaultConfigFile = "./configs/notee-config.yaml"
 
 type Config struct {
-	Platform Platform          `mapstructure:"platform"`
-	IPCs     map[string]IPC    `mapstructure:"ipcs"`
-	Servers  map[string]Server `mapstructure:"servers"`
-	Proxy    Proxy             `mapstructure:"proxy"`
+	Platform     Platform               `mapstructure:"platform"`
+	Attestations map[string]Attestation `mapstructure:"attestations"`
+	IPCs         map[string]IPC         `mapstructure:"ipcs"`
+	Servers      map[string]Server      `mapstructure:"servers"`
+	Proxy        Proxy                  `mapstructure:"proxy"`
+}
+
+type Attestation struct {
+	Measurement string `mapstructure:"measurement"`
 }
 
 type IPC struct {

@@ -1,11 +1,14 @@
 package attestation
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"time"
 
 	"github.com/google/go-sev-guest/abi"
 	"github.com/google/go-sev-guest/client"
+	"github.com/google/go-sev-guest/proto/sevsnp"
 	"github.com/google/go-sev-guest/verify"
 )
 
@@ -52,7 +55,7 @@ func (n *SEVVerifier) Verify(
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
-		measurement: nil,
+		measurement: "",
 		timestamp:   time.Now(),
 	}
 	for _, opt := range options {
@@ -70,5 +73,31 @@ func (n *SEVVerifier) Verify(
 	if err != nil {
 		return nil, fmt.Errorf("verifying sev attestation: %w", err)
 	}
+
+	err = VerifyMeasurement(opts, pbAttestation.Report)
+	if err != nil {
+		return nil, fmt.Errorf("verifying measurement: %w", err)
+	}
+
 	return pbAttestation.Report.GetReportData(), nil
+}
+
+func VerifyMeasurement(options VerifyOptions, report *sevsnp.Report) error {
+	if options.measurement == "" {
+		return nil
+	}
+
+	measurement, err := base64.StdEncoding.DecodeString(options.measurement)
+	if err != nil {
+		return fmt.Errorf("decoding measurement: %w", err)
+	}
+
+	if !bytes.Equal(measurement, report.GetMeasurement()) {
+		return fmt.Errorf(
+			"measurement mismatch: expected '%x' got '%x'",
+			measurement,
+			report.GetMeasurement(),
+		)
+	}
+	return nil
 }

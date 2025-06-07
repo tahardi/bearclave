@@ -1,4 +1,7 @@
 platform: "sev"
+attestations:
+  "enclave":
+    measurement: "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr"
 ipcs:
   "enclave":
     endpoint: "127.0.0.1:8083"
