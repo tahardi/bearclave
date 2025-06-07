@@ -39,9 +39,6 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	proxyConfig := config.Proxy
-	url := fmt.Sprintf("http://%s:%d", host, proxyConfig.Port)
-
 	verifier, err := attestation.NewVerifier(config.Platform)
 	if err != nil {
 		logger.Error("making verifier", slog.String("error", err.Error()))
@@ -49,6 +46,7 @@ func main() {
 	}
 
 	want := []byte("Hello, world!")
+	url := fmt.Sprintf("http://%s:%d", host, config.Proxy.Port)
 	client := networking.NewClient(url)
 	att, err := client.AttestUserData(want)
 	if err != nil {
@@ -56,7 +54,19 @@ func main() {
 		return
 	}
 
-	got, err := verifier.Verify(att)
+	attConfig, ok := config.Attestations["enclave"]
+	if !ok {
+		logger.Error(
+			"missing attestation config",
+			slog.String("service", "enclave"),
+		)
+		return
+	}
+
+	got, err := verifier.Verify(
+		att,
+		attestation.WithMeasurement(attConfig.Measurement),
+	)
 	if err != nil {
 		logger.Error("verifying attestation", slog.String("error", err.Error()))
 		return
