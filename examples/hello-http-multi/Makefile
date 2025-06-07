@@ -53,6 +53,10 @@ nitro_aws_profile=personal
 nitro_aws_region=us-east-2
 nitro_aws_instance_name=tahardi-bearclave
 
+.PHONY: nitro-cli-login
+nitro-cli-login:
+	aws sso login --profile $(nitro_aws_profile)
+
 .PHONY: nitro-enclave-build-image
 nitro-enclave-build-image: enclave-server-1 enclave-server-2
 	@docker build \
@@ -141,6 +145,7 @@ nitro-instance-ip:
 		echo "Error: No public DNS name found for instance $(nitro_aws_instance_name)"; \
 		exit 1; \
 	fi; \
+	echo "$$public_dns";
 
 ################################################################################
 # GCP AMD SEV-SNP
