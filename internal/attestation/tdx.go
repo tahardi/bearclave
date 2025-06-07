@@ -2,7 +2,7 @@ package attestation
 
 import (
 	"bytes"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -90,7 +90,7 @@ func VerifyMrTD(options VerifyOptions, quoteBody *pb.TDQuoteBody) error {
 		return nil
 	}
 
-	measurement, err := base64.StdEncoding.DecodeString(options.measurement)
+	measurement, err := hex.DecodeString(options.measurement)
 	if err != nil {
 		return fmt.Errorf("decoding measurement: %w", err)
 	}

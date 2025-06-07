@@ -16,7 +16,7 @@ import (
 var sevAttestationB64 string
 
 const (
-	sevAttestationMeasurementB64       = "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr"
+	sevAttestationMeasurement          = "309f1b1e068fe6390234722a725c7a64f9d453cea13275a0d574f3bfc1f8864450e8c8f28a245fa1ed6ea6817ac85b2b"
 	sevAttestationTimestampSeconds     = int64(1748808574)
 	sevAttestationTimestampNanoseconds = int64(295000000)
 )
@@ -30,7 +30,7 @@ func sevAttestationFromTestData(t *testing.T) ([]byte, string, time.Time) {
 		sevAttestationTimestampNanoseconds,
 	)
 
-	return report, sevAttestationMeasurementB64, timestamp
+	return report, sevAttestationMeasurement, timestamp
 }
 
 func TestSEV_Interfaces(t *testing.T) {
@@ -129,7 +129,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 
 	t.Run("error - wrong measurement", func(t *testing.T) {
 		// given
-		wrongMeasurement := "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFss"
+		wrongMeasurement := "009f1b1e068fe6390234722a725c7a64f9d453cea13275a0d574f3bfc1f8864450e8c8f28a245fa1ed6ea6817ac85b2b"
 		report, _, timestamp := sevAttestationFromTestData(t)
 
 		verifier, err := attestation.NewSEVVerifier()

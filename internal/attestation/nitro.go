@@ -2,6 +2,7 @@ package attestation
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -92,25 +93,43 @@ func VerifyPCRs(options VerifyOptions, document *nitrite.Document) error {
 		return nil
 	}
 
-	var expected map[uint][]byte
-	err := json.Unmarshal([]byte(options.measurement), &expected)
+	expectedPCRs, err := ParsePCRs(options.measurement)
 	if err != nil {
-		return fmt.Errorf("unmarshaling pcrs: %w", err)
+		return fmt.Errorf("parsing measurement: %w", err)
 	}
 
-	for pcr, expectedVal := range expected {
-		gotVal, ok := document.PCRs[pcr]
+	for i, expectedPCR := range expectedPCRs {
+		gotPCR, ok := document.PCRs[i]
 		if !ok {
-			return fmt.Errorf("missing pcr %d", pcr)
+			return fmt.Errorf("missing pcr '%d'", i)
 		}
-		if !bytes.Equal(expectedVal, gotVal) {
+		if !bytes.Equal(expectedPCR, gotPCR) {
 			return fmt.Errorf(
-				"pcr %d mismatch: expected '%x', got '%x'",
-				pcr,
-				expectedVal,
-				gotVal,
+				"pcr '%d' mismatch: expected '%x', got '%x'",
+				i,
+				expectedPCR,
+				gotPCR,
 			)
 		}
 	}
 	return nil
+}
+
+func ParsePCRs(measurement string) (map[uint][]byte, error) {
+	var pcrHexStrings map[uint]string
+	err := json.Unmarshal([]byte(measurement), &pcrHexStrings)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling pcrs: %w", err)
+	}
+
+	pcrs := make(map[uint][]byte)
+	for k, v := range pcrHexStrings {
+		pcr, err := hex.DecodeString(v)
+		if err != nil {
+			return nil, fmt.Errorf("decoding hex string for PCR%v: %w", k, err)
+		}
+		pcrs[k] = pcr
+	}
+
+	return pcrs, nil
 }
