@@ -16,7 +16,7 @@ import (
 var tdxAttestationB64 string
 
 const (
-	tdxAttestationMrTDB64              = "8nLYSS0x9v/6HQroHtLSQKLdS4Gl9evsfonJo195w9gxWI8Y068TqbM3OY75G7Nr"
+	tdxAttestationMrTD                 = "f272d8492d31f6fffa1d0ae81ed2d240a2dd4b81a5f5ebec7e89c9a35f79c3d831588f18d3af13a9b337398ef91bb36b"
 	tdxAttestationTimestampSeconds     = int64(1748808574)
 	tdxAttestationTimestampNanoseconds = int64(295000000)
 )
@@ -30,7 +30,7 @@ func tdxAttestationFromTestData(t *testing.T) ([]byte, string, time.Time) {
 		tdxAttestationTimestampNanoseconds,
 	)
 
-	return report, tdxAttestationMrTDB64, timestamp
+	return report, tdxAttestationMrTD, timestamp
 }
 
 func TestTDX_Interfaces(t *testing.T) {
@@ -129,7 +129,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 
 	t.Run("error - wrong measurement", func(t *testing.T) {
 		// given
-		wrongMeasurement := "8nLYSS0x9v/6HQroHtLSQKLdS4Gl9evsfonJo195w9gxWI8Y068TqbM3OY75G7Ns"
+		wrongMeasurement := "0272d8492d31f6fffa1d0ae81ed2d240a2dd4b81a5f5ebec7e89c9a35f79c3d831588f18d3af13a9b337398ef91bb36b"
 		report, _, timestamp := tdxAttestationFromTestData(t)
 
 		verifier, err := attestation.NewTDXVerifier()
