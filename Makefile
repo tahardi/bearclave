@@ -23,9 +23,10 @@ lint:
 lint-fix:
 	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml --fix
 
+mockery_modfile=modfiles/mockery.mod
 .PHONY: mock
 mock: tidy
-	@go tool mockery --config=.mockery.yaml
+	@go tool -modfile=$(mockery_modfile) mockery --config=.mockery.yaml
 
 .PHONY: tidy
 tidy:
@@ -58,5 +59,6 @@ hello-http-multi-example:
 
 .PHONY: clean
 clean:
-	rm -rf ./chains/
 	@make -C ./examples/hello-world/ clean
+	@make -C ./examples/hello-http/ clean
+	@make -C ./examples/hello-http-multi/ clean
