@@ -51,7 +51,7 @@ func NewSEVVerifier() (*SEVVerifier, error) {
 // Only annoying thing is that it always returns a 64 byte slice, even if the
 // userdata is less than 64 bytes.
 func (n *SEVVerifier) Verify(
-	attestation []byte,
+	report []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
@@ -63,24 +63,24 @@ func (n *SEVVerifier) Verify(
 		opt(&opts)
 	}
 
-	pbAttestation, err := abi.ReportCertsToProto(attestation)
+	pbReport, err := abi.ReportCertsToProto(report)
 	if err != nil {
-		return nil, fmt.Errorf("converting sev attestation to proto: %w", err)
+		return nil, fmt.Errorf("converting sev report to proto: %w", err)
 	}
 
 	snpOptions := verify.DefaultOptions()
 	snpOptions.Now = opts.timestamp
-	err = verify.SnpAttestation(pbAttestation, snpOptions)
+	err = verify.SnpAttestation(pbReport, snpOptions)
 	if err != nil {
-		return nil, fmt.Errorf("verifying sev attestation: %w", err)
+		return nil, fmt.Errorf("verifying sev report: %w", err)
 	}
 
-	err = SEVVerifyMeasurement(opts.measurement, pbAttestation.Report)
+	err = SEVVerifyMeasurement(opts.measurement, pbReport.Report)
 	if err != nil {
 		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
-	debug, err := SEVIsDebugEnabled(pbAttestation.Report)
+	debug, err := SEVIsDebugEnabled(pbReport.Report)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("getting debug mode: %w", err)
@@ -90,7 +90,7 @@ func (n *SEVVerifier) Verify(
 			debug,
 		)
 	}
-	return pbAttestation.Report.GetReportData(), nil
+	return pbReport.Report.GetReportData(), nil
 }
 
 func SEVIsDebugEnabled(report *sevsnp.Report) (bool, error) {
