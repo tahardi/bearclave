@@ -59,7 +59,7 @@ func NewNitroVerifier() (*NitroVerifier, error) {
 }
 
 func (n *NitroVerifier) Verify(
-	attestation []byte,
+	report []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
@@ -72,13 +72,13 @@ func (n *NitroVerifier) Verify(
 	}
 
 	result, err := nitrite.Verify(
-		attestation,
+		report,
 		nitrite.VerifyOptions{
 			CurrentTime: opts.timestamp,
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("verifying attestation: %w", err)
+		return nil, fmt.Errorf("verifying report: %w", err)
 	}
 
 	err = NitroVerifyMeasurement(opts.measurement, result.Document)
@@ -101,9 +101,13 @@ func (n *NitroVerifier) Verify(
 
 func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
 	if len(document.PCRs) < 1 {
-		return false, fmt.Errorf("missing pcrs")
+		return false, fmt.Errorf("no pcrs provided")
 	}
-	for _, pcr := range document.PCRs {
+	for i := 0; i < 3; i++ {
+		pcr, ok := document.PCRs[uint(i)]
+		if !ok {
+			return false, fmt.Errorf("missing pcr '%d'", i)
+		}
 		for _, b := range pcr {
 			if b != 0 {
 				return false, nil
