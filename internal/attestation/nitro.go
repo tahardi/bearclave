@@ -32,8 +32,6 @@ func (n *NitroAttester) Attest(userdata []byte) ([]byte, error) {
 	}
 	defer session.Close()
 
-	// TODO: Look into this resp struct and determine if we need to check/return
-	// more than just the document
 	resp, err := session.Send(&request.Attestation{
 		Nonce:     []byte("TODO: generate nonce"),
 		UserData:  userdata,
@@ -59,10 +57,11 @@ func NewNitroVerifier() (*NitroVerifier, error) {
 }
 
 func (n *NitroVerifier) Verify(
-	attestation []byte,
+	report []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
+		debug:       false,
 		measurement: "",
 		timestamp:   time.Now(),
 	}
@@ -71,51 +70,79 @@ func (n *NitroVerifier) Verify(
 	}
 
 	result, err := nitrite.Verify(
-		attestation,
+		report,
 		nitrite.VerifyOptions{
 			CurrentTime: opts.timestamp,
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("verifying attestation: %w", err)
+		return nil, fmt.Errorf("verifying report: %w", err)
 	}
 
-	err = VerifyPCRs(opts, result.Document)
+	err = NitroVerifyMeasurement(opts.measurement, result.Document)
 	if err != nil {
-		return nil, fmt.Errorf("verifying pcrs: %w", err)
+		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
+	debug, err := NitroIsDebugEnabled(result.Document)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("getting debug mode: %w", err)
+	case opts.debug != debug:
+		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
+			opts.debug,
+			debug,
+		)
+	}
 	return result.Document.UserData, nil
 }
 
-func VerifyPCRs(options VerifyOptions, document *nitrite.Document) error {
-	if options.measurement == "" {
+func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
+	if len(document.PCRs) < 1 {
+		return false, fmt.Errorf("no pcrs provided")
+	}
+	for i := 0; i < 3; i++ {
+		pcr, ok := document.PCRs[uint(i)]
+		if !ok {
+			return false, fmt.Errorf("missing pcr '%d'", i)
+		}
+		for _, b := range pcr {
+			if b != 0 {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
+func NitroVerifyMeasurement(measurement string, document *nitrite.Document) error {
+	if measurement == "" {
 		return nil
 	}
 
-	expectedPCRs, err := ParsePCRs(options.measurement)
+	expectedPCRs, err := NitroParseMeasurement(measurement)
 	if err != nil {
 		return fmt.Errorf("parsing measurement: %w", err)
 	}
 
-	for i, expectedPCR := range expectedPCRs {
-		gotPCR, ok := document.PCRs[i]
+	for i, expected := range expectedPCRs {
+		got, ok := document.PCRs[i]
 		if !ok {
 			return fmt.Errorf("missing pcr '%d'", i)
 		}
-		if !bytes.Equal(expectedPCR, gotPCR) {
+		if !bytes.Equal(expected, got) {
 			return fmt.Errorf(
 				"pcr '%d' mismatch: expected '%x', got '%x'",
 				i,
-				expectedPCR,
-				gotPCR,
+				expected,
+				got,
 			)
 		}
 	}
 	return nil
 }
 
-func ParsePCRs(measurement string) (map[uint][]byte, error) {
+func NitroParseMeasurement(measurement string) (map[uint][]byte, error) {
 	var pcrHexStrings map[uint]string
 	err := json.Unmarshal([]byte(measurement), &pcrHexStrings)
 	if err != nil {

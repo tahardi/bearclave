@@ -51,10 +51,11 @@ func NewSEVVerifier() (*SEVVerifier, error) {
 // Only annoying thing is that it always returns a 64 byte slice, even if the
 // userdata is less than 64 bytes.
 func (n *SEVVerifier) Verify(
-	attestation []byte,
+	report []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
+		debug:       false,
 		measurement: "",
 		timestamp:   time.Now(),
 	}
@@ -62,42 +63,65 @@ func (n *SEVVerifier) Verify(
 		opt(&opts)
 	}
 
-	pbAttestation, err := abi.ReportCertsToProto(attestation)
+	pbReport, err := abi.ReportCertsToProto(report)
 	if err != nil {
-		return nil, fmt.Errorf("converting sev attestation to proto: %w", err)
+		return nil, fmt.Errorf("converting sev report to proto: %w", err)
 	}
 
 	snpOptions := verify.DefaultOptions()
 	snpOptions.Now = opts.timestamp
-	err = verify.SnpAttestation(pbAttestation, snpOptions)
+	err = verify.SnpAttestation(pbReport, snpOptions)
 	if err != nil {
-		return nil, fmt.Errorf("verifying sev attestation: %w", err)
+		return nil, fmt.Errorf("verifying sev report: %w", err)
 	}
 
-	err = VerifyMeasurement(opts, pbAttestation.Report)
+	err = SEVVerifyMeasurement(opts.measurement, pbReport.Report)
 	if err != nil {
 		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
-	return pbAttestation.Report.GetReportData(), nil
+	debug, err := SEVIsDebugEnabled(pbReport.Report)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("getting debug mode: %w", err)
+	case opts.debug != debug:
+		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
+			opts.debug,
+			debug,
+		)
+	}
+	return pbReport.Report.GetReportData(), nil
 }
 
-func VerifyMeasurement(options VerifyOptions, report *sevsnp.Report) error {
-	if options.measurement == "" {
+func SEVIsDebugEnabled(report *sevsnp.Report) (bool, error) {
+	policy, err := abi.ParseSnpPolicy(report.GetPolicy())
+	if err != nil {
+		return false, fmt.Errorf("parsing policy: %w", err)
+	}
+	return policy.Debug, nil
+}
+
+func SEVVerifyMeasurement(measurement string, report *sevsnp.Report) error {
+	if measurement == "" {
 		return nil
 	}
 
-	measurement, err := hex.DecodeString(options.measurement)
+	expected, err := SEVParseMeasurement(measurement)
 	if err != nil {
-		return fmt.Errorf("decoding measurement: %w", err)
+		return fmt.Errorf("parsing measurement: %w", err)
 	}
 
-	if !bytes.Equal(measurement, report.GetMeasurement()) {
+	got := report.GetMeasurement()
+	if !bytes.Equal(expected, got) {
 		return fmt.Errorf(
 			"measurement mismatch: expected '%x' got '%x'",
-			measurement,
-			report.GetMeasurement(),
+			expected,
+			got,
 		)
 	}
 	return nil
+}
+
+func SEVParseMeasurement(measurement string) ([]byte, error) {
+	return hex.DecodeString(measurement)
 }

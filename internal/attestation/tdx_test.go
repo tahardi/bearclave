@@ -6,31 +6,43 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-tdx-guest/abi"
+	pb "github.com/google/go-tdx-guest/proto/tdx"
+	"github.com/google/go-tdx-guest/verify"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
-//go:embed testdata/tdx-attestation-b64.txt
-var tdxAttestationB64 string
+//go:embed testdata/tdx-report-b64.txt
+var tdxReportB64 string
 
 const (
-	tdxAttestationMrTD                 = "f272d8492d31f6fffa1d0ae81ed2d240a2dd4b81a5f5ebec7e89c9a35f79c3d831588f18d3af13a9b337398ef91bb36b"
-	tdxAttestationTimestampSeconds     = int64(1748808574)
-	tdxAttestationTimestampNanoseconds = int64(295000000)
+	tdxReportMrTD                 = "f272d8492d31f6fffa1d0ae81ed2d240a2dd4b81a5f5ebec7e89c9a35f79c3d831588f18d3af13a9b337398ef91bb36b"
+	tdxReportTimestampSeconds     = int64(1748808574)
+	tdxReportTimestampNanoseconds = int64(295000000)
 )
 
-func tdxAttestationFromTestData(t *testing.T) ([]byte, string, time.Time) {
-	report, err := base64.StdEncoding.DecodeString(tdxAttestationB64)
+func tdxReportFromTestData(
+	t *testing.T,
+	reportB64 string,
+	timestamp time.Time,
+) ([]byte, *pb.QuoteV4) {
+	report, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 
-	timestamp := time.Unix(
-		tdxAttestationTimestampSeconds,
-		tdxAttestationTimestampNanoseconds,
-	)
+	pbQuote, err := abi.QuoteToProto(report)
+	require.NoError(t, err)
 
-	return report, tdxAttestationMrTD, timestamp
+	opts := verify.DefaultOptions()
+	opts.Now = timestamp
+	err = verify.TdxQuote(pbQuote, opts)
+	require.NoError(t, err)
+
+	quoteV4, ok := pbQuote.(*pb.QuoteV4)
+	require.True(t, ok)
+	return report, quoteV4
 }
 
 func TestTDX_Interfaces(t *testing.T) {
@@ -46,7 +58,12 @@ func TestTDXVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		report, measurement, timestamp := tdxAttestationFromTestData(t)
+		measurement := tdxReportMrTD
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		report, _ := tdxReportFromTestData(t, tdxReportB64, timestamp)
 
 		verifier, err := attestation.NewTDXVerifier()
 		require.NoError(t, err)
@@ -63,23 +80,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		assert.Contains(t, string(got), string(want))
 	})
 
-	t.Run("happy path - no measurement", func(t *testing.T) {
-		// given
-		want := []byte("Hello, world!")
-		report, _, timestamp := tdxAttestationFromTestData(t)
-
-		verifier, err := attestation.NewTDXVerifier()
-		require.NoError(t, err)
-
-		// when
-		got, err := verifier.Verify(report, attestation.WithTimestamp(timestamp))
-
-		// then
-		assert.NoError(t, err)
-		assert.Contains(t, string(got), string(want))
-	})
-
-	t.Run("error - invalid attestation report", func(t *testing.T) {
+	t.Run("error - invalid report", func(t *testing.T) {
 		// given
 		report := []byte("invalid attestation report")
 
@@ -90,13 +91,17 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report)
 
 		// then
-		assert.ErrorContains(t, err, "converting tdx attestation to proto")
+		assert.ErrorContains(t, err, "converting tdx report to proto")
 	})
 
 	t.Run("error - expired report", func(t *testing.T) {
 		// given
-		timestamp := time.Unix(0, 0)
-		report, _, _ := tdxAttestationFromTestData(t)
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		report, _ := tdxReportFromTestData(t, tdxReportB64, timestamp)
+		timestamp = time.Unix(0, 0)
 
 		verifier, err := attestation.NewTDXVerifier()
 		require.NoError(t, err)
@@ -108,10 +113,14 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		assert.ErrorContains(t, err, "certificate has expired or is not yet valid")
 	})
 
-	t.Run("error - invalid measurement format", func(t *testing.T) {
+	t.Run("error - verifying measurement", func(t *testing.T) {
 		// given
-		invalidMeasurement := "invalid measurement format"
-		report, _, timestamp := tdxAttestationFromTestData(t)
+		measurement := "invalid measurement"
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		report, _ := tdxReportFromTestData(t, tdxReportB64, timestamp)
 
 		verifier, err := attestation.NewTDXVerifier()
 		require.NoError(t, err)
@@ -119,18 +128,22 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		// when
 		_, err = verifier.Verify(
 			report,
-			attestation.WithMeasurement(invalidMeasurement),
+			attestation.WithMeasurement(measurement),
 			attestation.WithTimestamp(timestamp),
 		)
 
 		// then
-		assert.ErrorContains(t, err, "decoding measurement")
+		assert.ErrorContains(t, err, "verifying measurement")
 	})
 
-	t.Run("error - wrong measurement", func(t *testing.T) {
+	t.Run("error - debug mode mismatch", func(t *testing.T) {
 		// given
-		wrongMeasurement := "0272d8492d31f6fffa1d0ae81ed2d240a2dd4b81a5f5ebec7e89c9a35f79c3d831588f18d3af13a9b337398ef91bb36b"
-		report, _, timestamp := tdxAttestationFromTestData(t)
+		measurement := tdxReportMrTD
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		report, _ := tdxReportFromTestData(t, tdxReportB64, timestamp)
 
 		verifier, err := attestation.NewTDXVerifier()
 		require.NoError(t, err)
@@ -138,11 +151,114 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		// when
 		_, err = verifier.Verify(
 			report,
-			attestation.WithMeasurement(wrongMeasurement),
+			attestation.WithDebug(true),
+			attestation.WithMeasurement(measurement),
 			attestation.WithTimestamp(timestamp),
 		)
 
 		// then
-		assert.ErrorContains(t, err, "measurement mismatch")
+		assert.ErrorContains(t, err, "debug mode mismatch")
+	})
+}
+
+func TestTDXIsDebugEnabled(t *testing.T) {
+	t.Run("happy path - debug enabled", func(t *testing.T) {
+		// given
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+		quoteV4.TdQuoteBody.TdAttributes[0] = 1
+
+		// when
+		got, err := attestation.TDXIsDebugEnabled(quoteV4)
+
+		// then
+		assert.NoError(t, err)
+		assert.True(t, got)
+	})
+
+	t.Run("happy path - debug disabled", func(t *testing.T) {
+		// given
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+
+		// when
+		got, err := attestation.TDXIsDebugEnabled(quoteV4)
+
+		// then
+		assert.NoError(t, err)
+		assert.False(t, got)
+	})
+}
+
+func TestTDXVerifyMeasurement(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		measurement := tdxReportMrTD
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+
+		// when
+		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
+
+		// then
+		assert.NoError(t, err)
+	})
+
+	t.Run("happy path - no measurement", func(t *testing.T) {
+		// given
+		measurement := ""
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+
+		// when
+		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
+
+		// then
+		assert.NoError(t, err)
+	})
+
+	t.Run("error - invalid measurement", func(t *testing.T) {
+		// given
+		measurement := "invalid measurement"
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+
+		// when
+		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
+
+		// then
+		assert.ErrorContains(t, err, "parsing measurement")
+	})
+
+	t.Run("error - incorrect measurement", func(t *testing.T) {
+		// given
+		measurement := tdxReportMrTD
+		measurement = measurement[:len(measurement)-2]
+		timestamp := time.Unix(
+			tdxReportTimestampSeconds,
+			tdxReportTimestampNanoseconds,
+		)
+		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+
+		// when
+		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
+
+		// then
+		assert.ErrorContains(t, err, "mismatch: expected")
 	})
 }
