@@ -77,7 +77,15 @@ nitro-enclave-run-eif: nitro-enclave-build-eif
 		--cpu-count 2 \
 		--memory 512 \
 		--enclave-cid 4 \
-		--eif-path ./enclaves.eif \
+		--eif-path ./enclaves.eif
+
+.PHONY: nitro-enclave-run-eif-debug
+nitro-enclave-run-eif-debug: nitro-enclave-build-eif
+	@nitro-cli run-enclave \
+		--cpu-count 2 \
+		--memory 512 \
+		--enclave-cid 4 \
+		--eif-path ./enclave/bin/enclave.eif \
 		--debug-mode \
 		--attach-console
 
