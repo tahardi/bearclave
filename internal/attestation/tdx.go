@@ -49,7 +49,7 @@ func NewTDXVerifier() (*TDXVerifier, error) {
 }
 
 func (n *TDXVerifier) Verify(
-	attestation []byte,
+	report []byte,
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
@@ -61,19 +61,19 @@ func (n *TDXVerifier) Verify(
 		opt(&opts)
 	}
 
-	pbAttestation, err := abi.QuoteToProto(attestation)
+	pbQuote, err := abi.QuoteToProto(report)
 	if err != nil {
-		return nil, fmt.Errorf("converting tdx attestation to proto: %w", err)
+		return nil, fmt.Errorf("converting tdx report to proto: %w", err)
 	}
 
 	tdxOptions := verify.DefaultOptions()
 	tdxOptions.Now = opts.timestamp
-	err = verify.TdxQuote(pbAttestation, tdxOptions)
+	err = verify.TdxQuote(pbQuote, tdxOptions)
 	if err != nil {
-		return nil, fmt.Errorf("verifying tdx attestation: %w", err)
+		return nil, fmt.Errorf("verifying tdx report: %w", err)
 	}
 
-	quoteV4, ok := pbAttestation.(*pb.QuoteV4)
+	quoteV4, ok := pbQuote.(*pb.QuoteV4)
 	if !ok {
 		return nil, fmt.Errorf("unexpected quote type")
 	}
