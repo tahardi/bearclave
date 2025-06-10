@@ -32,8 +32,6 @@ func (n *NitroAttester) Attest(userdata []byte) ([]byte, error) {
 	}
 	defer session.Close()
 
-	// TODO: Look into this resp struct and determine if we need to check/return
-	// more than just the document
 	resp, err := session.Send(&request.Attestation{
 		Nonce:     []byte("TODO: generate nonce"),
 		UserData:  userdata,
