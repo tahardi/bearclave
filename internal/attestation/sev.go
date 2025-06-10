@@ -55,6 +55,7 @@ func (n *SEVVerifier) Verify(
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
+		debug:       false,
 		measurement: "",
 		timestamp:   time.Now(),
 	}
@@ -74,30 +75,53 @@ func (n *SEVVerifier) Verify(
 		return nil, fmt.Errorf("verifying sev attestation: %w", err)
 	}
 
-	err = VerifyMeasurement(opts, pbAttestation.Report)
+	err = SEVVerifyMeasurement(opts.measurement, pbAttestation.Report)
 	if err != nil {
 		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
+	debug, err := SEVIsDebugEnabled(pbAttestation.Report)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("getting debug mode: %w", err)
+	case opts.debug != debug:
+		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
+			opts.debug,
+			debug,
+		)
+	}
 	return pbAttestation.Report.GetReportData(), nil
 }
 
-func VerifyMeasurement(options VerifyOptions, report *sevsnp.Report) error {
-	if options.measurement == "" {
+func SEVIsDebugEnabled(report *sevsnp.Report) (bool, error) {
+	policy, err := abi.ParseSnpPolicy(report.GetPolicy())
+	if err != nil {
+		return false, fmt.Errorf("parsing policy: %w", err)
+	}
+	return policy.Debug, nil
+}
+
+func SEVVerifyMeasurement(measurement string, report *sevsnp.Report) error {
+	if measurement == "" {
 		return nil
 	}
 
-	measurement, err := hex.DecodeString(options.measurement)
+	expected, err := SEVParseMeasurement(measurement)
 	if err != nil {
-		return fmt.Errorf("decoding measurement: %w", err)
+		return fmt.Errorf("parsing measurement: %w", err)
 	}
 
-	if !bytes.Equal(measurement, report.GetMeasurement()) {
+	got := report.GetMeasurement()
+	if !bytes.Equal(expected, got) {
 		return fmt.Errorf(
 			"measurement mismatch: expected '%x' got '%x'",
-			measurement,
-			report.GetMeasurement(),
+			expected,
+			got,
 		)
 	}
 	return nil
+}
+
+func SEVParseMeasurement(measurement string) ([]byte, error) {
+	return hex.DecodeString(measurement)
 }

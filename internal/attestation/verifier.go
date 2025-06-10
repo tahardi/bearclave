@@ -28,8 +28,15 @@ func NewVerifier(platform setup.Platform) (Verifier, error) {
 
 type VerifyOption func(*VerifyOptions)
 type VerifyOptions struct {
+	debug       bool
 	measurement string
 	timestamp   time.Time
+}
+
+func WithDebug(debug bool) VerifyOption {
+	return func(opts *VerifyOptions) {
+		opts.debug = debug
+	}
 }
 
 func WithMeasurement(measurement string) VerifyOption {

@@ -63,6 +63,7 @@ func (n *NitroVerifier) Verify(
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
+		debug:       false,
 		measurement: "",
 		timestamp:   time.Now(),
 	}
@@ -80,42 +81,66 @@ func (n *NitroVerifier) Verify(
 		return nil, fmt.Errorf("verifying attestation: %w", err)
 	}
 
-	err = VerifyPCRs(opts, result.Document)
+	err = NitroVerifyMeasurement(opts.measurement, result.Document)
 	if err != nil {
-		return nil, fmt.Errorf("verifying pcrs: %w", err)
+		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
+	debug, err := NitroIsDebugEnabled(result.Document)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("getting debug mode: %w", err)
+	case opts.debug != debug:
+		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
+			opts.debug,
+			debug,
+		)
+	}
 	return result.Document.UserData, nil
 }
 
-func VerifyPCRs(options VerifyOptions, document *nitrite.Document) error {
-	if options.measurement == "" {
+func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
+	if len(document.PCRs) < 1 {
+		return false, fmt.Errorf("missing pcrs")
+	}
+	for _, pcr := range document.PCRs {
+		for _, b := range pcr {
+			if b != 0 {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
+func NitroVerifyMeasurement(measurement string, document *nitrite.Document) error {
+	if measurement == "" {
 		return nil
 	}
 
-	expectedPCRs, err := ParsePCRs(options.measurement)
+	expectedPCRs, err := NitroParseMeasurement(measurement)
 	if err != nil {
 		return fmt.Errorf("parsing measurement: %w", err)
 	}
 
-	for i, expectedPCR := range expectedPCRs {
-		gotPCR, ok := document.PCRs[i]
+	for i, expected := range expectedPCRs {
+		got, ok := document.PCRs[i]
 		if !ok {
 			return fmt.Errorf("missing pcr '%d'", i)
 		}
-		if !bytes.Equal(expectedPCR, gotPCR) {
+		if !bytes.Equal(expected, got) {
 			return fmt.Errorf(
 				"pcr '%d' mismatch: expected '%x', got '%x'",
 				i,
-				expectedPCR,
-				gotPCR,
+				expected,
+				got,
 			)
 		}
 	}
 	return nil
 }
 
-func ParsePCRs(measurement string) (map[uint][]byte, error) {
+func NitroParseMeasurement(measurement string) (map[uint][]byte, error) {
 	var pcrHexStrings map[uint]string
 	err := json.Unmarshal([]byte(measurement), &pcrHexStrings)
 	if err != nil {

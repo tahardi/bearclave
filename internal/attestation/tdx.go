@@ -53,6 +53,7 @@ func (n *TDXVerifier) Verify(
 	options ...VerifyOption,
 ) ([]byte, error) {
 	opts := VerifyOptions{
+		debug:       false,
 		measurement: "",
 		timestamp:   time.Now(),
 	}
@@ -77,30 +78,58 @@ func (n *TDXVerifier) Verify(
 		return nil, fmt.Errorf("unexpected quote type")
 	}
 
-	err = VerifyMrTD(opts, quoteV4.GetTdQuoteBody())
+	err = TDXVerifyMeasurement(opts.measurement, quoteV4.GetTdQuoteBody())
 	if err != nil {
 		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
+	debug, err := TDXIsDebugEnabled(quoteV4)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("getting debug mode: %w", err)
+	case opts.debug != debug:
+		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
+			opts.debug,
+			debug,
+		)
+	}
 	return quoteV4.GetTdQuoteBody().GetReportData(), nil
 }
 
-func VerifyMrTD(options VerifyOptions, quoteBody *pb.TDQuoteBody) error {
-	if options.measurement == "" {
+func TDXIsDebugEnabled(quoteV4 *pb.QuoteV4) (bool, error) {
+	tdAttributes := quoteV4.GetTdQuoteBody().GetTdAttributes()
+
+	// Documentation states that if any of bits 7:0 are set to 1, then
+	// the TD is in debug mode. Thus, if they are all 0, debug is not enabled.
+	// Also, the documentation states that all fields are little endian
+	// https://download.01.org/intel-sgx/latest/dcap-latest/linux/docs/Intel_TDX_DCAP_Quoting_Library_API.pdf
+	if tdAttributes[0]&0xFF == 0 {
+		return false, nil
+	}
+	return true, nil
+}
+
+func TDXVerifyMeasurement(measurement string, quoteBody *pb.TDQuoteBody) error {
+	if measurement == "" {
 		return nil
 	}
 
-	measurement, err := hex.DecodeString(options.measurement)
+	expected, err := TDXParseMeasurement(measurement)
 	if err != nil {
-		return fmt.Errorf("decoding measurement: %w", err)
+		return fmt.Errorf("parsing measurement: %w", err)
 	}
 
-	if !bytes.Equal(measurement, quoteBody.GetMrTd()) {
+	got := quoteBody.GetMrTd()
+	if !bytes.Equal(expected, got) {
 		return fmt.Errorf(
 			"measurement mismatch: expected '%x' got '%x'",
-			measurement,
-			quoteBody.GetMrTd(),
+			expected,
+			got,
 		)
 	}
 	return nil
+}
+
+func TDXParseMeasurement(measurement string) ([]byte, error) {
+	return hex.DecodeString(measurement)
 }

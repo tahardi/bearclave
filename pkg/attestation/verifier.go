@@ -16,6 +16,10 @@ func NewVerifier(platform setup.Platform) (Verifier, error) {
 type VerifyOption = attestation.VerifyOption
 type VerifyOptions = attestation.VerifyOptions
 
+func WithDebug(debug bool) VerifyOption {
+	return attestation.WithDebug(debug)
+}
+
 func WithMeasurement(measurement string) VerifyOption {
 	return attestation.WithMeasurement(measurement)
 }
