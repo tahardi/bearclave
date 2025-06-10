@@ -13,14 +13,14 @@ import (
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
-//go:embed testdata/nitro-attestation-b64.txt
-var nitroAttestationB64 string
+//go:embed testdata/nitro-report-b64.txt
+var nitroReportB64 string
 
-//go:embed testdata/nitro-attestation-debug-b64.txt
-var nitroAttestationDebugB64 string
+//go:embed testdata/nitro-report-debug-b64.txt
+var nitroReportDebugB64 string
 
 const (
-	nitroAttestationPCRsJSON = `{
+	nitroReportPCRsJSON = `{
   "0": "1606040ac5afb19824cb0f783ed0f90583ef1ac555dc3b0b5f00d564ec0d206bd7a56ca6ee049ba2e03bb7d4ea88d00b",
   "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
   "2": "e0742e0e40b8576aeadccff8539e448399b9924bb9701772bb5d2501d97757faba6d2aa390e761ef60c5a4d7452f101f",
@@ -28,7 +28,7 @@ const (
   "4": "a823da6c81d753e9e119c65d34e961eadeadb3ce6f3e95db1214716357fe6b32dc02f6a16e0b0137eb0a6c27e713ecaa",
   "8": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 }`
-	nitroAttestationDebugPCRsJSON = `{
+	nitroReportDebugPCRsJSON = `{
   "0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
   "1": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
   "2": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -36,10 +36,10 @@ const (
   "4": "a823da6c81d753e9e119c65d34e961eadeadb3ce6f3e95db1214716357fe6b32dc02f6a16e0b0137eb0a6c27e713ecaa",
   "8": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 }`
-	nitroAttestationTimestampSeconds          = int64(1749295504)
-	nitroAttestationTimestampNanoseconds      = int64(541000000)
-	nitroAttestationDebugTimestampSeconds     = int64(1749558205)
-	nitroAttestationDebugTimestampNanoseconds = int64(687000000)
+	nitroReportTimestampSeconds          = int64(1749295504)
+	nitroReportTimestampNanoseconds      = int64(541000000)
+	nitroReportDebugTimestampSeconds     = int64(1749558205)
+	nitroReportDebugTimestampNanoseconds = int64(687000000)
 )
 
 func nitroReportFromTestData(
@@ -69,12 +69,12 @@ func TestNitroVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := nitroAttestationPCRsJSON
+		measurement := nitroReportPCRsJSON
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		report, _ := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		report, _ := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		verifier, err := attestation.NewNitroVerifier()
 		require.NoError(t, err)
@@ -94,12 +94,12 @@ func TestNitroVerifier_Verify(t *testing.T) {
 	t.Run("happy path - debug", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := nitroAttestationDebugPCRsJSON
+		measurement := nitroReportDebugPCRsJSON
 		timestamp := time.Unix(
-			nitroAttestationDebugTimestampSeconds,
-			nitroAttestationDebugTimestampNanoseconds,
+			nitroReportDebugTimestampSeconds,
+			nitroReportDebugTimestampNanoseconds,
 		)
-		report, _ := nitroReportFromTestData(t, nitroAttestationDebugB64, timestamp)
+		report, _ := nitroReportFromTestData(t, nitroReportDebugB64, timestamp)
 
 		verifier, err := attestation.NewNitroVerifier()
 		require.NoError(t, err)
@@ -134,10 +134,10 @@ func TestNitroVerifier_Verify(t *testing.T) {
 	t.Run("error - expired report", func(t *testing.T) {
 		// given
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		report, _ := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		report, _ := nitroReportFromTestData(t, nitroReportB64, timestamp)
 		timestamp = time.Unix(0, 0)
 
 		verifier, err := attestation.NewNitroVerifier()
@@ -154,10 +154,10 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		// given
 		measurement := "invalid measurement"
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		report, _ := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		report, _ := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		verifier, err := attestation.NewNitroVerifier()
 		require.NoError(t, err)
@@ -170,17 +170,17 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorContains(t, err, "parsing measurement")
+		assert.ErrorContains(t, err, "verifying measurement")
 	})
 
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
 		// given
-		measurement := nitroAttestationPCRsJSON
+		measurement := nitroReportPCRsJSON
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		report, _ := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		report, _ := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		verifier, err := attestation.NewNitroVerifier()
 		require.NoError(t, err)
@@ -263,12 +263,12 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 func TestNitroVerifyMeasurement(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
-		measurement := nitroAttestationPCRsJSON
+		measurement := nitroReportPCRsJSON
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		_, document := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		// when
 		err := attestation.NitroVerifyMeasurement(measurement, document)
@@ -281,10 +281,10 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		// given
 		measurement := ""
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		_, document := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		// when
 		err := attestation.NitroVerifyMeasurement(measurement, document)
@@ -297,10 +297,10 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		// given
 		measurement := "invalid measurement format"
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		_, document := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		// when
 		err := attestation.NitroVerifyMeasurement(measurement, document)
@@ -311,12 +311,12 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("error - missing pcr", func(t *testing.T) {
 		// given
-		measurement := nitroAttestationPCRsJSON
+		measurement := nitroReportPCRsJSON
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		_, document := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 		document.PCRs = make(map[uint][]byte, 0)
 
 		// when
@@ -328,12 +328,12 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("error - incorrect measurement", func(t *testing.T) {
 		// given
-		measurement := nitroAttestationPCRsJSON
+		measurement := nitroReportPCRsJSON
 		timestamp := time.Unix(
-			nitroAttestationTimestampSeconds,
-			nitroAttestationTimestampNanoseconds,
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
 		)
-		_, document := nitroReportFromTestData(t, nitroAttestationB64, timestamp)
+		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 		document.PCRs[0][0] = 0
 
 		// when
