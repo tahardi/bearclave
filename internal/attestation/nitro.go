@@ -2,7 +2,7 @@ package attestation
 
 import (
 	"bytes"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -115,48 +115,45 @@ func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
 	return true, nil
 }
 
-func NitroVerifyMeasurement(measurement string, document *nitrite.Document) error {
-	if measurement == "" {
+type NitroMeasurement struct {
+	PCRs     map[uint][]byte `json:"pcrs"`
+	ModuleID string          `json:"module_id"`
+}
+
+func NitroVerifyMeasurement(measurementJSON string, document *nitrite.Document) error {
+	if measurementJSON == "" {
 		return nil
 	}
 
-	expectedPCRs, err := NitroParseMeasurement(measurement)
+	measurement := NitroMeasurement{}
+	err := json.Unmarshal([]byte(measurementJSON), &measurement)
 	if err != nil {
-		return fmt.Errorf("parsing measurement: %w", err)
+		return fmt.Errorf("unmarshaling measurement: %w", err)
 	}
 
-	for i, expected := range expectedPCRs {
+	for i, expected := range measurement.PCRs {
 		got, ok := document.PCRs[i]
 		if !ok {
 			return fmt.Errorf("missing pcr '%d'", i)
 		}
 		if !bytes.Equal(expected, got) {
 			return fmt.Errorf(
-				"pcr '%d' mismatch: expected '%x', got '%x'",
+				"pcr '%d' mismatch: expected '%s', got '%s'",
 				i,
-				expected,
-				got,
+				base64.StdEncoding.EncodeToString(expected),
+				base64.StdEncoding.EncodeToString(got),
 			)
 		}
 	}
+
+	switch {
+	case measurement.ModuleID == "":
+		return nil
+	case measurement.ModuleID != document.ModuleID:
+		return fmt.Errorf("module id mismatch: expected '%s', got '%s'",
+			measurement.ModuleID,
+			document.ModuleID,
+		)
+	}
 	return nil
-}
-
-func NitroParseMeasurement(measurement string) (map[uint][]byte, error) {
-	var pcrHexStrings map[uint]string
-	err := json.Unmarshal([]byte(measurement), &pcrHexStrings)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshaling pcrs: %w", err)
-	}
-
-	pcrs := make(map[uint][]byte)
-	for k, v := range pcrHexStrings {
-		pcr, err := hex.DecodeString(v)
-		if err != nil {
-			return nil, fmt.Errorf("decoding hex string for PCR%v: %w", k, err)
-		}
-		pcrs[k] = pcr
-	}
-
-	return pcrs, nil
 }

@@ -19,7 +19,24 @@ import (
 var tdxReportB64 string
 
 const (
-	tdxReportMrTD                 = "f272d8492d31f6fffa1d0ae81ed2d240a2dd4b81a5f5ebec7e89c9a35f79c3d831588f18d3af13a9b337398ef91bb36b"
+	tdxReportMeasurementJSON = `{
+  "tee_tcb_svn": "CAEIAAAAAAAAAAAAAAAAAA==",
+  "mr_seam": "v7NgrI5iM6G8oUM8r3OC2VwWW0p3+wC/FDXloI8wDN/q1e5oRhr9m2xyjc51NGAt",
+  "mr_signer_seam": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "seam_attributes": "AAAAAAAAAAA=",
+  "td_attributes": "AAAAEAAAAAA=",
+  "xfam": "5wAGAAAAAAA=",
+  "mr_td": "8nLYSS0x9v/6HQroHtLSQKLdS4Gl9evsfonJo195w9gxWI8Y068TqbM3OY75G7Nr",
+  "mr_config_id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "mr_owner": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "mr_owner_config": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "rtmrs": [
+    "rRswApVNahPhBLWg69PzXOJ11lJZ6693qpzUBKv95YqdvGEgeoKPWoPbyCmD/ohO",
+    "541YF6n1DTDLxiDYwkfmmWOptN82LDCu/6SnPGQ+c1dPtqSGHWuDqNwJWzkvN+Ae",
+    "lfXvmOAaKoL3eRi2SxkYsp2ypIr4ng9XdCBy+HxNklgRzNdMwFQNavJaVnHC3/Nl",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  ]
+}`
 	tdxReportTimestampSeconds     = int64(1748808574)
 	tdxReportTimestampNanoseconds = int64(295000000)
 )
@@ -58,7 +75,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := tdxReportMrTD
+		measurement := tdxReportMeasurementJSON
 		timestamp := time.Unix(
 			tdxReportTimestampSeconds,
 			tdxReportTimestampNanoseconds,
@@ -138,7 +155,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
 		// given
-		measurement := tdxReportMrTD
+		measurement := tdxReportMeasurementJSON
 		timestamp := time.Unix(
 			tdxReportTimestampSeconds,
 			tdxReportTimestampNanoseconds,
@@ -199,7 +216,7 @@ func TestTDXIsDebugEnabled(t *testing.T) {
 func TestTDXVerifyMeasurement(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
-		measurement := tdxReportMrTD
+		measurement := tdxReportMeasurementJSON
 		timestamp := time.Unix(
 			tdxReportTimestampSeconds,
 			tdxReportTimestampNanoseconds,
@@ -242,18 +259,18 @@ func TestTDXVerifyMeasurement(t *testing.T) {
 		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
 
 		// then
-		assert.ErrorContains(t, err, "parsing measurement")
+		assert.ErrorContains(t, err, "unmarshaling measurement")
 	})
 
 	t.Run("error - incorrect measurement", func(t *testing.T) {
 		// given
-		measurement := tdxReportMrTD
-		measurement = measurement[:len(measurement)-2]
+		measurement := tdxReportMeasurementJSON
 		timestamp := time.Unix(
 			tdxReportTimestampSeconds,
 			tdxReportTimestampNanoseconds,
 		)
 		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+		quoteV4.TdQuoteBody.TdAttributes[0] = 1
 
 		// when
 		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())

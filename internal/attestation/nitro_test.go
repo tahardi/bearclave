@@ -3,6 +3,7 @@ package attestation_test
 import (
 	_ "embed"
 	"encoding/base64"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -20,21 +21,27 @@ var nitroReportB64 string
 var nitroReportDebugB64 string
 
 const (
-	nitroReportPCRsJSON = `{
-  "0": "1606040ac5afb19824cb0f783ed0f90583ef1ac555dc3b0b5f00d564ec0d206bd7a56ca6ee049ba2e03bb7d4ea88d00b",
-  "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-  "2": "e0742e0e40b8576aeadccff8539e448399b9924bb9701772bb5d2501d97757faba6d2aa390e761ef60c5a4d7452f101f",
-  "3": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  "4": "a823da6c81d753e9e119c65d34e961eadeadb3ce6f3e95db1214716357fe6b32dc02f6a16e0b0137eb0a6c27e713ecaa",
-  "8": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+	nitroReportMeasurementJSON = `{
+  "pcrs": {
+    "0": "FgYECsWvsZgkyw94PtD5BYPvGsVV3DsLXwDVZOwNIGvXpWym7gSbouA7t9TqiNAL",
+    "1": "S01bNmGz78EpIJAMgOEm5M54PFIt5sAqKlv3rzorkye4Z3bxiOS+HBxAShKdvaST",
+    "2": "4HQuDkC4V2rq3M/4U55Eg5m5kku5cBdyu10lAdl3V/q6bSqjkOdh72DFpNdFLxAf",
+    "3": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "4": "qCPabIHXU+nhGcZdNOlh6t6ts85vPpXbEhRxY1f+azLcAvahbgsBN+sKbCfnE+yq",
+    "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  },
+  "module_id": "i-01bdf23ce28366cb5-enc01974a1e041bde39"
 }`
-	nitroReportDebugPCRsJSON = `{
-  "0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  "1": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  "2": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  "3": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  "4": "a823da6c81d753e9e119c65d34e961eadeadb3ce6f3e95db1214716357fe6b32dc02f6a16e0b0137eb0a6c27e713ecaa",
-  "8": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+	nitroReportDebugMeasurementJSON = `{
+  "pcrs": {
+    "0": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "1": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "2": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "3": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "4": "qCPabIHXU+nhGcZdNOlh6t6ts85vPpXbEhRxY1f+azLcAvahbgsBN+sKbCfnE+yq",
+    "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  },
+  "module_id": "i-01bdf23ce28366cb5-enc019759c92189a1e4"
 }`
 	nitroReportTimestampSeconds          = int64(1749295504)
 	nitroReportTimestampNanoseconds      = int64(541000000)
@@ -69,7 +76,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := nitroReportPCRsJSON
+		measurement := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -94,7 +101,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 	t.Run("happy path - debug", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := nitroReportDebugPCRsJSON
+		measurement := nitroReportDebugMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportDebugTimestampSeconds,
 			nitroReportDebugTimestampNanoseconds,
@@ -175,7 +182,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
 		// given
-		measurement := nitroReportPCRsJSON
+		measurement := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -263,7 +270,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 func TestNitroVerifyMeasurement(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
-		measurement := nitroReportPCRsJSON
+		measurementJSON := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -271,7 +278,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		// when
-		err := attestation.NitroVerifyMeasurement(measurement, document)
+		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
 		assert.NoError(t, err)
@@ -279,7 +286,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("happy path - no measurement", func(t *testing.T) {
 		// given
-		measurement := ""
+		measurementJSON := ""
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -287,7 +294,26 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		// when
-		err := attestation.NitroVerifyMeasurement(measurement, document)
+		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
+
+		// then
+		assert.NoError(t, err)
+	})
+
+	t.Run("happy path - no module ID", func(t *testing.T) {
+		// given
+		measurement := attestation.NitroMeasurement{}
+		measurementJSON, err := json.Marshal(measurement)
+		require.NoError(t, err)
+
+		timestamp := time.Unix(
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
+		)
+		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
+
+		// when
+		err = attestation.NitroVerifyMeasurement(string(measurementJSON), document)
 
 		// then
 		assert.NoError(t, err)
@@ -295,7 +321,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("error - invalid measurement format", func(t *testing.T) {
 		// given
-		measurement := "invalid measurement format"
+		measurementJSON := "invalid measurement format"
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -303,15 +329,15 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
 
 		// when
-		err := attestation.NitroVerifyMeasurement(measurement, document)
+		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
-		assert.ErrorContains(t, err, "parsing measurement")
+		assert.ErrorContains(t, err, "unmarshaling measurement")
 	})
 
 	t.Run("error - missing pcr", func(t *testing.T) {
 		// given
-		measurement := nitroReportPCRsJSON
+		measurementJSON := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -320,7 +346,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		document.PCRs = make(map[uint][]byte, 0)
 
 		// when
-		err := attestation.NitroVerifyMeasurement(measurement, document)
+		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
 		assert.ErrorContains(t, err, "missing pcr")
@@ -328,7 +354,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("error - incorrect measurement", func(t *testing.T) {
 		// given
-		measurement := nitroReportPCRsJSON
+		measurementJSON := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -337,7 +363,24 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		document.PCRs[0][0] = 0
 
 		// when
-		err := attestation.NitroVerifyMeasurement(measurement, document)
+		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
+
+		// then
+		assert.ErrorContains(t, err, "mismatch: expected")
+	})
+
+	t.Run("error - incorrect module ID", func(t *testing.T) {
+		// given
+		measurementJSON := nitroReportMeasurementJSON
+		timestamp := time.Unix(
+			nitroReportTimestampSeconds,
+			nitroReportTimestampNanoseconds,
+		)
+		_, document := nitroReportFromTestData(t, nitroReportB64, timestamp)
+		document.ModuleID = "invalid module ID"
+
+		// when
+		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
 		assert.ErrorContains(t, err, "mismatch: expected")

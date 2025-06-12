@@ -1,9 +1,9 @@
 package attestation
 
 import (
-	"bytes"
-	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/google/go-sev-guest/abi"
@@ -101,27 +101,85 @@ func SEVIsDebugEnabled(report *sevsnp.Report) (bool, error) {
 	return policy.Debug, nil
 }
 
-func SEVVerifyMeasurement(measurement string, report *sevsnp.Report) error {
-	if measurement == "" {
+type SEVMeasurement struct {
+	Version         uint32 `json:"version"`
+	GuestSVN        uint32 `json:"guest_svn"`
+	Policy          uint64 `json:"policy"`
+	FamilyID        []byte `json:"family_id"`
+	ImageID         []byte `json:"image_id"`
+	VMPL            uint32 `json:"vmpl"`
+	CurrentTCB      uint64 `json:"current_tcb"`
+	PlatformInfo    uint64 `json:"platform_info"`
+	SignerInfo      uint32 `json:"signer_info"`
+	Measurement     []byte `json:"measurement"`
+	HostData        []byte `json:"host_data"`
+	IDKeyDigest     []byte `json:"id_key_digest"`
+	AuthorKeyDigest []byte `json:"author_key_digest"`
+	ReportID        []byte `json:"report_id"`
+	ReportIDMA      []byte `json:"report_id_ma"`
+	ReportedTCB     uint64 `json:"reported_tcb"`
+	ChipID          []byte `json:"chip_id"`
+	CommittedTCB    uint64 `json:"committed_tcb"`
+	CurrentBuild    uint32 `json:"current_build"`
+	CurrentMinor    uint32 `json:"current_minor"`
+	CurrentMajor    uint32 `json:"current_major"`
+	CommittedBuild  uint32 `json:"committed_build"`
+	CommittedMinor  uint32 `json:"committed_minor"`
+	CommittedMajor  uint32 `json:"committed_major"`
+	LaunchTCB       uint64 `json:"launch_tcb"`
+	CPUID1EAXFMS    uint32 `json:"cpuid_1eax_fms"`
+}
+
+func SEVVerifyMeasurement(measurementJSON string, report *sevsnp.Report) error {
+	if measurementJSON == "" {
 		return nil
 	}
 
-	expected, err := SEVParseMeasurement(measurement)
+	measurement := SEVMeasurement{}
+	err := json.Unmarshal([]byte(measurementJSON), &measurement)
 	if err != nil {
-		return fmt.Errorf("parsing measurement: %w", err)
+		return fmt.Errorf("unmarshaling measurement: %w", err)
 	}
 
-	got := report.GetMeasurement()
-	if !bytes.Equal(expected, got) {
+	got := SEVMeasurement{
+		Version:         report.GetVersion(),
+		GuestSVN:        report.GetGuestSvn(),
+		Policy:          report.GetPolicy(),
+		FamilyID:        report.GetFamilyId(),
+		ImageID:         report.GetImageId(),
+		VMPL:            report.GetVmpl(),
+		CurrentTCB:      report.GetCurrentTcb(),
+		PlatformInfo:    report.GetPlatformInfo(),
+		SignerInfo:      report.GetSignerInfo(),
+		Measurement:     report.GetMeasurement(),
+		HostData:        report.GetHostData(),
+		IDKeyDigest:     report.GetIdKeyDigest(),
+		AuthorKeyDigest: report.GetAuthorKeyDigest(),
+		ReportID:        report.GetReportId(),
+		ReportIDMA:      report.GetReportIdMa(),
+		ReportedTCB:     report.GetReportedTcb(),
+		ChipID:          report.GetChipId(),
+		CommittedTCB:    report.GetCommittedTcb(),
+		CurrentBuild:    report.GetCurrentBuild(),
+		CurrentMinor:    report.GetCurrentMinor(),
+		CurrentMajor:    report.GetCurrentMajor(),
+		CommittedBuild:  report.GetCommittedBuild(),
+		CommittedMinor:  report.GetCommittedMinor(),
+		CommittedMajor:  report.GetCommittedMajor(),
+		LaunchTCB:       report.GetLaunchTcb(),
+		CPUID1EAXFMS:    report.GetCpuid1EaxFms(),
+	}
+
+	if !reflect.DeepEqual(measurement, got) {
+		gotJSON, err := json.Marshal(got)
+		if err != nil {
+			return fmt.Errorf("marshaling measurement: %w", err)
+		}
 		return fmt.Errorf(
-			"measurement mismatch: expected '%x' got '%x'",
-			expected,
-			got,
+			"measurement mismatch: expected '%s', got '%s'",
+			measurementJSON,
+			string(gotJSON),
 		)
 	}
 	return nil
-}
-
-func SEVParseMeasurement(measurement string) ([]byte, error) {
-	return hex.DecodeString(measurement)
 }

@@ -19,7 +19,34 @@ import (
 var sevReportB64 string
 
 const (
-	sevReportMeasurement          = "309f1b1e068fe6390234722a725c7a64f9d453cea13275a0d574f3bfc1f8864450e8c8f28a245fa1ed6ea6817ac85b2b"
+	sevReportMeasurementJSON = `{
+  "version": 4,
+  "guest_svn": 0,
+  "policy": 196608,
+  "family_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+  "image_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+  "vmpl": 0,
+  "current_tcb": 15787649968723984388,
+  "platform_info": 37,
+  "signer_info": 0,
+  "measurement": "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr",
+  "host_data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  "id_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "author_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "report_id": "6FRblnt1xgkavHxgGL8mWw8B6gEO+YklgWmboVVrI9M=",
+  "report_id_ma": "//////////////////////////////////////////8=",
+  "reported_tcb": 15787649968723984388,
+  "chip_id": "Etk3ouD6ZGkppCuDr+W0eNOYdzXjhKAVcH7AaJjhfAmXu4cuC7tyz9ccUMoVYHZ84eGYcz5kjA7APC1nqsjAuQ==",
+  "committed_tcb": 15787649968723984388,
+  "current_build": 31,
+  "current_minor": 55,
+  "current_major": 1,
+  "committed_build": 31,
+  "committed_minor": 55,
+  "committed_major": 1,
+  "launch_tcb": 15787649968723984388,
+  "cpuid_1eax_fms": 10489617
+}`
 	sevReportTimestampSeconds     = int64(1748808574)
 	sevReportTimestampNanoseconds = int64(295000000)
 )
@@ -56,7 +83,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := sevReportMeasurement
+		measurement := sevReportMeasurementJSON
 		timestamp := time.Unix(
 			sevReportTimestampSeconds,
 			sevReportTimestampNanoseconds,
@@ -131,12 +158,12 @@ func TestSEVVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorContains(t, err, "parsing measurement")
+		assert.ErrorContains(t, err, "verifying measurement")
 	})
 
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
 		// given
-		measurement := sevReportMeasurement
+		measurement := sevReportMeasurementJSON
 		timestamp := time.Unix(
 			sevReportTimestampSeconds,
 			sevReportTimestampNanoseconds,
@@ -217,7 +244,7 @@ func TestSEVIsDebugEnabled(t *testing.T) {
 func TestSEVVerifyMeasurement(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
-		measurement := sevReportMeasurement
+		measurement := sevReportMeasurementJSON
 		timestamp := time.Unix(
 			sevReportTimestampSeconds,
 			sevReportTimestampNanoseconds,
@@ -260,23 +287,23 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 		err := attestation.SEVVerifyMeasurement(measurement, sevReport)
 
 		// then
-		assert.ErrorContains(t, err, "parsing measurement")
+		assert.ErrorContains(t, err, "unmarshaling measurement")
 	})
 
 	t.Run("error - incorrect measurement", func(t *testing.T) {
 		// given
-		measurement := sevReportMeasurement
-		measurement = measurement[:len(measurement)-2]
+		measurement := sevReportMeasurementJSON
 		timestamp := time.Unix(
 			sevReportTimestampSeconds,
 			sevReportTimestampNanoseconds,
 		)
 		_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
+		sevReport.Measurement[0] = 0
 
 		// when
 		err := attestation.SEVVerifyMeasurement(measurement, sevReport)
 
 		// then
-		assert.ErrorContains(t, err, "mismatch: expected")
+		assert.ErrorContains(t, err, "measurement mismatch: expected")
 	})
 }

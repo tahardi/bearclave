@@ -1,7 +1,25 @@
 platform: "tdx"
 attestations:
   "enclave-server":
-    measurement: "409c0cd3e63d9ea54d817cf851983a220131262664ac8cd02cc6a2e19fd291d2fdd0cc035d7789b982a43a92a4424c99"
+    measurement: |
+      {
+        "tee_tcb_svn": "CAEIAAAAAAAAAAAAAAAAAA==",
+        "mr_seam": "v7NgrI5iM6G8oUM8r3OC2VwWW0p3+wC/FDXloI8wDN/q1e5oRhr9m2xyjc51NGAt",
+        "mr_signer_seam": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "seam_attributes": "AAAAAAAAAAA=",
+        "td_attributes": "AAAAEAAAAAA=",
+        "xfam": "5wAGAAAAAAA=",
+        "mr_td": "8nLYSS0x9v/6HQroHtLSQKLdS4Gl9evsfonJo195w9gxWI8Y068TqbM3OY75G7Nr",
+        "mr_config_id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "mr_owner": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "mr_owner_config": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "rtmrs": [
+          "rRswApVNahPhBLWg69PzXOJ11lJZ6693qpzUBKv95YqdvGEgeoKPWoPbyCmD/ohO",
+          "541YF6n1DTDLxiDYwkfmmWOptN82LDCu/6SnPGQ+c1dPtqSGHWuDqNwJWzkvN+Ae",
+          "lfXvmOAaKoL3eRi2SxkYsp2ypIr4ng9XdCBy+HxNklgRzNdMwFQNavJaVnHC3/Nl",
+          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        ]
+      }
 servers:
   "enclave-server":
     cid: 4
