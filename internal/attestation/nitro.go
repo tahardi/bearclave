@@ -146,7 +146,10 @@ func NitroVerifyMeasurement(measurementJSON string, document *nitrite.Document) 
 		}
 	}
 
-	if measurement.ModuleID != document.ModuleID {
+	switch {
+	case measurement.ModuleID == "":
+		return nil
+	case measurement.ModuleID != document.ModuleID:
 		return fmt.Errorf("module id mismatch: expected '%s', got '%s'",
 			measurement.ModuleID,
 			document.ModuleID,

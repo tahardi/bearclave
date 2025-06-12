@@ -11,7 +11,7 @@ attestations:
           "4": "qCPabIHXU+nhGcZdNOlh6t6ts85vPpXbEhRxY1f+azLcAvahbgsBN+sKbCfnE+yq",
           "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         },
-        "module_id": "i-01bdf23ce28366cb5-enc01974a1e041bde39"
+        "module_id": ""
       }
 servers:
   "enclave-server":
