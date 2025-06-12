@@ -146,6 +146,7 @@ func NitroVerifyMeasurement(measurementJSON string, document *nitrite.Document) 
 		}
 	}
 
+	// TODO: Don't let this be optional
 	switch {
 	case measurement.ModuleID == "":
 		return nil

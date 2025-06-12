@@ -21,7 +21,7 @@ var nitroReportB64 string
 var nitroReportDebugB64 string
 
 const (
-	nitroReportPCRsJSON = `{
+	nitroReportMeasurementJSON = `{
   "pcrs": {
     "0": "FgYECsWvsZgkyw94PtD5BYPvGsVV3DsLXwDVZOwNIGvXpWym7gSbouA7t9TqiNAL",
     "1": "S01bNmGz78EpIJAMgOEm5M54PFIt5sAqKlv3rzorkye4Z3bxiOS+HBxAShKdvaST",
@@ -32,7 +32,7 @@ const (
   },
   "module_id": "i-01bdf23ce28366cb5-enc01974a1e041bde39"
 }`
-	nitroReportDebugPCRsJSON = `{
+	nitroReportDebugMeasurementJSON = `{
   "pcrs": {
     "0": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     "1": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -76,7 +76,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := nitroReportPCRsJSON
+		measurement := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -101,7 +101,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 	t.Run("happy path - debug", func(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
-		measurement := nitroReportDebugPCRsJSON
+		measurement := nitroReportDebugMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportDebugTimestampSeconds,
 			nitroReportDebugTimestampNanoseconds,
@@ -182,7 +182,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
 		// given
-		measurement := nitroReportPCRsJSON
+		measurement := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -270,7 +270,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 func TestNitroVerifyMeasurement(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
-		measurementJSON := nitroReportPCRsJSON
+		measurementJSON := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -337,7 +337,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("error - missing pcr", func(t *testing.T) {
 		// given
-		measurementJSON := nitroReportPCRsJSON
+		measurementJSON := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -354,7 +354,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("error - incorrect measurement", func(t *testing.T) {
 		// given
-		measurementJSON := nitroReportPCRsJSON
+		measurementJSON := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
@@ -371,7 +371,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 	t.Run("error - incorrect module ID", func(t *testing.T) {
 		// given
-		measurementJSON := nitroReportPCRsJSON
+		measurementJSON := nitroReportMeasurementJSON
 		timestamp := time.Unix(
 			nitroReportTimestampSeconds,
 			nitroReportTimestampNanoseconds,
