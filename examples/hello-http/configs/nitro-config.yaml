@@ -3,12 +3,15 @@ attestations:
   "enclave-server":
     measurement: |
       {
-        "0": "f29bfb8ceef3d1307255b088dbd29ee7870d4b091972066b564113f04417a0ac2da85fcf33d55af353cab95e7aa09ef2",
-        "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-        "2": "cde39a429c2df74c74cfd2c57b9247de6ca0ef6426911fe27cdb6cba0903f14deaaeca2049f76714a3eaa5a97a311871",
-        "3": "0000000000000000000000000000000000000000000000000000000000000000",
-        "4": "a823da6c81d753e9e119c65d34e961eadeadb3ce6f3e95db1214716357fe6b32dc02f6a16e0b0137eb0a6c27e713ecaa",
-        "8": "0000000000000000000000000000000000000000000000000000000000000000"
+        "pcrs": {
+          "0": "FgYECsWvsZgkyw94PtD5BYPvGsVV3DsLXwDVZOwNIGvXpWym7gSbouA7t9TqiNAL",
+          "1": "S01bNmGz78EpIJAMgOEm5M54PFIt5sAqKlv3rzorkye4Z3bxiOS+HBxAShKdvaST",
+          "2": "4HQuDkC4V2rq3M/4U55Eg5m5kku5cBdyu10lAdl3V/q6bSqjkOdh72DFpNdFLxAf",
+          "3": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "4": "qCPabIHXU+nhGcZdNOlh6t6ts85vPpXbEhRxY1f+azLcAvahbgsBN+sKbCfnE+yq",
+          "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        "module_id": "i-01bdf23ce28366cb5-enc01974a1e041bde39"
       }
 servers:
   "enclave-server":
