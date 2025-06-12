@@ -1,9 +1,9 @@
 package attestation
 
 import (
-	"bytes"
-	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/google/go-tdx-guest/abi"
@@ -109,27 +109,55 @@ func TDXIsDebugEnabled(quoteV4 *pb.QuoteV4) (bool, error) {
 	return true, nil
 }
 
-func TDXVerifyMeasurement(measurement string, quoteBody *pb.TDQuoteBody) error {
-	if measurement == "" {
+type TDXMeasurement struct {
+	TEETCBSVN      []byte   `json:"tee_tcb_svn"`
+	MrSeam         []byte   `json:"mr_seam"`
+	MrSignerSeam   []byte   `json:"mr_signer_seam"`
+	SeamAttributes []byte   `json:"seam_attributes"`
+	TDAttributes   []byte   `json:"td_attributes"`
+	Xfam           []byte   `json:"xfam"`
+	MrTD           []byte   `json:"mr_td"`
+	MrConfigID     []byte   `json:"mr_config_id"`
+	MrOwner        []byte   `json:"mr_owner"`
+	MrOwnerConfig  []byte   `json:"mr_owner_config"`
+	RTMRs          [][]byte `json:"rtmrs"`
+}
+
+func TDXVerifyMeasurement(measurementJSON string, quoteBody *pb.TDQuoteBody) error {
+	if measurementJSON == "" {
 		return nil
 	}
 
-	expected, err := TDXParseMeasurement(measurement)
+	measurement := TDXMeasurement{}
+	err := json.Unmarshal([]byte(measurementJSON), &measurement)
 	if err != nil {
-		return fmt.Errorf("parsing measurement: %w", err)
+		return fmt.Errorf("unmarshaling measurement: %w", err)
 	}
 
-	got := quoteBody.GetMrTd()
-	if !bytes.Equal(expected, got) {
+	got := TDXMeasurement{
+		TEETCBSVN:      quoteBody.GetTeeTcbSvn(),
+		MrSeam:         quoteBody.GetMrSeam(),
+		MrSignerSeam:   quoteBody.GetMrSignerSeam(),
+		SeamAttributes: quoteBody.GetSeamAttributes(),
+		TDAttributes:   quoteBody.GetTdAttributes(),
+		Xfam:           quoteBody.GetXfam(),
+		MrTD:           quoteBody.GetMrTd(),
+		MrConfigID:     quoteBody.GetMrConfigId(),
+		MrOwner:        quoteBody.GetMrOwner(),
+		MrOwnerConfig:  quoteBody.GetMrOwnerConfig(),
+		RTMRs:          quoteBody.GetRtmrs(),
+	}
+
+	if !reflect.DeepEqual(measurement, got) {
+		gotJSON, err := json.Marshal(got)
+		if err != nil {
+			return fmt.Errorf("marshaling measurement: %w", err)
+		}
 		return fmt.Errorf(
-			"measurement mismatch: expected '%x' got '%x'",
-			expected,
-			got,
+			"measurement mismatch: expected '%s', got '%s'",
+			measurementJSON,
+			string(gotJSON),
 		)
 	}
 	return nil
-}
-
-func TDXParseMeasurement(measurement string) ([]byte, error) {
-	return hex.DecodeString(measurement)
 }
