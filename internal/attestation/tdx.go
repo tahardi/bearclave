@@ -1,9 +1,10 @@
 package attestation
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/google/go-tdx-guest/abi"
@@ -134,29 +135,84 @@ func TDXVerifyMeasurement(measurementJSON string, quoteBody *pb.TDQuoteBody) err
 		return fmt.Errorf("unmarshaling measurement: %w", err)
 	}
 
-	got := TDXMeasurement{
-		TEETCBSVN:      quoteBody.GetTeeTcbSvn(),
-		MrSeam:         quoteBody.GetMrSeam(),
-		MrSignerSeam:   quoteBody.GetMrSignerSeam(),
-		SeamAttributes: quoteBody.GetSeamAttributes(),
-		TDAttributes:   quoteBody.GetTdAttributes(),
-		Xfam:           quoteBody.GetXfam(),
-		MrTD:           quoteBody.GetMrTd(),
-		MrConfigID:     quoteBody.GetMrConfigId(),
-		MrOwner:        quoteBody.GetMrOwner(),
-		MrOwnerConfig:  quoteBody.GetMrOwnerConfig(),
-		RTMRs:          quoteBody.GetRtmrs(),
-	}
-
-	if !reflect.DeepEqual(measurement, got) {
-		gotJSON, err := json.Marshal(got)
-		if err != nil {
-			return fmt.Errorf("marshaling measurement: %w", err)
-		}
-		return fmt.Errorf(
-			"measurement mismatch: expected '%s', got '%s'",
-			measurementJSON,
-			string(gotJSON),
+	switch {
+	case !bytes.Equal(measurement.TEETCBSVN, quoteBody.GetTeeTcbSvn()):
+		return fmt.Errorf("tee tcb svn mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.TEETCBSVN),
+			base64.StdEncoding.EncodeToString(quoteBody.GetTeeTcbSvn()),
+		)
+	case !bytes.Equal(measurement.MrSeam, quoteBody.GetMrSeam()):
+		return fmt.Errorf("mr seam mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.MrSeam),
+			base64.StdEncoding.EncodeToString(quoteBody.GetMrSeam()),
+		)
+	case !bytes.Equal(measurement.MrSignerSeam, quoteBody.GetMrSignerSeam()):
+		return fmt.Errorf("mr signer seam mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.MrSignerSeam),
+			base64.StdEncoding.EncodeToString(quoteBody.GetMrSignerSeam()),
+		)
+	case !bytes.Equal(measurement.SeamAttributes, quoteBody.GetSeamAttributes()):
+		return fmt.Errorf("seam attributes mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.SeamAttributes),
+			base64.StdEncoding.EncodeToString(quoteBody.GetSeamAttributes()),
+		)
+	case !bytes.Equal(measurement.TDAttributes, quoteBody.GetTdAttributes()):
+		return fmt.Errorf("td attributes mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.TDAttributes),
+			base64.StdEncoding.EncodeToString(quoteBody.GetTdAttributes()),
+		)
+	case !bytes.Equal(measurement.Xfam, quoteBody.GetXfam()):
+		return fmt.Errorf("xfam mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.Xfam),
+			base64.StdEncoding.EncodeToString(quoteBody.GetXfam()),
+		)
+	case !bytes.Equal(measurement.MrTD, quoteBody.GetMrTd()):
+		return fmt.Errorf("mr td mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.MrTD),
+			base64.StdEncoding.EncodeToString(quoteBody.GetMrTd()),
+		)
+	case !bytes.Equal(measurement.MrConfigID, quoteBody.GetMrConfigId()):
+		return fmt.Errorf("mr config id mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.MrConfigID),
+			base64.StdEncoding.EncodeToString(quoteBody.GetMrConfigId()),
+		)
+	case !bytes.Equal(measurement.MrOwner, quoteBody.GetMrOwner()):
+		return fmt.Errorf("mr owner mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.MrOwner),
+			base64.StdEncoding.EncodeToString(quoteBody.GetMrOwner()),
+		)
+	case !bytes.Equal(measurement.MrOwnerConfig, quoteBody.GetMrOwnerConfig()):
+		return fmt.Errorf("mr owner config mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.MrOwnerConfig),
+			base64.StdEncoding.EncodeToString(quoteBody.GetMrOwnerConfig()),
+		)
+	case len(measurement.RTMRs) != 4:
+		return fmt.Errorf("missing rtmrs (measurement): expected 4, got %d",
+			len(measurement.RTMRs),
+		)
+	case len(quoteBody.GetRtmrs()) != 4:
+		return fmt.Errorf("missing rtmrs (quote): expected 4, got %d",
+			len(quoteBody.GetRtmrs()),
+		)
+	case !bytes.Equal(measurement.RTMRs[0], quoteBody.GetRtmrs()[0]):
+		return fmt.Errorf("rtmrs[0] mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.RTMRs[0]),
+			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[0]),
+		)
+	case !bytes.Equal(measurement.RTMRs[1], quoteBody.GetRtmrs()[1]):
+		return fmt.Errorf("rtmrs[1] mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.RTMRs[1]),
+			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[1]),
+		)
+	case !bytes.Equal(measurement.RTMRs[2], quoteBody.GetRtmrs()[2]):
+		return fmt.Errorf("rtmrs[2] mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.RTMRs[2]),
+			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[2]),
+		)
+	case !bytes.Equal(measurement.RTMRs[3], quoteBody.GetRtmrs()[3]):
+		return fmt.Errorf("rtmrs[3] mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(measurement.RTMRs[3]),
+			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[3]),
 		)
 	}
 	return nil
