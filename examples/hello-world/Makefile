@@ -67,6 +67,7 @@ aws_nitro_instance_ip=$(shell aws ec2 describe-instances \
 	--filters "Name=tag:Name,Values=$(aws_nitro_instance_name)" \
 	--query "Reservations[].Instances[].PublicDnsName" \
 	--output text)
+aws_nitro_enclave_config=configs/nitro-config.yaml
 aws_nitro_enclave_image_tag=hello-world-enclave-nitro
 aws_nitro_enclave_eif_path=./enclave/bin/enclave.eif
 aws_nitro_enclave_cpu_count=2
@@ -78,7 +79,7 @@ aws-nitro-enclave-build-image: enclave
 	@docker build \
 		-f ./nitro.Dockerfile \
 		-t $(aws_nitro_enclave_image_tag) \
-		--build-arg CONFIG_FILE=configs/nitro-config.yaml \
+		--build-arg CONFIG_FILE=$(aws_nitro_enclave_config) \
 		.
 
 .PHONY: aws-nitro-enclave-build-eif
@@ -113,10 +114,14 @@ aws-nitro-enclave-describe-eif: aws-nitro-enclave-build-eif
 aws-nitro-enclave-terminate-eifs:
 	@nitro-cli terminate-enclave --all
 
+.PHONY: aws-nitro-proxy-run
+aws-nitro-proxy-run:
+	go run ./proxy/main.go --config $(aws_nitro_enclave_config)
+
 .PHONY: aws-nitro-nonclave-run
 aws-nitro-nonclave-run:
 	go run ./nonclave/main.go \
-		--config ./configs/nitro-config.yaml \
+		--config $(aws_nitro_enclave_config) \
 		--host $(aws_nitro_instance_ip)
 
 .PHONY: aws-nitro-instance-start
