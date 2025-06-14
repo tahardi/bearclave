@@ -13,3 +13,5 @@ attestations:
         },
         "module_id": ""
       }
+proxy:
+  port: 8080

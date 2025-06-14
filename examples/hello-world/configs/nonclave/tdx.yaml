@@ -20,3 +20,5 @@ attestations:
           "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         ]
       }
+proxy:
+  port: 8080
