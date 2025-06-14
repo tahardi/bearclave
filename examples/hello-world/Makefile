@@ -116,7 +116,7 @@ aws-nitro-enclave-terminate-eifs:
 
 .PHONY: aws-nitro-proxy-run
 aws-nitro-proxy-run:
-	go run ./proxy/main.go --config $(aws_nitro_enclave_config)
+	go run ./enclave-proxy/main.go --config $(aws_nitro_enclave_config)
 
 .PHONY: aws-nitro-nonclave-run
 aws-nitro-nonclave-run:
