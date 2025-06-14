@@ -30,10 +30,5 @@ attestations:
         "launch_tcb": 15787649968723984388,
         "cpuid_1eax_fms": 10489617
       }
-servers:
-  "enclave-server":
-    cid: 4
-    port: 8082
-    route: ""
 proxy:
   port: 8080
