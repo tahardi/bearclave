@@ -43,113 +43,107 @@ enclave-proxy: enclave-proxy/bin/enclave-proxy
 nonclave: nonclave/bin/nonclave
 
 ################################################################################
-# AWS Nitro-Enclave
+# AWS
 ################################################################################
-nitro_aws_profile=personal
-nitro_aws_region=us-east-2
-nitro_aws_instance_name=tahardi-bearclave
+aws_profile=personal
+aws_region=us-east-2
 
-.PHONY: nitro-cli-login
-nitro-cli-login:
-	aws sso login --profile $(nitro_aws_profile)
+.PHONY: aws-cli-login
+aws-cli-login:
+	aws sso login --profile $(aws_profile)
 
-.PHONY: nitro-enclave-build-image
-nitro-enclave-build-image: enclave
+# AWS Nitro
+################################################################################
+aws_nitro_instance_name=tahardi-bearclave
+aws_nitro_instance_id=$(shell aws ec2 describe-instances \
+	--profile $(aws_profile) \
+	--no-cli-pager \
+	--filters "Name=tag:Name,Values=$(aws_nitro_instance_name)" \
+	--query "Reservations[].Instances[].InstanceId" \
+	--output text)
+aws_nitro_instance_ip=$(shell aws ec2 describe-instances \
+	--profile $(aws_profile) \
+	--no-cli-pager \
+	--filters "Name=tag:Name,Values=$(aws_nitro_instance_name)" \
+	--query "Reservations[].Instances[].PublicDnsName" \
+	--output text)
+aws_nitro_enclave_image_tag=hello-world-enclave-nitro
+aws_nitro_enclave_eif_path=./enclave/bin/enclave.eif
+aws_nitro_enclave_cpu_count=2
+aws_nitro_enclave_memory_size=512
+aws_nitro_enclave_cid=4
+
+.PHONY: aws-nitro-enclave-build-image
+aws-nitro-enclave-build-image: enclave
 	@docker build \
 		-f ./nitro.Dockerfile \
-		-t hello-world-enclave-nitro \
+		-t $(aws_nitro_enclave_image_tag) \
 		--build-arg CONFIG_FILE=configs/nitro-config.yaml \
 		.
 
-.PHONY: nitro-enclave-build-eif
-nitro-enclave-build-eif: nitro-enclave-build-image
+.PHONY: aws-nitro-enclave-build-eif
+aws-nitro-enclave-build-eif: aws-nitro-enclave-build-image
 	@nitro-cli build-enclave \
-		--docker-uri hello-world-enclave-nitro:latest \
-		--output-file ./enclave/bin/enclave.eif
+		--docker-uri $(aws_nitro_enclave_image_tag):latest \
+		--output-file $(aws_nitro_enclave_eif_path)
 
-.PHONY: nitro-enclave-run-eif
-nitro-enclave-run-eif: nitro-enclave-build-eif
+.PHONY: aws-nitro-enclave-run-eif
+aws-nitro-enclave-run-eif: aws-nitro-enclave-build-eif
 	@nitro-cli run-enclave \
-		--cpu-count 2 \
-		--memory 512 \
-		--enclave-cid 4 \
-		--eif-path ./enclave/bin/enclave.eif
+		--cpu-count $(aws_nitro_enclave_cpu_count) \
+		--memory $(aws_nitro_enclave_memory_size) \
+		--enclave-cid $(aws_nitro_enclave_cid) \
+		--eif-path $(aws_nitro_enclave_eif_path)
 
-.PHONY: nitro-enclave-run-eif-debug
-nitro-enclave-run-eif-debug: nitro-enclave-build-eif
+.PHONY: aws-nitro-enclave-run-eif-debug
+aws-nitro-enclave-run-eif-debug: aws-nitro-enclave-build-eif
 	@nitro-cli run-enclave \
-		--cpu-count 2 \
-		--memory 512 \
-		--enclave-cid 4 \
-		--eif-path ./enclave/bin/enclave.eif \
+		--cpu-count $(aws_nitro_enclave_cpu_count) \
+		--memory $(aws_nitro_enclave_memory_size) \
+		--enclave-cid $(aws_nitro_enclave_cid) \
+		--eif-path $(aws_nitro_enclave_eif_path) \
 		--debug-mode \
 		--attach-console
 
-.PHONY: nitro-enclave-describe-eif
-nitro-enclave-describe-eif: nitro-enclave-build-eif
-	@nitro-cli describe-eif --eif-path ./enclave/bin/enclave.eif
+.PHONY: aws-nitro-enclave-describe-eif
+aws-nitro-enclave-describe-eif: aws-nitro-enclave-build-eif
+	@nitro-cli describe-eif --eif-path $(aws_nitro_enclave_eif_path)
 
-.PHONY: nitro-enclave-terminate-eifs
-nitro-enclave-terminate-eifs:
+.PHONY: aws-nitro-enclave-terminate-eifs
+aws-nitro-enclave-terminate-eifs:
 	@nitro-cli terminate-enclave --all
 
-.PHONY: nitro-instance-start
-nitro-instance-start:
-	@instance_id=$$(aws ec2 describe-instances \
-		--profile $(nitro_aws_profile) \
-		--no-cli-pager \
-		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
-		--query "Reservations[].Instances[].InstanceId" \
-		--output text) && \
-	aws ec2 start-instances \
-		--profile $(nitro_aws_profile) \
-		--no-cli-pager \
-		--region=$(nitro_aws_region) \
-		--instance-ids $$instance_id
+.PHONY: aws-nitro-nonclave-run
+aws-nitro-nonclave-run:
+	go run ./nonclave/main.go \
+		--config ./configs/nitro-config.yaml \
+		--host $(aws_nitro_instance_ip)
 
-.PHONY: nitro-instance-stop
-nitro-instance-stop:
-	@instance_id=$$(aws ec2 describe-instances \
-		--profile $(nitro_aws_profile) \
+.PHONY: aws-nitro-instance-start
+aws-nitro-instance-start:
+	@aws ec2 start-instances \
+		--profile $(aws_profile) \
 		--no-cli-pager \
-		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
-		--query "Reservations[].Instances[].InstanceId" \
-		--output text) && \
-	aws ec2 stop-instances \
-		--profile $(nitro_aws_profile) \
-		--no-cli-pager \
-		--region=$(nitro_aws_region) \
-		--instance-ids $$instance_id
+		--region=$(aws_region) \
+		--instance-ids $(aws_nitro_instance_id)
 
-.PHONY: nitro-instance-ssh
-nitro-instance-ssh:
-	@public_dns=$$(aws ec2 describe-instances \
-		--profile $(nitro_aws_profile) \
+.PHONY: aws-nitro-instance-stop
+aws-nitro-instance-stop:
+	@aws ec2 stop-instances \
+		--profile $(aws_profile) \
 		--no-cli-pager \
-		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
-		--query "Reservations[].Instances[].PublicDnsName" \
-		--output text); \
-	if [ -z "$$public_dns" ]; then \
-		echo "Error: No public DNS name found for instance $(nitro_aws_instance_name)"; \
+		--region=$(aws_region) \
+		--instance-ids $(aws_nitro_instance_id)
+
+.PHONY: aws-nitro-instance-ssh
+aws-nitro-instance-ssh:
+	if [ -z "$(aws_nitro_instance_ip)" ]; then \
+		echo "Error: No public DNS name found for instance $(aws_nitro_instance_name)"; \
 		exit 1; \
 	fi; \
-	echo "Updating ~/.ssh/config with Public DNS: $$public_dns"; \
-	sed -i.bak "/^Host ec2-bearclave$$/,/^Host /{s|^\([[:space:]]*Hostname[[:space:]]\).*|\1$$public_dns|}" ~/.ssh/config; \
+	echo "Updating ~/.ssh/config with Public DNS: $(aws_nitro_instance_ip)"; \
+	sed -i.bak "/^Host ec2-bearclave$$/,/^Host /{s|^\([[:space:]]*Hostname[[:space:]]\).*|\1$(aws_nitro_instance_ip)|}" ~/.ssh/config; \
 	ssh ec2-bearclave
-
-.PHONY: nitro-instance-ip
-nitro-instance-ip:
-	@public_dns=$$(aws ec2 describe-instances \
-		--profile $(nitro_aws_profile) \
-		--no-cli-pager \
-		--filters "Name=tag:Name,Values=$(nitro_aws_instance_name)" \
-		--query "Reservations[].Instances[].PublicDnsName" \
-		--output text); \
-	if [ -z "$$public_dns" ]; then \
-		echo "Error: No public DNS name found for instance $(nitro_aws_instance_name)"; \
-		exit 1; \
-	fi; \
-	echo "$$public_dns";
 
 ################################################################################
 # GCP AMD SEV-SNP
