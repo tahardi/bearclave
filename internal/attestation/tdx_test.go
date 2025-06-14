@@ -262,20 +262,133 @@ func TestTDXVerifyMeasurement(t *testing.T) {
 		assert.ErrorContains(t, err, "unmarshaling measurement")
 	})
 
-	t.Run("error - incorrect measurement", func(t *testing.T) {
-		// given
-		measurement := tdxReportMeasurementJSON
-		timestamp := time.Unix(
-			tdxReportTimestampSeconds,
-			tdxReportTimestampNanoseconds,
-		)
-		_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
-		quoteV4.TdQuoteBody.TdAttributes[0] = 1
+	mismatchTestCases := []struct {
+		name        string
+		modifyQuote func(*pb.QuoteV4)
+		wantErr     string
+	}{
+		{
+			name: "error - tee tcb svn mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.TeeTcbSvn = []byte("wrong tee tcb svn")
+			},
+			wantErr: "tee tcb svn mismatch",
+		},
+		{
+			name: "error - mr seam mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.MrSeam = []byte("wrong mr seam")
+			},
+			wantErr: "mr seam mismatch",
+		},
+		{
+			name: "error - mr signer seam mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.MrSignerSeam = []byte("wrong mr signer seam")
+			},
+			wantErr: "mr signer seam mismatch",
+		},
+		{
+			name: "error - seam attributes mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.SeamAttributes = []byte("wrong seam attributes")
+			},
+			wantErr: "seam attributes mismatch",
+		},
+		{
+			name: "error - td attributes mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.TdAttributes = []byte("wrong td attributes")
+			},
+			wantErr: "td attributes mismatch",
+		},
+		{
+			name: "error - xfam mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.Xfam = []byte("wrong xfam")
+			},
+			wantErr: "xfam mismatch",
+		},
+		{
+			name: "error - mr td mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.MrTd = []byte("wrong mr td")
+			},
+			wantErr: "mr td mismatch",
+		},
+		{
+			name: "error - mr config id mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.MrConfigId = []byte("wrong mr config id")
+			},
+			wantErr: "mr config id mismatch",
+		},
+		{
+			name: "error - mr owner mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.MrOwner = []byte("wrong mr owner")
+			},
+			wantErr: "mr owner mismatch",
+		},
+		{
+			name: "error - mr owner config mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.MrOwnerConfig = []byte("wrong mr owner config")
+			},
+			wantErr: "mr owner config mismatch",
+		},
+		{
+			name: "error - missing rtmrs (quote)",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.Rtmrs = [][]byte{}
+			},
+			wantErr: "missing rtmrs (quote)",
+		},
+		{
+			name: "error - rtmrs[0] mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.Rtmrs[0] = []byte("wrong rtmrs[0]")
+			},
+			wantErr: "rtmrs[0] mismatch",
+		},
+		{
+			name: "error - rtmrs[1] mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.Rtmrs[1] = []byte("wrong rtmrs[1]")
+			},
+			wantErr: "rtmrs[1] mismatch",
+		},
+		{
+			name: "error - rtmrs[2] mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.Rtmrs[2] = []byte("wrong rtmrs[2]")
+			},
+			wantErr: "rtmrs[2] mismatch",
+		},
+		{
+			name: "error - rtmrs[3] mismatch",
+			modifyQuote: func(quoteV4 *pb.QuoteV4) {
+				quoteV4.TdQuoteBody.Rtmrs[3] = []byte("wrong rtmrs[3]")
+			},
+			wantErr: "rtmrs[3] mismatch",
+		},
+	}
+	for _, tc := range mismatchTestCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			measurement := tdxReportMeasurementJSON
+			timestamp := time.Unix(
+				tdxReportTimestampSeconds,
+				tdxReportTimestampNanoseconds,
+			)
+			_, quoteV4 := tdxReportFromTestData(t, tdxReportB64, timestamp)
+			tc.modifyQuote(quoteV4)
 
-		// when
-		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
+			// when
+			err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
 
-		// then
-		assert.ErrorContains(t, err, "mismatch: expected")
-	})
+			// then
+			assert.ErrorContains(t, err, tc.wantErr)
+		})
+	}
 }
