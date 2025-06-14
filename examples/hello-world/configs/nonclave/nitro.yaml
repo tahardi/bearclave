@@ -13,10 +13,3 @@ attestations:
         },
         "module_id": ""
       }
-ipcs:
-  "enclave":
-    endpoint: "4:8083"
-  "enclave-proxy":
-    endpoint: "3:8082"
-proxy:
-  port: 8080

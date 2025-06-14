@@ -1,0 +1,8 @@
+platform: "sev"
+ipcs:
+  "enclave":
+    endpoint: "127.0.0.1:8083"
+  "enclave-proxy":
+    endpoint: "127.0.0.1:8082"
+proxy:
+  port: 8080

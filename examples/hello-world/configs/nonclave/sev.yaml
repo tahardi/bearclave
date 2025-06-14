@@ -30,10 +30,3 @@ attestations:
         "launch_tcb": 15787649968723984388,
         "cpuid_1eax_fms": 10489617
       }
-ipcs:
-  "enclave":
-    endpoint: "127.0.0.1:8083"
-  "enclave-proxy":
-    endpoint: "127.0.0.1:8082"
-proxy:
-  port: 8080

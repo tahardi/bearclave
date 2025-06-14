@@ -1,0 +1,4 @@
+platform: "notee"
+attestations:
+  "enclave":
+    measurement: "Not a TEE platform. Code measurements are not real."
