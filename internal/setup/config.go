@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-const DefaultConfigFile = "./configs/notee-config.yaml"
-
 type Config struct {
 	Platform     Platform               `mapstructure:"platform"`
 	Attestations map[string]Attestation `mapstructure:"attestations"`

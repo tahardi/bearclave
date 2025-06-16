@@ -1,7 +1,4 @@
-platform: "notee"
-attestations:
-  "enclave":
-    measurement: "Not a TEE platform. Code measurements are not real."
+platform: "tdx"
 ipcs:
   "enclave":
     endpoint: "127.0.0.1:8083"
