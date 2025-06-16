@@ -17,9 +17,9 @@ func main() {
 	flag.StringVar(
 		&configFile,
 		"config",
-		setup.DefaultConfigFile,
+		"configs/enclave/notee.yaml",
 		"The Trusted Computing platform to use. Options: "+
-			"nitro, sev, tdx, unsafe (default: unsafe)",
+			"nitro, sev, tdx, notee (default: notee)",
 	)
 	flag.Parse()
 

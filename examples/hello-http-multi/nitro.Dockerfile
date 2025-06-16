@@ -5,7 +5,7 @@ RUN apk add --no-cache tini bash
 
 WORKDIR /app
 
-ARG CONFIG_FILE=configs/nitro-config.yaml
+ARG CONFIG_FILE=configs/enclave/nitro.yaml
 COPY ./${CONFIG_FILE} ./config.yaml
 COPY ./enclave-server-1/bin/enclave-server-1 .
 COPY ./enclave-server-2/bin/enclave-server-2 .

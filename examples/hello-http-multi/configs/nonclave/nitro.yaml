@@ -1,0 +1,8 @@
+platform: "nitro"
+servers:
+  "enclave-server-1":
+    route: "/v1"
+  "enclave-server-2":
+    route: "/v2"
+proxy:
+  port: 8080
