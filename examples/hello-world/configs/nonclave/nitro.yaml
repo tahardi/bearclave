@@ -4,9 +4,9 @@ attestations:
     measurement: |
       {
         "pcrs": {
-          "0": "d60GIkG6k8ivTNwLaKJ1llYliHzCSbsa4cwsNOQK79EE97dX5pf7zPOFuWnoBaJG",
+          "0": "ualIFzFFxz8IIIqYhij2NxRXw9T62VuFIyvfMCy7RZ25NAXQXTinaP85hwH139JO",
           "1": "S01bNmGz78EpIJAMgOEm5M54PFIt5sAqKlv3rzorkye4Z3bxiOS+HBxAShKdvaST",
-          "2": "12dqPrJbU9IoOwKxf85P3lV0K5zZG+gnaN3ZUVoJdKPawCb8eu7lRyEhg2c+EDh+",
+          "2": "gF4MerB5+kTOdjdpf/sMMtJDjhXDh47rE5Xep5NZpEXQDp+h82i6nRAXJwvGzF1S",
           "3": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
           "4": "qCPabIHXU+nhGcZdNOlh6t6ts85vPpXbEhRxY1f+azLcAvahbgsBN+sKbCfnE+yq",
           "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
