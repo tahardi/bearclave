@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/tahardi/bearclave/examples/hello-http-multi/examples"
+	"github.com/tahardi/bearclave/pkg/attestation"
 	"github.com/tahardi/bearclave/pkg/networking"
 	"github.com/tahardi/bearclave/pkg/setup"
 )
@@ -33,6 +34,12 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
+	attester, err := attestation.NewAttester(config.Platform)
+	if err != nil {
+		logger.Error("making attester", slog.String("error", err.Error()))
+		return
+	}
+
 	serverConfig, exists := config.Servers[serviceName]
 	if !exists {
 		logger.Error("missing server config", slog.String("service", serviceName))
@@ -42,7 +49,7 @@ func main() {
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
 		"GET "+examples.HelloMultipleServersPath,
-		examples.MakeHelloMultipleServersHandler(logger, serviceName),
+		examples.MakeHelloMultipleServersHandler(logger, serviceName, attester),
 	)
 
 	server, err := networking.NewServer(

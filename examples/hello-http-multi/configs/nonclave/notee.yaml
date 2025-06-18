@@ -1,4 +1,9 @@
 platform: "notee"
+attestations:
+  "enclave-server-1":
+    measurement: "Not a TEE platform. Code measurements are not real."
+  "enclave-server-2":
+    measurement: "Not a TEE platform. Code measurements are not real."
 servers:
   "enclave-server-1":
     route: "/v1"
