@@ -8,11 +8,12 @@ import (
 )
 
 type SocketIPC struct {
-	receiveListener net.Listener
+	dial     func(network, address string) (net.Conn, error)
+	listener net.Listener
 }
 
 func NewSocketIPC(endpoint string) (*SocketIPC, error) {
-	receiveListener, err := net.Listen("tcp", endpoint)
+	listener, err := net.Listen("tcp", endpoint)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"initializing TCP listener on '%s': %w",
@@ -20,23 +21,27 @@ func NewSocketIPC(endpoint string) (*SocketIPC, error) {
 			err,
 		)
 	}
+	return NewSocketIPCWithDialAndListener(net.Dial, listener)
+}
 
+func NewSocketIPCWithDialAndListener(
+	dial func(network, address string) (net.Conn, error),
+	listener net.Listener,
+) (*SocketIPC, error) {
 	return &SocketIPC{
-		receiveListener: receiveListener,
+		dial:     dial,
+		listener: listener,
 	}, nil
 }
 
 func (s *SocketIPC) Close() error {
-	if s.receiveListener != nil {
-		s.receiveListener.Close()
-	}
-	return nil
+	return s.listener.Close()
 }
 
 func (s *SocketIPC) Send(ctx context.Context, endpoint string, data []byte) error {
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := net.Dial("tcp", endpoint)
+		conn, err := s.dial("tcp", endpoint)
 		if err != nil {
 			errChan <- fmt.Errorf("dialing '%s': %w", endpoint, err)
 			return
@@ -68,7 +73,7 @@ func (s *SocketIPC) Receive(ctx context.Context) ([]byte, error) {
 	dataChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := s.receiveListener.Accept()
+		conn, err := s.listener.Accept()
 		if err != nil {
 			errChan <- fmt.Errorf("accepting connection: %w", err)
 			return
