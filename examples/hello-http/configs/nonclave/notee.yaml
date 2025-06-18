@@ -1,6 +1,4 @@
 platform: "notee"
-attestations:
-  "enclave-server":
-    measurement: "Not a TEE platform. Code measurements are not real."
 proxy:
   port: 8080
+measurement: "Not a TEE platform. Code measurements are not real."
