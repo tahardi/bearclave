@@ -7,11 +7,12 @@ import (
 	"os"
 
 	"github.com/tahardi/bearclave/examples/hello-http-multi/examples"
+	"github.com/tahardi/bearclave/pkg/attestation"
 	"github.com/tahardi/bearclave/pkg/networking"
 	"github.com/tahardi/bearclave/pkg/setup"
 )
 
-func HelloMultipleServers(client *networking.Client) (string, error) {
+func HelloMultipleServers(client *networking.Client) ([]byte, error) {
 	multipleServersResponse := examples.MultipleServersResponse{}
 	err := client.Do(
 		"GET",
@@ -20,9 +21,9 @@ func HelloMultipleServers(client *networking.Client) (string, error) {
 		&multipleServersResponse,
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return multipleServersResponse.Message, nil
+	return multipleServersResponse.Report, nil
 }
 
 var configFile string
@@ -52,8 +53,15 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
+	verifier, err := attestation.NewVerifier(config.Platform)
+	if err != nil {
+		logger.Error("making verifier", slog.String("error", err.Error()))
+		return
+	}
+
 	urls := make([]string, 0)
-	for _, server := range config.Servers {
+	measurements := make([]string, 0)
+	for service, server := range config.Servers {
 		urls = append(
 			urls,
 			fmt.Sprintf("http://%s:%d%s",
@@ -62,16 +70,35 @@ func main() {
 				server.Route,
 			),
 		)
+
+		attConfig, exists := config.Attestations[service]
+		if !exists {
+			logger.Error(
+				"missing attestation config",
+				slog.String("service", service),
+			)
+			return
+		}
+		measurements = append(measurements, attConfig.Measurement)
 	}
 
-	for _, url := range urls {
+	for i, url := range urls {
 		logger.Info("sending request to url", slog.String("url", url))
 		client := networking.NewClient(url)
-		message, err := HelloMultipleServers(client)
+		report, err := HelloMultipleServers(client)
 		if err != nil {
-			logger.Error("making hello multiple servers request", slog.String("error", err.Error()))
+			logger.Error("making request", slog.String("error", err.Error()))
 			continue
 		}
-		logger.Info("received message", slog.String("message", message))
+
+		userdata, err := verifier.Verify(
+			report,
+			attestation.WithMeasurement(measurements[i]),
+		)
+		if err != nil {
+			logger.Error("verifying report", slog.String("error", err.Error()))
+			continue
+		}
+		logger.Info("verified userdata", slog.String("userdata", string(userdata)))
 	}
 }

@@ -1,4 +1,65 @@
 platform: "sev"
+attestations:
+  "enclave-server-1":
+    measurement: |
+      {
+        "version": 4,
+        "guest_svn": 0,
+        "policy": 196608,
+        "family_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "image_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "vmpl": 0,
+        "current_tcb": 15787649968723984388,
+        "platform_info": 37,
+        "signer_info": 0,
+        "measurement": "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr",
+        "host_data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "id_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "author_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "report_id": "m0OORmeIhw45CtWsUacQkrNrlEnwnDuB+23P7RZPhJY=",
+        "report_id_ma": "//////////////////////////////////////////8=",
+        "reported_tcb": 15787649968723984388,
+        "chip_id": "Etk3ouD6ZGkppCuDr+W0eNOYdzXjhKAVcH7AaJjhfAmXu4cuC7tyz9ccUMoVYHZ84eGYcz5kjA7APC1nqsjAuQ==",
+        "committed_tcb": 15787649968723984388,
+        "current_build": 31,
+        "current_minor": 55,
+        "current_major": 1,
+        "committed_build": 31,
+        "committed_minor": 55,
+        "committed_major": 1,
+        "launch_tcb": 15787649968723984388,
+        "cpuid_1eax_fms": 10489617
+      }
+  "enclave-server-2":
+    measurement: |
+      {
+        "version": 4,
+        "guest_svn": 0,
+        "policy": 196608,
+        "family_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "image_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "vmpl": 0,
+        "current_tcb": 15787649968723984388,
+        "platform_info": 37,
+        "signer_info": 0,
+        "measurement": "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr",
+        "host_data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "id_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "author_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "report_id": "m0OORmeIhw45CtWsUacQkrNrlEnwnDuB+23P7RZPhJY=",
+        "report_id_ma": "//////////////////////////////////////////8=",
+        "reported_tcb": 15787649968723984388,
+        "chip_id": "Etk3ouD6ZGkppCuDr+W0eNOYdzXjhKAVcH7AaJjhfAmXu4cuC7tyz9ccUMoVYHZ84eGYcz5kjA7APC1nqsjAuQ==",
+        "committed_tcb": 15787649968723984388,
+        "current_build": 31,
+        "current_minor": 55,
+        "current_major": 1,
+        "committed_build": 31,
+        "committed_minor": 55,
+        "committed_major": 1,
+        "launch_tcb": 15787649968723984388,
+        "cpuid_1eax_fms": 10489617
+      }
 servers:
   "enclave-server-1":
     route: "/v1"
