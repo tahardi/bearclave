@@ -14,7 +14,6 @@ type Client struct {
 }
 
 func NewClient(host string) *Client {
-	// TODO: Check configuration - should I set a timeout?
 	client := &http.Client{}
 	return NewClientWithClient(host, client)
 }

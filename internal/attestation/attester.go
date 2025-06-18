@@ -7,7 +7,6 @@ import (
 )
 
 type Attester interface {
-	// TODO: Update to take [64]byte?
 	Attest(userdata []byte) (report []byte, err error)
 }
 
