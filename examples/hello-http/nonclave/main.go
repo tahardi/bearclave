@@ -55,18 +55,9 @@ func main() {
 		return
 	}
 
-	attConfig, ok := config.Attestations["enclave-server"]
-	if !ok {
-		logger.Error(
-			"missing attestation config",
-			slog.String("service", "enclave-server"),
-		)
-		return
-	}
-
 	got, err := verifier.Verify(
 		att,
-		attestation.WithMeasurement(attConfig.Measurement),
+		attestation.WithMeasurement(config.Measurement),
 	)
 	if err != nil {
 		logger.Error("verifying attestation", slog.String("error", err.Error()))

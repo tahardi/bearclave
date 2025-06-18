@@ -60,8 +60,7 @@ func main() {
 	}
 
 	urls := make([]string, 0)
-	measurements := make([]string, 0)
-	for service, server := range config.Servers {
+	for _, server := range config.Servers {
 		urls = append(
 			urls,
 			fmt.Sprintf("http://%s:%d%s",
@@ -70,19 +69,9 @@ func main() {
 				server.Route,
 			),
 		)
-
-		attConfig, exists := config.Attestations[service]
-		if !exists {
-			logger.Error(
-				"missing attestation config",
-				slog.String("service", service),
-			)
-			return
-		}
-		measurements = append(measurements, attConfig.Measurement)
 	}
 
-	for i, url := range urls {
+	for _, url := range urls {
 		logger.Info("sending request to url", slog.String("url", url))
 		client := networking.NewClient(url)
 		report, err := HelloMultipleServers(client)
@@ -93,7 +82,7 @@ func main() {
 
 		userdata, err := verifier.Verify(
 			report,
-			attestation.WithMeasurement(measurements[i]),
+			attestation.WithMeasurement(config.Measurement),
 		)
 		if err != nil {
 			logger.Error("verifying report", slog.String("error", err.Error()))
