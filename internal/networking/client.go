@@ -62,17 +62,17 @@ func (c *Client) Do(
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
-	if err != nil {
+	switch {
+	case err != nil:
 		return fmt.Errorf("sending request: %w", err)
+	case resp.StatusCode != http.StatusOK:
+		return fmt.Errorf("received non-200 response: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err = io.ReadAll(resp.Body)
-	switch {
-	case err != nil:
+	if err != nil {
 		return fmt.Errorf("reading response body: %w", err)
-	case resp.StatusCode != http.StatusOK:
-		return fmt.Errorf("received non-200 response: %s", string(bodyBytes))
 	}
 
 	err = json.Unmarshal(bodyBytes, apiResp)
