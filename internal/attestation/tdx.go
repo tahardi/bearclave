@@ -36,11 +36,11 @@ func (n *TDXAttester) Attest(userdata []byte) ([]byte, error) {
 
 	var reportData [64]byte
 	copy(reportData[:], userdata)
-	attestation, err := tdxQP.GetRawQuote(reportData)
+	quote, err := tdxQP.GetRawQuote(reportData)
 	if err != nil {
 		return nil, fmt.Errorf("getting tdx quote: %w", err)
 	}
-	return attestation, nil
+	return quote, nil
 }
 
 type TDXVerifier struct{}

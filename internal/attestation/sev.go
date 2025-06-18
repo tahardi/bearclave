@@ -36,11 +36,11 @@ func (n *SEVAttester) Attest(userdata []byte) ([]byte, error) {
 
 	var reportData [64]byte
 	copy(reportData[:], userdata)
-	attestation, err := sevQP.GetRawQuote(reportData)
+	quote, err := sevQP.GetRawQuote(reportData)
 	if err != nil {
 		return nil, fmt.Errorf("getting sev quote: %w", err)
 	}
-	return attestation, nil
+	return quote, nil
 }
 
 type SEVVerifier struct{}
@@ -49,8 +49,6 @@ func NewSEVVerifier() (*SEVVerifier, error) {
 	return &SEVVerifier{}, nil
 }
 
-// Only annoying thing is that it always returns a 64 byte slice, even if the
-// userdata is less than 64 bytes.
 func (n *SEVVerifier) Verify(
 	report []byte,
 	options ...VerifyOption,

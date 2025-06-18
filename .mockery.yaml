@@ -1,4 +1,4 @@
-dir: mocks
+dir: internal/mocks
 filename: '{{.InterfaceName}}.go'
 structname: '{{.InterfaceName}}'
 pkgname: mocks
@@ -14,3 +14,16 @@ packages:
     config:
     interfaces:
       IPC:
+  io:
+    config:
+    interfaces:
+      ReadCloser:
+  net:
+    config:
+    interfaces:
+      Conn:
+      Listener:
+  net/http:
+    config:
+    interfaces:
+      RoundTripper:

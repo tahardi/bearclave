@@ -4,21 +4,23 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net"
 
 	"github.com/mdlayher/vsock"
 )
 
 type VSocketIPC struct {
-	receiveListener *vsock.Listener
+	dial     func(contextID, port uint32, cfg *vsock.Config) (net.Conn, error)
+	listener net.Listener
 }
 
 func NewVSocketIPC(endpoint string) (*VSocketIPC, error) {
 	cid, port, err := ParseEndpoint(endpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing endpoint: %w", err)
 	}
 
-	receiveListener, err := vsock.ListenContextID(cid, port, nil)
+	listener, err := vsock.ListenContextID(cid, port, nil)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"initializing vsock listener on '%s': %w",
@@ -27,24 +29,35 @@ func NewVSocketIPC(endpoint string) (*VSocketIPC, error) {
 		)
 	}
 
+	dial := func(contextID, port uint32, cfg *vsock.Config) (net.Conn, error) {
+		return vsock.Dial(contextID, port, cfg)
+	}
+	return NewVSocketIPCWithDialAndListener(dial, listener)
+}
+
+func NewVSocketIPCWithDialAndListener(
+	dial func(contextID, port uint32, cfg *vsock.Config) (net.Conn, error),
+	listener net.Listener,
+) (*VSocketIPC, error) {
 	return &VSocketIPC{
-		receiveListener: receiveListener,
+		dial:     dial,
+		listener: listener,
 	}, nil
 }
 
 func (v *VSocketIPC) Close() error {
-	return fmt.Errorf("not implemented")
+	return v.listener.Close()
 }
 
 func (v *VSocketIPC) Send(ctx context.Context, endpoint string, data []byte) error {
 	cid, port, err := ParseEndpoint(endpoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("parsing endpoint: %w", err)
 	}
 
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := vsock.Dial(cid, port, nil)
+		conn, err := v.dial(cid, port, nil)
 		if err != nil {
 			errChan <- fmt.Errorf("dialing '%s': %w", endpoint, err)
 			return
@@ -76,7 +89,7 @@ func (v *VSocketIPC) Receive(ctx context.Context) ([]byte, error) {
 	dataChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := v.receiveListener.Accept()
+		conn, err := v.listener.Accept()
 		if err != nil {
 			errChan <- fmt.Errorf("accepting connection: %w", err)
 			return
@@ -114,9 +127,9 @@ func ParseEndpoint(endpoint string) (uint32, uint32, error) {
 	n, err := fmt.Sscanf(endpoint, "%d:%d", &cid, &port)
 	switch {
 	case err != nil:
-		return 0, 0, fmt.Errorf("parsing endpoint '%s': %w", endpoint, err)
+		return 0, 0, fmt.Errorf("invalid format '%s': %w", endpoint, err)
 	case n != 2:
-		return 0, 0, fmt.Errorf("invalid endpoint '%s'", endpoint)
+		return 0, 0, fmt.Errorf("expected '2' got '%d", n)
 	}
 	return uint32(cid), uint32(port), nil
 }
