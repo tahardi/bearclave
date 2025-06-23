@@ -20,13 +20,15 @@ This repository offers a holistic, step-by-step guide to developing TEE
 applications, including:
 
 - **Introduction to TEEs**: A high-level overview of TEEs and popular  
-  implementations such as AWS Nitro, AMD SEV-SNP, and Intel TDX.
-- **Cloud Integration Guides**: Detailed instructions for configuring the required  
-  cloud resources on AWS and GCP.
-- **Practical Code Examples**: Implementations for performing basic TEE operations  
-  like remote attestation.
-- **Deployment Simplified**: Code for compiling and deploying applications to cloud-  
-  based TEEs.
+  platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX.
+- **Cloud Integration Guides**: Detailed instructions for configuring the cloud  
+  resources needed to build and deploy TEE applications on AWS and GCP.
+- **Practical Code Examples**: Demonstrations of how to compile, deploy, and
+  interact with real-world applications on different TEE platforms.
+- **Platform-Agnostic Code**: Bearclave provides a framework for developing
+  applications across various TEE platforms. By abstracting away
+  platform-specific details, you can more easily write portable applications 
+  without worrying about the idiosyncrasies of the underlying TEE implementation.
 
 Additionally, Bearclave includes a **"No TEE" development mode**, allowing you to  
 develop and test your application without a TEE instance. This reduces costs  
@@ -86,7 +88,8 @@ If you wish to use AMD SEV-SNP or Intel TDX, refer to the
 
 ## Build and Deploy Examples
 The `examples/` directory contains code demonstrating the basics of TEE
-application development and deployment.
+application development and deployment on the AWS Nitro Enclaves, GCP AMD-SEV,
+and GCP Intel TDX platforms.
 
 - [**Hello World:**](examples/hello-world/README.md) demonstrates how to deploy
 an application to a TEE and communicate with it via (virtual) sockets.
