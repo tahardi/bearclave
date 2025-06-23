@@ -77,17 +77,19 @@ and popular implementations such as AWS Nitro, AMD SEV-SNP, and Intel TDX.
 Please ensure that all tools are properly installed and added to your system's
 `PATH` for seamless use.
 
-- **Golang (version 1.24.3 or higher):**  
-  Install Go from the official website:  
-  [https://go.dev/dl/](https://go.dev/dl/)
+- **[Golang (version 1.24.3 or higher):](https://go.dev/dl/)** this project
+  is written in Go and is required for building and running the examples
 
-- **Docker Engine:**  
-  Install Docker Engine for managing containerized applications:  
-  [https://docs.docker.com/engine/install/](https://docs.docker.com/engine/install/)
+- **[Docker Engine:](https://docs.docker.com/engine/install/)** cloud-based TEE
+  platforms require you to provide your application packaged as an OCI-compliant
+  image. While you could use any OCI-compliant tool, the build and deploy
+  commands in the examples assume you have `docker`.
 
-- **process-compose:**  
-  Install process-compose for managing process groups via YAML files:  
-  [https://github.com/F1bonacc1/process-compose](https://github.com/F1bonacc1/process-compose)
+- **[Process Compose:](https://github.com/F1bonacc1/process-compose)** a simple
+  tool modeled after `docker-compose` for initializing non-containerized
+  applications. This is a convenience for running the "No TEE" versions of the
+  example applications, but is not strictly necessary for running on cloud-based
+  TEEs.
 
 These are the minimum set of tools required to build and run the Bearclave
 examples locally in "No TEE" mode. If you wish to run on real TEE platforms,
