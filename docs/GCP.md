@@ -1,4 +1,4 @@
-# GCP AMD SEV-SNP and Intel-TDX: Overview and Development Setup Guide
+# Google Cloud Platform (GCP): Setup Guide
 The Google Cloud Platform (GCP) provides compute instances that support the
 AMD SEV-SNP and Intel-TDX TEE platforms. Unlike AWS Nitro Enclaves, these
 platforms are not tied to GCP specifically---you could spin up similar instances
@@ -6,94 +6,73 @@ on Azure or buy the hardware yourself. That said, there may be setup and
 development idiosyncrasies introduced by GCP (not the TEE platform itself).
 Thus, while the `sev` and `tdx` code in this repository _should_ run on Azure
 instances, it is important to note that this has not been tested and there
-may be Azure-specific deployment hiccups not accounted in this document and/or
-code.
-
-## What is AMD SEV-SNP?
-
-**TODO**
+may be Azure-specific deployment hiccups not accounted for in this document
+and/or code.
 
 ---
 
-## What is Intel-TDX? 
+### Configure Google Cloud
+1. **Create a [Google Account](https://accounts.google.com/)** If you use GMail,
+  Drive, or any other similar Google service, then you already have an account;
+  feel free to Skip this step.
 
-**TODO**
-
----
-
-## Setting Up Your Environment for AMD SEV-SNP and Intel-TDX Development on GCP
-
-To start developing you will need to launch and configure GCP compute instances
-configured for SEV-SNP and TDX. Note that **THIS WILL COST MONEY**. In fact,
-developing on any cloud-based TEE platform is going to cost money. That said,
-the smallest sev and tdx-enabled instances only run between $0.20-0.40/hr.
-Coupled with the Bearclave "No TEE" platform implementation, you should be able
-to develop locally and minimize the time needed to test and run on actual TEE
-hardware.
+2. **Setup Billing** Navigate to the Google Cloud
+  [Console](https://console.cloud.google.com/). At the time of this writing (
+  June, 2025), Google offers $300 in credits for new Google Cloud users. Sign
+  up if it is still available. Either way, you will need to add a valid Billing
+  method to your account to use TEE-enabled cloud resources.
 
 ---
 
-### Step 1: Create and Configure Your Google Cloud Account
-
-1. **Create a Google Cloud Account**
-   At the time of writing this document (May 18, 2025), Google gives $300 in
-   free cloud credits (expires after 3 months) for 
-   [creating a new account](https://cloud.google.com/free?hl=en).
-   This is way more than you need to try out TEEs and well worth the trouble.
-
-2. **Create a Project** Create a project to organize cloud resources under
-   (e.g., `bearclave-test`)
-
-3. **Locate Service Account** Locate the name of your GCP service account.
-   This is what is used by `gcloud` to authenticate and interact with
-   cloud resources.
-
-4. **Enable Artifact Registry API** Your Confidential VM "workloads" should be
-   packaged as docker images and uploaded to the GCP Artifact Registry because
-   this is where the compute instance looks for the specified image when
-   starting up.
-
----
-
-### Step 2: Install and Configure the GCloud Command Line Interface (CLI)
-
+### Install and Configure the GCloud CLI Tool
 I do not think it is possible to properly configure an SEV or TDX-enabled
 compute instance purely through the web UI. At least, I have been unable to
-figure out how to do so. Thus, I recommend installing the `gcloud` cli tool
-for creating, configuring, and destroying compute instances (and other cloud
+figure out how to do so. Thus, we will use the `gcloud` cli tool for
+creating, configuring, and destroying compute instances (and other cloud-
 related resources).
 
-1. **Install and Configure GCloud CLI**
-   Install and set up the CLI using the
-   [GCloud CLI guide](https://cloud.google.com/sdk/docs/install).
+1. **Install the [`gcloud` CLI]((https://cloud.google.com/sdk/docs/install))**
 
-2. **Setup `gcloud`**
-   Run the following command to sign in to your google cloud account with
-   `gcloud` and select a default project for it to associate with.
-   ```bash
+2. **Initialize `gcloud`** login to your google account with `gcloud` and
+configure default settings.
+    ```bash
+    # This will walk you through logging into your google account and then
+    # setting defaults for when you use `gcloud`. Note that you are free to
+    # choose your own defaults, but the commands in `examples/` assume:
+    #   region: us-central1
+    #   zone: us-central1-a
+    #   project-id: bearclave
+    #
+    # If you choose different defaults you will have to edit the examples Makefiles
     gcloud init
-    # I think this is only needed if you want to switch accounts?
-    gcloud auth login
-    
-    # e.g., 403490793521-compute@developer.gserviceaccount.com
-    gcloud config set account <your-google-cloud-service-account>
-   
-    # Configure docker to work with GCP Artifact Registry
-    # e.g., us-east1-docker.pkg.dev
-    gcloud auth configure-docker <artifact-registry>
-    
-    # Add a policy allowing your service account to push to the registry
-    # under your specified project
-    # e.g., bearclave
-    gcloud artifacts repositories add-iam-policy-binding <project-id> \
+    ```
+
+---
+
+### Create an Image Repository
+To run your application on GCP TEE-enabled compute instances, you first need to
+package it as an OCI-compliant image and upload it to the GCP
+[Artifact Registry](https://console.cloud.google.com/artifacts).
+
+1. **Create an image repository** Create a new repo in your Artifact Registry
+  for storing images. Note that `examples/` assumes the repo is located in
+  `us-east1` and called `bearclave`.
+   ```bash
+    gcloud artifacts repositories create bearclave \
+    --repository-format=docker \
     --location=us-east1 \
-    --member=serviceAccount:<your-google-cloud-service-account> \
-    --role=roles/artifactregistry.writer
+    --description="Docker repository for bearclave images" \
+    --project=bearclave
+    ```
+2. **Configure Docker** Update your `docker` config to use `gcloud` for
+  authentication when interacting with the Artifact Registry
+   ```bash
+    gcloud auth configure-docker us-east1-docker.pkg.dev
    ```
 
 ---
 
-### Step 3: Create SEV and TDX Compute Instances
+### Create SEV and TDX Compute Instances
 
 1. **Create an SEV-enabled Compute Instance** At the time of this writing, the
     `n2d-standard-*` instances provide SEV-SNP an run between $0.08-$0.34/hr.
@@ -175,48 +154,3 @@ related resources).
     ```
    
 ---
-
-## Other useful `gcloud` commands
-
-```bash
-# If you don't tag with the full registry storage path docker push will default
-# to docker hub and not store in the Google Artifact Registry
-docker tag hello-world-enclave-sev us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
-docker push us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev
-
-# update the image for a running instance
-gcloud compute instances update-container instance-bearclave-sev-snp \
-    --zone=us-central1-a \
-    --project=bearclave \
-    --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-sev@sha256:d7214f758098275b254228345d46d2071b76b3c06aab5f198de1e58097370ba1
-
-# Log into your instance and view output of your confidential workload
-gcloud compute ssh instance-bearclave-sev-snp
-docker logs -f $(docker ps -q)
-
-# Start/Stop instances
-gcloud compute instances start instance-bearclave-sev-snp \
-    --zone=us-central1-a
-gcloud compute instances stop instance-bearclave-sev-snp \
-    --zone=us-central1-a
-```
-
-## Tutorial/Code links
-- [confidential space tutorial](https://cloud.google.com/confidential-computing/confidential-space/docs/create-your-first-confidential-space-environment#run_the_workload)
-confidential spaces use confidential VMs. This tutorial at least has some code
-and shows deployment but its still unclear to me how communicating with programs
-within the confidential VM works (if at all)
-- [confidential-space repo](https://github.com/GoogleCloudPlatform/confidential-space)
-another confidential spaces repo. may or may not be helpful
-- [confidential space deploy workload doc](https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads)
-- [confidential spaces images](https://cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-images)
-- [confidential space codelab 1](https://codelabs.developers.google.com/confidential-space-pki#0)
-- [confidential space codelab 2](https://codelabs.developers.google.com/codelabs/confidential-space#0)
-- [ncc confidential spaces security review](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.nccgroup.com/media/edukzwst/_ncc_group_googleinc_e004374_confidentialspacereport_public_v10.pdf)
-- [monitor and debug workloads](https://cloud.google.com/confidential-computing/confidential-space/docs/monitor-debug)
-- [redirect to serial](https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads#tee-container-log-redirect)
-- https://cloud.google.com/sdk/gcloud/reference/compute/instances/create-with-container
-- https://cloud.google.com/compute/all-pricing?hl=en
-- [third party confidential space project](https://github.com/salrashid123/confidential_space)
-this might be the most thorough example yet. Go through code to figure out how
-they are designing/building confidential spaces apps
