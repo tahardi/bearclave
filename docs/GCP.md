@@ -1,24 +1,19 @@
-# Google Cloud Platform (GCP): Setup Guide
+# Google Cloud Platform (GCP) Setup Guide
 The Google Cloud Platform (GCP) provides compute instances that support the
-AMD SEV-SNP and Intel-TDX TEE platforms. Unlike AWS Nitro Enclaves, these
-platforms are not tied to GCP specifically---you could spin up similar instances
-on Azure or buy the hardware yourself. That said, there may be setup and
-development idiosyncrasies introduced by GCP (not the TEE platform itself).
-Thus, while the `sev` and `tdx` code in this repository _should_ run on Azure
-instances, it is important to note that this has not been tested and there
-may be Azure-specific deployment hiccups not accounted for in this document
-and/or code.
+AMD SEV-SNP and Intel TDX TEE platforms. Follow the steps below to sign up for
+a Google Cloud account and configure the cloud resources required to develop
+on AMD SEV-SNP and Intel TDX.
 
 ---
 
 ### Configure Google Cloud
 1. **Create a [Google Account](https://accounts.google.com/)** If you use GMail,
   Drive, or any other similar Google service, then you already have an account;
-  feel free to Skip this step.
+  feel free to use that account.
 
 2. **Setup Billing** Navigate to the Google Cloud
-  [Console](https://console.cloud.google.com/). At the time of this writing (
-  June, 2025), Google offers $300 in credits for new Google Cloud users. Sign
+  [Console](https://console.cloud.google.com/). At the time of this writing 
+  (June, 2025), Google offers $300 in credits for new Google Cloud users. Sign
   up if it is still available. Either way, you will need to add a valid Billing
   method to your account to use TEE-enabled cloud resources.
 
@@ -75,7 +70,7 @@ package it as an OCI-compliant image and upload it to the GCP
 ### Create SEV and TDX Compute Instances
 
 1. **Create an SEV-enabled Compute Instance** At the time of this writing, the
-    `n2d-standard-*` instances provide SEV-SNP an run between $0.08-$0.34/hr.
+    `n2d-standard-*` instances provide SEV-SNP and run between $0.08-$0.34/hr.
 
     ```bash
     # Usage
@@ -85,8 +80,13 @@ package it as an OCI-compliant image and upload it to the GCP
         --machine-type= \
         --confidential-compute-type=SEV_SNP \
         --container-privileged \
+        # Specify the artifact registry string for the image of the confidential
+        # workload that you wish to run inside the SEV-SNP TEE
         --container-image= \
+        # You must mount the `/dev/sev-guest` device to the Confidential VM so
+        # that your workload can generate attestations
         --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
+        # Add this tag to enable external http traffic to your Confidential VM
         --tags=http-server \
         --scopes=cloud-platform \
         --maintenance-policy=TERMINATE \
@@ -99,13 +99,10 @@ package it as an OCI-compliant image and upload it to the GCP
         --machine-type=n2d-standard-8 \
         --confidential-compute-type=SEV_SNP \
         --container-privileged \
-        # Specify the artifact registry string for the image of the confidential
-        # workload that you wish to run inside the SEV-SNP TEE
-        --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-tdx@sha256:73267a52b7e026cf63e1e8d680af8985f7cb9d252a09175ea8bf024069e01221 \
-        # You must mount the `/dev/sev-guest` device to the Confidential VM so
-        # that your workload can generate attestations
+        # We must create with a valid image. Use this hello-world image as a placeholder
+        # until you are ready to deploy your actual TEE application
+        --container-image=hello-world \
         --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
-        # Add this tag to enable external http traffic to your Confidential VM
         --tags=http-server \
         --scopes=cloud-platform \
         --maintenance-policy=TERMINATE \
@@ -140,7 +137,7 @@ package it as an OCI-compliant image and upload it to the GCP
         --container-privileged \
         # Specify the artifact registry string for the image of the confidential
         # workload that you wish to run inside the TDX TEE
-        --container-image=us-east1-docker.pkg.dev/bearclave/bearclave/hello-world-enclave-tdx@sha256:73267a52b7e026cf63e1e8d680af8985f7cb9d252a09175ea8bf024069e01221 \
+        --container-image=hello-world \
         # You must mount the `/dev/tdx-guest` device to the Confidential VM so
         # that your workload can generate attestations
         --container-mount-host-path mount-path=/dev/tdx-guest,host-path=/dev/tdx-guest \
