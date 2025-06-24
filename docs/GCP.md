@@ -60,7 +60,7 @@ package it as an OCI-compliant image and upload it to the GCP
     --project=bearclave
     ```
 2. **Configure Docker** Update your `docker` config to use `gcloud` for
-  authentication when interacting with the Artifact Registry
+  authentication when interacting with the Artifact Registry.
    ```bash
     gcloud auth configure-docker us-east1-docker.pkg.dev
    ```
@@ -68,86 +68,93 @@ package it as an OCI-compliant image and upload it to the GCP
 ---
 
 ### Create SEV and TDX Compute Instances
+1. **Allow HTTP Traffic** Update the default firewall policy to allow for
+  http traffic on port 8080 as that is what is used in `examples/`.
 
-1. **Create an SEV-enabled Compute Instance** At the time of this writing, the
-    `n2d-standard-*` instances provide SEV-SNP and run between $0.08-$0.34/hr.
+    ```bash
+    gcloud compute firewall-rules update default-allow-http \
+    --target-tags=http-server \
+    --allow=tcp:8080
+    ```
+
+2. **Create an SEV-enabled Compute Instance** At the time of this writing, the
+  `n2d-standard-*` instances provide SEV-SNP and run between $0.08-$0.34/hr.
+  Note that you need to create the instance with a valid image. Thus, we
+  initially deploy with a simple `hello-world` image and will replace it later
+  with one of the TEE applications in `examples/`.
 
     ```bash
     # Usage
     gcloud compute instances create-with-container <instance-name> \
-        --project= \
-        --zone= \
-        --machine-type= \
-        --confidential-compute-type=SEV_SNP \
-        --container-privileged \
-        # Specify the artifact registry string for the image of the confidential
-        # workload that you wish to run inside the SEV-SNP TEE
-        --container-image= \
-        # You must mount the `/dev/sev-guest` device to the Confidential VM so
-        # that your workload can generate attestations
-        --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
-        # Add this tag to enable external http traffic to your Confidential VM
-        --tags=http-server \
-        --scopes=cloud-platform \
-        --maintenance-policy=TERMINATE \
-        --shielded-secure-boot
-   
+    --project= \
+    --zone= \
+    --machine-type= \
+    --confidential-compute-type=SEV_SNP \
+    --container-privileged \
+    # Specify the artifact registry string for the image of the confidential
+    # workload that you wish to run inside the SEV-SNP TEE
+    --container-image= \
+    # You must mount the `/dev/sev-guest` device to the Confidential VM so
+    # that your workload can generate attestations
+    --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
+    # Add this tag to enable external http traffic to your Confidential VM
+    --tags=http-server \
+    --scopes=cloud-platform \
+    --maintenance-policy=TERMINATE \
+    --shielded-secure-boot
+    
     # Example (n2d-standard-2 $0.08/hr, n2d-standard-4 $0.17/hr, n2d-standard-8 $0.34/hr)
     gcloud compute instances create-with-container instance-bearclave-sev \
-        --project=bearclave \
-        --zone=us-central1-a \
-        --machine-type=n2d-standard-8 \
-        --confidential-compute-type=SEV_SNP \
-        --container-privileged \
-        # We must create with a valid image. Use this hello-world image as a placeholder
-        # until you are ready to deploy your actual TEE application
-        --container-image=hello-world \
-        --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
-        --tags=http-server \
-        --scopes=cloud-platform \
-        --maintenance-policy=TERMINATE \
-        --shielded-secure-boot
+    --project=bearclave \
+    --zone=us-central1-a \
+    --machine-type=n2d-standard-8 \
+    --confidential-compute-type=SEV_SNP \
+    --container-privileged \
+    --container-image=hello-world \
+    --container-mount-host-path mount-path=/dev/sev-guest,host-path=/dev/sev-guest \
+    --tags=http-server \
+    --scopes=cloud-platform \
+    --maintenance-policy=TERMINATE \
+    --shielded-secure-boot
     ```
 
-2. **Create an TDX-enabled Compute Instance** At the time of this writing, the
+3. **Create an TDX-enabled Compute Instance** At the time of this writing, the
    `c3-standard-*` instances provide TDX and run between $0.20-$0.40/hr.
 
     ```bash
     # Usage
     gcloud compute instances create-with-container <instance-name> \
-        --project= \
-        --zone= \
-        --machine-type= \
-        --confidential-compute-type=TDX \
-        --container-privileged \
-        --container-image= \
-        --container-mount-host-path mount-path=/dev/tdx-guest,host-path=/dev/tdx-guest \
-        --container-mount-host-path mount-path=/sys/kernel/config,host-path=/sys/kernel/config \     
-        --tags=http-server \
-        --scopes=cloud-platform \
-        --maintenance-policy=TERMINATE \
-        --shielded-secure-boot
+    --project= \
+    --zone= \
+    --machine-type= \
+    --confidential-compute-type=TDX \
+    --container-privileged \
+    # Specify the artifact registry string for the image of the confidential
+    # workload that you wish to run inside the TDX TEE
+    --container-image= \
+    # You must mount the `/dev/tdx-guest` device to the Confidential VM so
+    # that your workload can generate attestations
+    --container-mount-host-path mount-path=/dev/tdx-guest,host-path=/dev/tdx-guest \
+    # You also need to mount this so tdx can access /sys/kernel/config/tdx/report
+    --container-mount-host-path mount-path=/sys/kernel/config,host-path=/sys/kernel/config \
+    # Add this tag to enable external http traffic to your Confidential VM     
+    --tags=http-server \
+    --scopes=cloud-platform \
+    --maintenance-policy=TERMINATE \
+    --shielded-secure-boot
    
     # Example (c3-standard-4 $0.20/hr, c3-standard-8 $0.40/hr)
     gcloud compute instances create-with-container instance-bearclave-tdx \
-        --project=bearclave \
-        --zone=us-central1-a \
-        --machine-type=c3-standard-4 \
-        --confidential-compute-type=TDX \
-        --container-privileged \
-        # Specify the artifact registry string for the image of the confidential
-        # workload that you wish to run inside the TDX TEE
-        --container-image=hello-world \
-        # You must mount the `/dev/tdx-guest` device to the Confidential VM so
-        # that your workload can generate attestations
-        --container-mount-host-path mount-path=/dev/tdx-guest,host-path=/dev/tdx-guest \
-        # You also need to mount this so tdx can access /sys/kernel/config/tdx/report
-        --container-mount-host-path mount-path=/sys/kernel/config,host-path=/sys/kernel/config \
-        # Add this tag to enable external http traffic to your Confidential VM
-        --tags=http-server \
-        --scopes=cloud-platform \
-        --maintenance-policy=TERMINATE \
-        --shielded-secure-boot
+    --project=bearclave \
+    --zone=us-central1-a \
+    --machine-type=c3-standard-4 \
+    --confidential-compute-type=TDX \
+    --container-privileged \
+    --container-image=hello-world \
+    --container-mount-host-path mount-path=/dev/tdx-guest,host-path=/dev/tdx-guest \
+    --container-mount-host-path mount-path=/sys/kernel/config,host-path=/sys/kernel/config \
+    --tags=http-server \
+    --scopes=cloud-platform \
+    --maintenance-policy=TERMINATE \
+    --shielded-secure-boot
     ```
-   
----
