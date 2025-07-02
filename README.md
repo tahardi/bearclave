@@ -78,7 +78,7 @@ Please ensure that all tools are properly installed and added to your system's
 `PATH` for seamless use.
 
 - **[Golang (version 1.24.3 or higher):](https://go.dev/dl/)** this project
-  is written in Go and is required for building and running the examples
+  is written in Go and is required for building and running the examples.
 
 - **[Docker Engine:](https://docs.docker.com/engine/install/)** cloud-based TEE
   platforms require you to provide your application packaged as an OCI-compliant
