@@ -1,5 +1,5 @@
 # Google Cloud Platform (GCP) Setup Guide
-The Google Cloud Platform (GCP) provides compute instances that support the
+Google Cloud Platform (GCP) provides compute instances that support the
 AMD SEV-SNP and Intel TDX TEE platforms. Follow the steps below to sign up for
 a Google Cloud account and configure the cloud resources required to develop
 on AMD SEV-SNP and Intel TDX.
