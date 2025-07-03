@@ -14,7 +14,7 @@ on AMD SEV-SNP and Intel TDX.
 2. **Setup Billing** Navigate to the Google Cloud
   [Console](https://console.cloud.google.com/). At the time of this writing 
   (June, 2025), Google offers $300 in credits for new Google Cloud users. Sign
-  up if it is still available. Either way, you will need to add a valid Billing
+  up if it is still available. Regardless, you will need to add a valid Billing
   method to your account to use TEE-enabled cloud resources.
 
 ---
