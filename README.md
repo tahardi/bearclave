@@ -1,19 +1,18 @@
 # Bearclave: Simplifying Cloud-Based TEE Development
-Trusted Execution Environments (TEEs) are a fascinating fusion of specialized  
+Trusted Execution Environments (TEEs) are a combination of specialized  
 hardware and software designed to enhance the confidentiality and integrity of  
 sensitive code and data. Curious developers often want to explore TEE technology  
-but soon find themselves overwhelmed by steep learning curves and complicated  
-requirements. The challenges include:
+but find themselves overwhelmed by steep learning curves and complicated  
+requirements. These challenges include:
 
-- Limited documentation that can be dense, scattered, or difficult to understand.
-- The need for specialized hardware that is either costly or requires complex setup.
-- A deep understanding of how TEEs function and interact with cloud platforms.
+- Limited documentation that can be dense, scattered, or difficult to understand
+- The need for specialized hardware that is either costly or requires complex setup
+- A deep understanding of how TEEs function and how to configure them on cloud platforms
 
 Bearclave is here to bridge that knowledge gap! This repository is tailored for  
-developers—whether individuals or small teams—who want to take their first steps  
-into the world of cloud-based TEE application development. Bearclave provides all  
-the necessary resources to go from zero to a working example, while keeping the  
-process approachable and affordable.
+developers who want to take their first steps into the world of cloud-based TEE 
+application development. Bearclave provides all the necessary resources to go 
+from zero to a working example, while keeping the process approachable and affordable.
 
 ---
 
@@ -22,15 +21,15 @@ This repository offers a holistic, step-by-step guide to developing TEE
 applications, including:
 
 - **Introduction to TEEs**: A high-level overview of TEEs and popular  
-  platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX.
+  platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX
 - **Cloud Integration Guides**: Detailed instructions for configuring the cloud  
-  resources needed to build and deploy TEE applications on AWS and GCP.
+  resources needed to build and deploy TEE applications on AWS and GCP
 - **Practical Code Examples**: Demonstrations of how to compile, deploy, and
-  interact with real-world applications on different TEE platforms.
-- **Platform-Agnostic Code**: Bearclave provides a framework for developing
-  applications across various TEE platforms. By abstracting away
-  platform-specific details, you can more easily write portable applications 
-  without worrying about the idiosyncrasies of the underlying TEE implementation.
+  interact with real-world applications on different TEE platforms
+- **Platform-Agnostic Code**: A framework for developing applications on various
+  TEE platforms. Bearclave abstracts away platform-specific details so you can
+  more easily write portable applications without worrying about the 
+  idiosyncrasies of the underlying TEE implementation
 
 Additionally, Bearclave includes a **"No TEE" development mode**, allowing you to  
 develop and test your application without a TEE instance. This reduces costs  
@@ -44,12 +43,11 @@ which isn't free. Unless you own and manage the hardware yourself, you'll need t
 rent resources through cloud providers like AWS or GCP. Fortunately, these  
 providers offer affordable, TEE-enabled instances starting at $0.17 to $0.40 per  
 hour. Paired with Bearclave's "No TEE" mode, you can develop and test your  
-applications for just a few dollars a month if you carefully manage your instances.
+applications for just a few dollars a month if you carefully manage your resources.
 
 ---
 
 ### Important Reminder
-
 Bearclave is designed as an educational tool. While the repository provides  
 practical examples and working code, it should not be considered production-ready.  
 We encourage you to use it as a learning resource and adapt it for your unique  
@@ -110,8 +108,8 @@ application development and deployment on the AWS Nitro Enclaves, GCP AMD-SEV,
 and GCP Intel TDX platforms.
 
 - [**Hello World:**](examples/hello-world/README.md) demonstrates how to deploy
-an application to a TEE and communicate with it via (virtual) sockets.
+an application to a TEE and communicate with it via (virtual) sockets
 - [**Hello HTTP:**](examples/hello-http/README.md) demonstrates how to deploy an 
-HTTP server to a TEE.
+HTTP server to a TEE
 - [**Hello HTTP Multi:**](examples/hello-http-multi/README.md) demonstrates how
-to deploy multiple HTTP servers to the same TEE.
+to deploy multiple HTTP servers to the same TEE
