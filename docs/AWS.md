@@ -130,7 +130,7 @@ authenticate securely with short-lived credentials.
    ```
    Input the following details:
    - SSO session name: `tahardi-dev-mac`
-   - Start URL: `https://d-9a67642110.awsapps.com/start`
+   - Start URL: `https://id.awsapps.com/start`
    - SSO Region: `us-east-2`
    - SSO Scopes: Default (`sso:account:access`)
 
