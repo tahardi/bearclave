@@ -1,34 +1,31 @@
-# AWS Nitro Enclaves: Overview and Development Setup Guide
-
-## What are AWS Nitro Enclaves?
-
-AWS Nitro Enclaves is a feature of Amazon EC2 that helps create isolated,
-highly secure environments for processing sensitive data. Examples include
-personally identifiable information, intellectual property, and cryptographic
-material. Nitro Enclaves is built on the AWS Nitro System, which provides
-advanced security and performance capabilities.
-
-Nitro Enclaves differ from other TEE platforms like Intel TDX and AMD SEV-SNP.
-While those platforms are not tied to specific cloud providers, Nitro Enclaves
-are proprietary to AWS and are only available on EC2 and EKS. They provide
-specialized Linux VMs to run containerized applications in isolation, with no
-network or storage access. Communication is solely via the Virtual Socket
-(VSOCK) interface, allowing traffic to be proxied through the host.
+# Amazon Web Services (AWS) Setup Guide
+Amazon Web Services (AWS) provides compute instances that support the
+AMD SEV-SNP and AWS Nitro TEE platforms, but Bearclave only currently supports
+AWS Nitro. Follow the steps below to sign up for an AWS account and configure 
+the cloud resources required to develop on AWS Nitro Enclaves.
 
 ---
 
-## Setting Up Your Environment for Nitro Enclave Development
+### Configure AWS Cloud
+1. **Create an [AWS Account](TODO)** TODO
 
-To start developing with Nitro Enclaves, you must launch and configure an EC2
-instance that supports Nitro Enclaves. Note that THIS WILL COST MONEY. In fact,
-developing on any cloud-based TEE platform is going to cost money. That said,
-the smallest nitro-enabled instances only run around $0.17/hr. Coupled with the
-Bearclave "No TEE" platform, you should be able to develop and test your enclave
-application for $5–10/month as long as you are diligent about turning off your
-instances when done.
+2. **Setup Billing** TODO
 
 ---
 
+### Install and Configure the AWS CLI Tool
+TODO
+
+1. **Install the [`aws` CLI](TODO)**
+
+2. **Initialize `aws`** TODO
+    ```bash
+    # TODO
+    ```
+
+---
+
+TODO: Figure out how to do this all with `aws` cli instead of through console
 ### Step 1: Choosing and Launching an EC2 Instance
 Follow these steps to launch a Nitro-enabled EC2 instance from the web console:
 1. **Select a Nitro-enabled Instance**
@@ -101,7 +98,7 @@ Nitro CLI and other necessary tools.
    git clone https://github.com/<YOUR-REPO>.git
    ```
 
-6. **Install Go (Optional for Applications)**
+6. **Install Go (Optional for Applications)** TODO update go version
    ```bash
    wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
    tar -xvf go1.23.3.linux-amd64.tar.gz
@@ -133,7 +130,7 @@ authenticate securely with short-lived credentials.
    ```
    Input the following details:
    - SSO session name: `tahardi-dev-mac`
-   - Start URL: `https://d-9a67642110.awsapps.com/start`
+   - Start URL: `https://id.awsapps.com/start`
    - SSO Region: `us-east-2`
    - SSO Scopes: Default (`sso:account:access`)
 
