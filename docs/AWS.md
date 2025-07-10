@@ -1,31 +1,60 @@
 # Amazon Web Services (AWS) Setup Guide
 Amazon Web Services (AWS) provides compute instances that support the
 AMD SEV-SNP and AWS Nitro TEE platforms, but Bearclave only currently supports
-AWS Nitro. Follow the steps below to sign up for an AWS account and configure 
+AWS Nitro. Follow the steps below to sign up for an AWS account and configure
 the cloud resources required to develop on AWS Nitro Enclaves.
 
 ---
 
 ### Configure AWS Cloud
-1. **Create an [AWS Account](TODO)** TODO
+1. **Create an [AWS Account](https://aws.amazon.com/)** Note that this will be
+   your "root" account and should only be used to setup billing and your user(s).
+   I suggest looking for tutorials on AWS IAM Identity Center. Personally, I
+   attached Billing and SystemAdministrator policies to my account. This allows
+   me to login under a "role" with limited permissions instead of as root. Note
+   that your SSO page for logging in under these roles can be found in the
+   "Settings Summary" on your IAM Identity Center page and should look something
+   like `https://<subdomain>.awsapps.com/start`
 
-2. **Setup Billing** TODO
+2. **Setup Billing** You will need a valid billing method to deploy the
+   TEE-enabled EC2 instances.
 
 ---
 
 ### Install and Configure the AWS CLI Tool
-TODO
+The Makefile targets in `examples/` require the `aws` cli tool for starting,
+stopping, and sshing into your EC2 instances.
 
-1. **Install the [`aws` CLI](TODO)**
+1. **Install the [`aws` CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)**
 
-2. **Initialize `aws`** TODO
-    ```bash
-    # TODO
-    ```
+2. **Setup SSO** Configure SSO so `aws` can login under your SystemAdministrator
+   role. Again, you can find your SSO login URL on IAM Identity Center under
+   "Settings Summary".
+   ```bash
+   aws configure sso
+   ```
+   Input the following details:
+   - SSO session name: `bearclave`
+   - Start URL: `https://<subdomain>.awsapps.com/start`
+   - SSO Region: `us-east-2`
+   - SSO Scopes: Default (`sso:account:access`)
+
+3. **Define an AWS CLI Profile**
+   During the setup, specify:
+   - Default region: `us-east-2`
+   - Output format: `json`
+   - Profile name: `personal`
+
+4. **Authenticate with SSO**
+   Sign in using:
+   ```bash
+   # personal is the profile named used in `examples/`. If you use a different
+   # profile name you will need to update the Makefile targets to work
+   aws sso login --profile personal
+   ```
 
 ---
 
-TODO: Figure out how to do this all with `aws` cli instead of through console
 ### Step 1: Choosing and Launching an EC2 Instance
 Follow these steps to launch a Nitro-enabled EC2 instance from the web console:
 1. **Select a Nitro-enabled Instance**
@@ -61,16 +90,22 @@ Host ec2-nitro
 ---
 
 ### Step 2: Install Required Tools and Libraries
+The AWS Nitro developer workflow differs from AMD and Intel on GCP in that we
+build and deploy the enclave program on the EC2 instance (as opposed to doing
+it locally). Follow these steps to install the necessary tools for building
+and deploying Nitro applications on your EC2 instance.
 
-After logging into your EC2 instance, execute the following commands to install
-Nitro CLI and other necessary tools.
+1. **SSH into your EC2 instance**
+   ```bash
+   ssh ec2-nitro
+   ```
 
-1. **Install Git and Nitro CLI**
+2. **Install Git and Nitro CLI**
    ```bash
    sudo dnf install -y git aws-nitro-enclaves-cli aws-nitro-enclaves-cli-devel
    ```
 
-2. **Grant Necessary Permissions**
+3. **Grant Necessary Permissions**
    Add your user to the required groups for Nitro and Docker:
    ```bash
    sudo usermod -aG ne $USER
@@ -78,19 +113,19 @@ Nitro CLI and other necessary tools.
    ```
    Log out and log back in for these changes to apply.
 
-3. **Enable Nitro Enclaves Allocator Service**
+4. **Enable Nitro Enclaves Allocator Service**
    Enable and start the Nitro Enclaves Allocator Service:
    ```bash
    sudo systemctl enable --now nitro-enclaves-allocator.service
    ```
 
-4. **Enable Docker**
+5. **Enable Docker**
    Start Docker and configure it to run on instance startup:
    ```bash
    sudo systemctl enable --now docker
    ```
 
-5. **Git Configuration for Private Repos (Optional)**
+6. **Git Configuration for Private Repos (Optional)**
    If accessing private GitHub repositories, configure Git:
    ```bash
    git config --global url.https://<YOUR-TOKEN>@github.com/.insteadOf \
@@ -98,10 +133,10 @@ Nitro CLI and other necessary tools.
    git clone https://github.com/<YOUR-REPO>.git
    ```
 
-6. **Install Go (Optional for Applications)** TODO update go version
+7. **Install Go (Optional for Applications)** 
    ```bash
-   wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
-   tar -xvf go1.23.3.linux-amd64.tar.gz
+   wget https://go.dev/dl/go1.24.3.linux-amd64.tar.gz
+   tar -xvf go1.24.3.linux-amd64.tar.gz
    sudo mv go /usr/local
    ```
    Add Go to your environment variables:
@@ -120,7 +155,7 @@ The AWS CLI simplifies EC2 instance management. Use Single Sign-On (SSO) to
 authenticate securely with short-lived credentials.
 
 1. **Install and Configure AWS CLI**
-   Install and set up the CLI using the 
+   Install and set up the CLI using the
    [AWS CLI guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html).
 
 2. **Setup SSO**
@@ -195,5 +230,4 @@ Use these commands to start, describe, or stop your instances via AWS CLI.
 ---
 
 With this setup, you're ready to build and deploy applications with AWS Nitro
-Enclaves. Learn more about advanced enclave configuration in the [Nitro
-Enclaves documentation](https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclaves.html).
+Enclaves.
