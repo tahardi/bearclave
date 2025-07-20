@@ -124,7 +124,7 @@ when run on SEV or TDX.
     ```bash
    make gcp-sev-nonclave-run
    ```
-5. Remember to turn off your Compute instance when you are finished. Otherwise,
+4. Remember to turn off your Compute instance when you are finished. Otherwise,
 you will continue to incur GCP cloud charges.
     ```bash
     make gcp-sev-instance-stop 
