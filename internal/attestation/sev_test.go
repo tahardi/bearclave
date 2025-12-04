@@ -20,35 +20,35 @@ var sevReportB64 string
 
 const (
 	sevReportMeasurementJSON = `{
-  "version": 4,
+  "version": 5,
   "guest_svn": 0,
   "policy": 196608,
   "family_id": "AAAAAAAAAAAAAAAAAAAAAA==",
   "image_id": "AAAAAAAAAAAAAAAAAAAAAA==",
   "vmpl": 0,
-  "current_tcb": 15787649968723984388,
+  "current_tcb": 16004385700791189508,
   "platform_info": 37,
   "signer_info": 0,
-  "measurement": "MJ8bHgaP5jkCNHIqclx6ZPnUU86hMnWg1XTzv8H4hkRQ6MjyiiRfoe1upoF6yFsr",
+  "measurement": "t0fVVFLguekHl3Cknjl8Xm2Vc1geJG2nuqxPKLXNxbG20ZJRuO5gD9FqNwj1hAbz",
   "host_data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
   "id_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "author_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-  "report_id": "6FRblnt1xgkavHxgGL8mWw8B6gEO+YklgWmboVVrI9M=",
+  "report_id": "mQCG/KnohXCpN98FyZ5vQ2JknQdZ2AhhsnOJbOLp58U=",
   "report_id_ma": "//////////////////////////////////////////8=",
-  "reported_tcb": 15787649968723984388,
-  "chip_id": "Etk3ouD6ZGkppCuDr+W0eNOYdzXjhKAVcH7AaJjhfAmXu4cuC7tyz9ccUMoVYHZ84eGYcz5kjA7APC1nqsjAuQ==",
-  "committed_tcb": 15787649968723984388,
-  "current_build": 31,
+  "reported_tcb": 16004385700791189508,
+  "chip_id": "BGnXVODUH+qJbpsQKqxKve5nZ2TmfU4yuw4baIU9u7v/MdJmOLCc7wFFxvsFLDggUNohMViMUOBfeqsK480+AQ==",
+  "committed_tcb": 16004385700791189508,
+  "current_build": 35,
   "current_minor": 55,
   "current_major": 1,
-  "committed_build": 31,
+  "committed_build": 35,
   "committed_minor": 55,
   "committed_major": 1,
-  "launch_tcb": 15787649968723984388,
+  "launch_tcb": 16004385700791189508,
   "cpuid_1eax_fms": 10489617
 }`
-	sevReportTimestampSeconds     = int64(1748808574)
-	sevReportTimestampNanoseconds = int64(295000000)
+	// The testdata SEV report was generated on Fri Dec 05 2025 03:02:30 GMT+0000
+	sevReportTimestampSeconds     = int64(1764903750)
 )
 
 func sevReportFromTestData(
@@ -84,10 +84,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 		// given
 		want := []byte("Hello, world!")
 		measurement := sevReportMeasurementJSON
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		report, _ := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		verifier, err := attestation.NewSEVVerifier()
@@ -121,10 +118,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 
 	t.Run("error - expired report", func(t *testing.T) {
 		// given
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		report, _ := sevReportFromTestData(t, sevReportB64, timestamp)
 		timestamp = time.Unix(0, 0)
 
@@ -141,10 +135,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 	t.Run("error - verifying measurement", func(t *testing.T) {
 		// given
 		measurement := "invalid measurement"
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		report, _ := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		verifier, err := attestation.NewSEVVerifier()
@@ -164,10 +155,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
 		// given
 		measurement := sevReportMeasurementJSON
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		report, _ := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		verifier, err := attestation.NewSEVVerifier()
@@ -189,10 +177,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 func TestSEVIsDebugEnabled(t *testing.T) {
 	t.Run("happy path - debug enabled", func(t *testing.T) {
 		// given
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		// According to Pg. 31 of the SEV ABI Specification document, the 19th
@@ -210,10 +195,7 @@ func TestSEVIsDebugEnabled(t *testing.T) {
 
 	t.Run("happy path - debug disabled", func(t *testing.T) {
 		// given
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		// when
@@ -226,10 +208,7 @@ func TestSEVIsDebugEnabled(t *testing.T) {
 
 	t.Run("error - parsing policy", func(t *testing.T) {
 		// given
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
 		sevReport.Policy = 0x0000000000000000
 
@@ -245,10 +224,7 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		measurement := sevReportMeasurementJSON
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		// when
@@ -261,10 +237,7 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 	t.Run("happy path - no measurement", func(t *testing.T) {
 		// given
 		measurement := ""
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		// when
@@ -277,10 +250,7 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 	t.Run("error - invalid measurement", func(t *testing.T) {
 		// given
 		measurement := "invalid measurement"
-		timestamp := time.Unix(
-			sevReportTimestampSeconds,
-			sevReportTimestampNanoseconds,
-		)
+		timestamp := time.Unix(sevReportTimestampSeconds, 0)
 		_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
 
 		// when
@@ -476,10 +446,7 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			measurement := sevReportMeasurementJSON
-			timestamp := time.Unix(
-				sevReportTimestampSeconds,
-				sevReportTimestampNanoseconds,
-			)
+			timestamp := time.Unix(sevReportTimestampSeconds, 0)
 			_, sevReport := sevReportFromTestData(t, sevReportB64, timestamp)
 			tc.modifyReport(sevReport)
 
