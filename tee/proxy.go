@@ -66,11 +66,10 @@ func NewReverseProxyWithTransport(
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 	proxy.Transport = transport
 
-	// Customize the Director to handle path rewriting
+	// Customize the Director to strip the path prefix
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		originalDirector(req)
-		// Rewrite the path by stripping the prefix
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, route)
 	}
 	return proxy, nil
