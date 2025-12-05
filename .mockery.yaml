@@ -1,4 +1,4 @@
-dir: internal/mocks
+dir: mocks
 filename: '{{.InterfaceName}}.go'
 structname: '{{.InterfaceName}}'
 pkgname: mocks
@@ -10,10 +10,6 @@ packages:
     interfaces:
       Attester:
       Verifier:
-  github.com/tahardi/bearclave/internal/ipc:
-    config:
-    interfaces:
-      IPC:
   io:
     config:
     interfaces:

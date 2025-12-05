@@ -7,7 +7,7 @@ SHELL := bash
 .SUFFIXES:
 
 .PHONY: pre-pr
-pre-pr: tidy mock lint test-unit test-examples
+pre-pr: tidy mock lint test-unit
 
 # https://golangci-lint.run/welcome/install/#install-from-sources
 # They do not recommend using golangci-lint via go tool directive
@@ -33,32 +33,12 @@ tidy:
 	@go mod tidy
 
 .PHONY: test-unit
-test-unit: tidy test-internal-unit
+test-unit: tidy test-unit-tee test-unit-internal
 
-.PHONY: test-internal-unit
-test-internal-unit:
+.PHONY: test-unit-tee
+test-unit-tee:
+	@go test -v -count=1 -race ./tee/...
+
+.PHONY: test-unit-internal
+test-unit-internal:
 	@go test -v -count=1 -race ./internal/...
-
-.PHONY: test-examples
-test-examples: \
-	hello-world-example \
-	hello-http-example \
-	hello-http-multi-example
-
-.PHONY: hello-world-example
-hello-world-example:
-	@make -C ./examples/hello-world/
-
-.PHONY: hello-http-example
-hello-http-example:
-	@make -C ./examples/hello-http/
-
-.PHONY: hello-http-multi-example
-hello-http-multi-example:
-	@make -C ./examples/hello-http-multi/
-
-.PHONY: clean
-clean:
-	@make -C ./examples/hello-world/ clean
-	@make -C ./examples/hello-http/ clean
-	@make -C ./examples/hello-http-multi/ clean
