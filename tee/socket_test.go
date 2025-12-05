@@ -27,6 +27,8 @@ func TestSocketRoundTrip(t *testing.T) {
 		require.NoError(t, err)
 		socket2, err := tee.NewSocket(platform, network, addr2)
 		require.NoError(t, err)
+		defer socket1.Close()
+		defer socket2.Close()
 
 		// when
 		err = socket1.Send(ctx, addr2, want)
@@ -40,7 +42,7 @@ func TestSocketRoundTrip(t *testing.T) {
 	})
 }
 
-func TestSocketIPC_Send(t *testing.T) {
+func TestSocket_Send(t *testing.T) {
 	t.Run("error - dialing", func(t *testing.T) {
 		// given
 		ctx := context.Background()
@@ -54,6 +56,7 @@ func TestSocketIPC_Send(t *testing.T) {
 		}
 		socket, err := tee.NewSocket(platform, network, addr)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		err = socket.SendWithDialer(ctx, dialer, addr, want)
@@ -80,6 +83,7 @@ func TestSocketIPC_Send(t *testing.T) {
 
 		socket, err := tee.NewSocket(platform, network, addr)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		err = socket.SendWithDialer(ctx, dialer, addr, want)
@@ -106,6 +110,7 @@ func TestSocketIPC_Send(t *testing.T) {
 
 		socket, err := tee.NewSocket(platform, network, addr)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		err = socket.SendWithDialer(ctx, dialer, addr, want)
@@ -132,6 +137,7 @@ func TestSocketIPC_Send(t *testing.T) {
 
 		socket, err := tee.NewSocket(platform, network, addr)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		cancel()
@@ -142,7 +148,7 @@ func TestSocketIPC_Send(t *testing.T) {
 	})
 }
 
-func TestSocketIPC_Receive(t *testing.T) {
+func TestSocket_Receive(t *testing.T) {
 	t.Run("error - accepting connection", func(t *testing.T) {
 		// given
 		ctx := context.Background()
