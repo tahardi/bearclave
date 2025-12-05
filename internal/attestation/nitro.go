@@ -18,7 +18,16 @@ func NewNitroAttester() (*NitroAttester, error) {
 	return &NitroAttester{}, nil
 }
 
-func (n *NitroAttester) Attest(userdata []byte) ([]byte, error) {
+func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
+	opts := AttestOptions{
+		nonce: nil,
+		publicKey: nil,
+		userData: nil,
+	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
 	session, err := nsm.OpenDefaultSession()
 	if err != nil {
 		return nil, fmt.Errorf("opening nsm session: %w", err)
@@ -26,9 +35,9 @@ func (n *NitroAttester) Attest(userdata []byte) ([]byte, error) {
 	defer session.Close()
 
 	resp, err := session.Send(&request.Attestation{
-		Nonce:     []byte("TODO: generate nonce"),
-		UserData:  userdata,
-		PublicKey: []byte("TODO: generate public key"),
+		Nonce:     opts.nonce,
+		PublicKey: opts.publicKey,
+		UserData:  opts.userData,
 	})
 	switch {
 	case err != nil:
@@ -40,7 +49,7 @@ func (n *NitroAttester) Attest(userdata []byte) ([]byte, error) {
 	case resp.Attestation.Document == nil:
 		return nil, fmt.Errorf("attestation response missing document")
 	}
-	return resp.Attestation.Document, nil
+	return &AttestResult{Report: resp.Attestation.Document}, nil
 }
 
 type NitroVerifier struct{}
@@ -50,20 +59,21 @@ func NewNitroVerifier() (*NitroVerifier, error) {
 }
 
 func (n *NitroVerifier) Verify(
-	report []byte,
+	attestResult *AttestResult,
 	options ...VerifyOption,
-) ([]byte, error) {
+) (*VerifyResult, error) {
 	opts := VerifyOptions{
 		debug:       false,
 		measurement: "",
 		timestamp:   time.Now(),
+		nonce:       nil,
 	}
 	for _, opt := range options {
 		opt(&opts)
 	}
 
 	result, err := nitrite.Verify(
-		report,
+		attestResult.Report,
 		nitrite.VerifyOptions{
 			CurrentTime: opts.timestamp,
 		},
@@ -77,6 +87,11 @@ func (n *NitroVerifier) Verify(
 		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
+	err = NitroVerifyNonce(opts.nonce, result.Document)
+	if err != nil {
+		return nil, fmt.Errorf("verifying nonce: %w", err)
+	}
+
 	debug, err := NitroIsDebugEnabled(result.Document)
 	switch {
 	case err != nil:
@@ -87,7 +102,12 @@ func (n *NitroVerifier) Verify(
 			debug,
 		)
 	}
-	return result.Document.UserData, nil
+
+	verifyResult := &VerifyResult{
+		UserData:  result.Document.UserData,
+		PublicKey: result.Document.PublicKey,
+	}
+	return verifyResult, nil
 }
 
 func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
@@ -146,6 +166,19 @@ func NitroVerifyMeasurement(measurementJSON string, document *nitrite.Document) 
 		return fmt.Errorf("module id mismatch: expected '%s', got '%s'",
 			measurement.ModuleID,
 			document.ModuleID,
+		)
+	}
+	return nil
+}
+
+func NitroVerifyNonce(nonce []byte, document *nitrite.Document) error {
+	if nonce == nil || len(nonce) == 0 {
+		return nil
+	}
+	if !bytes.Equal(nonce, document.Nonce) {
+		return fmt.Errorf("nonce mismatch: expected '%s', got '%s'",
+			base64.StdEncoding.EncodeToString(nonce),
+			base64.StdEncoding.EncodeToString(document.Nonce),
 		)
 	}
 	return nil

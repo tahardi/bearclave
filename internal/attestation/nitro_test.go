@@ -53,14 +53,14 @@ func nitroReportFromTestData(
 	t *testing.T,
 	reportB64 string,
 	timestamp time.Time,
-) ([]byte, *nitrite.Document) {
+) (*attestation.AttestResult, *nitrite.Document) {
 	reportBytes, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 
 	opts := nitrite.VerifyOptions{CurrentTime: timestamp}
 	result, err := nitrite.Verify(reportBytes, opts)
 	require.NoError(t, err)
-	return reportBytes, result.Document
+	return &attestation.AttestResult{Report: reportBytes}, result.Document
 }
 
 func TestNitro_Interfaces(t *testing.T) {
@@ -95,7 +95,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, want, got)
+		assert.Equal(t, want, got.UserData)
 	})
 
 	t.Run("happy path - debug", func(t *testing.T) {
@@ -121,12 +121,12 @@ func TestNitroVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, want, got)
+		assert.Equal(t, want, got.UserData)
 	})
 
 	t.Run("error - invalid report", func(t *testing.T) {
 		// given
-		report := []byte("invalid attestation report")
+		report := &attestation.AttestResult{Report: []byte("invalid attestation report")}
 
 		verifier, err := attestation.NewNitroVerifier()
 		require.NoError(t, err)
@@ -384,5 +384,42 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 
 		// then
 		assert.ErrorContains(t, err, "mismatch: expected")
+	})
+}
+
+func TestNitroVerifyNonce(t *testing.T) {
+	t.Run("happy path - without nonce", func(t *testing.T) {
+		// given
+		document := &nitrite.Document{}
+
+		// when
+		err := attestation.NitroVerifyNonce(nil, document)
+
+		// then
+		assert.NoError(t, err)
+	})
+
+	t.Run("happy path - with nonce", func(t *testing.T) {
+		// given
+		nonce := []byte("nonce")
+		document := &nitrite.Document{Nonce: nonce}
+
+		// when
+		err := attestation.NitroVerifyNonce(nonce, document)
+
+		// then
+		assert.NoError(t, err)
+	})
+
+	t.Run("error - nonce mismatch", func(t *testing.T) {
+		// given
+		nonce := []byte("nonce")
+		document := &nitrite.Document{Nonce: nonce}
+
+		// when
+		err := attestation.NitroVerifyNonce([]byte("wrong nonce"), document)
+
+		// then
+		assert.ErrorContains(t, err, "nonce mismatch")
 	})
 }

@@ -48,14 +48,14 @@ const (
   "cpuid_1eax_fms": 10489617
 }`
 	// The testdata SEV report was generated on Fri Dec 05 2025 03:02:30 GMT+0000
-	sevReportTimestampSeconds     = int64(1764903750)
+	sevReportTimestampSeconds = int64(1764903750)
 )
 
 func sevReportFromTestData(
 	t *testing.T,
 	reportB64 string,
 	timestamp time.Time,
-) ([]byte, *sevsnp.Report) {
+) (*attestation.AttestResult, *sevsnp.Report) {
 	report, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 
@@ -67,7 +67,7 @@ func sevReportFromTestData(
 	err = verify.SnpAttestation(pbReport, opts)
 	require.NoError(t, err)
 
-	return report, pbReport.Report
+	return &attestation.AttestResult{Report: report}, pbReport.Report
 }
 
 func TestSEV_Interfaces(t *testing.T) {
@@ -99,12 +99,12 @@ func TestSEVVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Contains(t, string(got), string(want))
+		assert.Contains(t, string(got.UserData), string(want))
 	})
 
 	t.Run("error - invalid report", func(t *testing.T) {
 		// given
-		report := []byte("invalid attestation report")
+		report := &attestation.AttestResult{Report: []byte("invalid attestation report")}
 
 		verifier, err := attestation.NewSEVVerifier()
 		require.NoError(t, err)

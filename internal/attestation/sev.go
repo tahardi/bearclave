@@ -21,8 +21,17 @@ func NewSEVAttester() (*SEVAttester, error) {
 	return &SEVAttester{}, nil
 }
 
-func (n *SEVAttester) Attest(userdata []byte) ([]byte, error) {
-	if len(userdata) > AMD_SEV_USERDATA_SIZE {
+func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
+	opts := AttestOptions{
+		nonce: nil,
+		publicKey: nil,
+		userData: nil,
+	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	if len(opts.userData) > AMD_SEV_USERDATA_SIZE {
 		return nil, fmt.Errorf(
 			"userdata must be less than %d bytes",
 			AMD_SEV_USERDATA_SIZE,
@@ -35,12 +44,14 @@ func (n *SEVAttester) Attest(userdata []byte) ([]byte, error) {
 	}
 
 	var reportData [64]byte
-	copy(reportData[:], userdata)
+	if opts.userData != nil {
+		copy(reportData[:], opts.userData)
+	}
 	quote, err := sevQP.GetRawQuote(reportData)
 	if err != nil {
 		return nil, fmt.Errorf("getting sev quote: %w", err)
 	}
-	return quote, nil
+	return &AttestResult{Report: quote}, nil
 }
 
 type SEVVerifier struct{}
@@ -50,9 +61,9 @@ func NewSEVVerifier() (*SEVVerifier, error) {
 }
 
 func (n *SEVVerifier) Verify(
-	report []byte,
+	attestResult *AttestResult,
 	options ...VerifyOption,
-) ([]byte, error) {
+) (*VerifyResult, error) {
 	opts := VerifyOptions{
 		debug:       false,
 		measurement: "",
@@ -62,7 +73,7 @@ func (n *SEVVerifier) Verify(
 		opt(&opts)
 	}
 
-	pbReport, err := abi.ReportCertsToProto(report)
+	pbReport, err := abi.ReportCertsToProto(attestResult.Report)
 	if err != nil {
 		return nil, fmt.Errorf("converting sev report to proto: %w", err)
 	}
@@ -89,7 +100,11 @@ func (n *SEVVerifier) Verify(
 			debug,
 		)
 	}
-	return pbReport.Report.GetReportData(), nil
+
+	verifyResult := &VerifyResult{
+		UserData: pbReport.Report.GetReportData(),
+	}
+	return verifyResult, nil
 }
 
 func SEVIsDebugEnabled(report *sevsnp.Report) (bool, error) {
