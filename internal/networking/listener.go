@@ -37,12 +37,12 @@ func NewVSocketListener(_ string, addr string) (net.Listener, error) {
 	return listener, nil
 }
 
-func ParseVSocketAddr(endpoint string) (uint32, uint32, error) {
+func ParseVSocketAddr(addr string) (uint32, uint32, error) {
 	var cid, port int
-	n, err := fmt.Sscanf(endpoint, "%d:%d", &cid, &port)
+	n, err := fmt.Sscanf(addr, "%d:%d", &cid, &port)
 	switch {
 	case err != nil:
-		return 0, 0, fmt.Errorf("invalid format '%s': %w", endpoint, err)
+		return 0, 0, fmt.Errorf("invalid format '%s': %w", addr, err)
 	case n != 2:
 		return 0, 0, fmt.Errorf("expected '2' got '%d", n)
 	}
