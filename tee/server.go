@@ -2,29 +2,55 @@ package tee
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/tahardi/bearclave"
-	"github.com/tahardi/bearclave/internal/networking"
 )
 
-type Server = networking.Server
+type Server struct {
+	listener net.Listener
+	server   *http.Server
+}
 
 func NewServer(
 	platform bearclave.Platform,
-	port int,
+	network string,
+	addr string,
 	mux *http.ServeMux,
 ) (*Server, error) {
-	switch platform {
-	case bearclave.Nitro:
-		return networking.NewVSocketServer(port, mux)
-	case bearclave.SEV:
-		return networking.NewSocketServer(port, mux)
-	case bearclave.TDX:
-		return networking.NewSocketServer(port, mux)
-	case bearclave.NoTEE:
-		return networking.NewSocketServer(port, mux)
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+	listener, err := bearclave.NewListener(platform, network, addr)
+	if err != nil {
+		return nil, fmt.Errorf("creating listener: %w", err)
 	}
+	return NewServerWithListener(listener, mux)
+}
+
+func NewServerWithListener(
+	listener net.Listener,
+	mux *http.ServeMux,
+) (*Server, error) {
+	return &Server{
+		listener: listener,
+		server:   &http.Server{Handler: mux},
+	}, nil
+}
+
+func (s *Server) Addr() string {
+	return s.listener.Addr().String()
+}
+
+func (s *Server) Close() error {
+	if err := s.listener.Close(); err != nil {
+		return fmt.Errorf("closing listener: %w", err)
+	}
+
+	if err := s.server.Close(); err != nil {
+		return fmt.Errorf("closing server: %w", err)
+	}
+	return nil
+}
+
+func (s *Server) Serve() error {
+	return s.server.Serve(s.listener)
 }
