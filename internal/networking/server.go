@@ -6,32 +6,11 @@ import (
 	"net/http"
 
 	"github.com/mdlayher/vsock"
-
-	"github.com/tahardi/bearclave/internal/setup"
 )
 
 type Server struct {
 	listener net.Listener
 	server   *http.Server
-}
-
-func NewServer(
-	platform setup.Platform,
-	port int,
-	mux *http.ServeMux,
-) (*Server, error) {
-	switch platform {
-	case setup.Nitro:
-		return NewVSocketServer(port, mux)
-	case setup.SEV:
-		return NewSocketServer(port, mux)
-	case setup.TDX:
-		return NewSocketServer(port, mux)
-	case setup.NoTEE:
-		return NewSocketServer(port, mux)
-	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
-	}
 }
 
 func NewSocketServer(

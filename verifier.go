@@ -1,6 +1,7 @@
 package bearclave
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/tahardi/bearclave/internal/attestation"
@@ -9,7 +10,18 @@ import (
 type Verifier = attestation.Verifier
 
 func NewVerifier(platform Platform) (Verifier, error) {
-	return attestation.NewVerifier(platform)
+	switch platform {
+	case Nitro:
+		return attestation.NewNitroVerifier()
+	case SEV:
+		return attestation.NewSEVVerifier()
+	case TDX:
+		return attestation.NewTDXVerifier()
+	case NoTEE:
+		return attestation.NewNoTEEVerifier()
+	default:
+		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+	}
 }
 
 type VerifyOption = attestation.VerifyOption

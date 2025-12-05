@@ -1,6 +1,8 @@
 package bearclave
 
 import (
+	"fmt"
+
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
@@ -12,16 +14,16 @@ func NewProxy(
 	cid int,
 	port int,
 ) (*Proxy, error) {
-	return networking.NewProxy(platform, route, cid, port)
-}
-
-type MultiProxy = networking.MultiProxy
-
-func NewMultiProxy(
-	platform Platform,
-	routes []string,
-	cids []int,
-	ports []int,
-) (*MultiProxy, error) {
-	return networking.NewMultiProxy(platform, routes, cids, ports)
+	switch platform {
+	case Nitro:
+		return networking.NewVSocketProxy(route, cid, port)
+	case SEV:
+		return networking.NewSocketProxy(route, port)
+	case TDX:
+		return networking.NewSocketProxy(route, port)
+	case NoTEE:
+		return networking.NewSocketProxy(route, port)
+	default:
+		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+	}
 }

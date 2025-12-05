@@ -1,4 +1,4 @@
-package networking_test
+package bearclave_test
 
 import (
 	"bytes"
@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/internal/mocks"
-	"github.com/tahardi/bearclave/internal/networking"
 )
 
 func makeRequest(
@@ -40,10 +40,10 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := networking.AttestUserDataRequest{Data: data}
-		req := makeRequest(t, "POST", networking.AttestUserDataPath, body)
+		body := bearclave.AttestUserDataRequest{Data: data}
+		req := makeRequest(t, "POST", bearclave.AttestUserDataPath, body)
 
-		handler := networking.MakeAttestUserDataHandler(attester, logger)
+		handler := bearclave.MakeAttestUserDataHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -52,7 +52,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Contains(t, logBuffer.String(), string(data))
 
-		response := networking.AttestUserDataResponse{}
+		response := bearclave.AttestUserDataResponse{}
 		err := json.NewDecoder(recorder.Body).Decode(&response)
 		require.NoError(t, err)
 		assert.Equal(t, attestation, response.Attestation)
@@ -67,9 +67,9 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 		body := []byte("invalid json")
-		req := makeRequest(t, "POST", networking.AttestUserDataPath, body)
+		req := makeRequest(t, "POST", bearclave.AttestUserDataPath, body)
 
-		handler := networking.MakeAttestUserDataHandler(attester, logger)
+		handler := bearclave.MakeAttestUserDataHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -90,10 +90,10 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := networking.AttestUserDataRequest{Data: data}
-		req := makeRequest(t, "POST", networking.AttestUserDataPath, body)
+		body := bearclave.AttestUserDataRequest{Data: data}
+		req := makeRequest(t, "POST", bearclave.AttestUserDataPath, body)
 
-		handler := networking.MakeAttestUserDataHandler(attester, logger)
+		handler := bearclave.MakeAttestUserDataHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)

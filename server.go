@@ -1,6 +1,7 @@
 package bearclave
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/tahardi/bearclave/internal/networking"
@@ -13,5 +14,16 @@ func NewServer(
 	port int,
 	mux *http.ServeMux,
 ) (*Server, error) {
-	return networking.NewServer(platform, port, mux)
+	switch platform {
+	case Nitro:
+		return networking.NewVSocketServer(port, mux)
+	case SEV:
+		return networking.NewSocketServer(port, mux)
+	case TDX:
+		return networking.NewSocketServer(port, mux)
+	case NoTEE:
+		return networking.NewSocketServer(port, mux)
+	default:
+		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+	}
 }

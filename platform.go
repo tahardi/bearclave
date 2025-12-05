@@ -1,13 +1,11 @@
 package bearclave
 
-import "github.com/tahardi/bearclave/internal/setup"
-
-type Platform = setup.Platform
+type Platform string
 
 const (
-	Nitro Platform = setup.Nitro
-	SEV   Platform = setup.SEV
-	TDX   Platform = setup.TDX
-	NoTEE Platform = setup.NoTEE
+	Nitro Platform = "nitro"
+	SEV   Platform = "sev"
+	TDX   Platform = "tdx"
+	NoTEE Platform = "notee"
 )
 
