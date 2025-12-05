@@ -6,6 +6,7 @@ package mocks
 
 import (
 	mock "github.com/stretchr/testify/mock"
+	"github.com/tahardi/bearclave/internal/attestation"
 )
 
 // NewAttester creates a new instance of Attester. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
@@ -36,27 +37,33 @@ func (_m *Attester) EXPECT() *Attester_Expecter {
 }
 
 // Attest provides a mock function for the type Attester
-func (_mock *Attester) Attest(userdata []byte) ([]byte, error) {
-	ret := _mock.Called(userdata)
+func (_mock *Attester) Attest(options ...attestation.AttestOption) (*attestation.AttestResult, error) {
+	var tmpRet mock.Arguments
+	if len(options) > 0 {
+		tmpRet = _mock.Called(options)
+	} else {
+		tmpRet = _mock.Called()
+	}
+	ret := tmpRet
 
 	if len(ret) == 0 {
 		panic("no return value specified for Attest")
 	}
 
-	var r0 []byte
+	var r0 *attestation.AttestResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func([]byte) ([]byte, error)); ok {
-		return returnFunc(userdata)
+	if returnFunc, ok := ret.Get(0).(func(...attestation.AttestOption) (*attestation.AttestResult, error)); ok {
+		return returnFunc(options...)
 	}
-	if returnFunc, ok := ret.Get(0).(func([]byte) []byte); ok {
-		r0 = returnFunc(userdata)
+	if returnFunc, ok := ret.Get(0).(func(...attestation.AttestOption) *attestation.AttestResult); ok {
+		r0 = returnFunc(options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
+			r0 = ret.Get(0).(*attestation.AttestResult)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func([]byte) error); ok {
-		r1 = returnFunc(userdata)
+	if returnFunc, ok := ret.Get(1).(func(...attestation.AttestOption) error); ok {
+		r1 = returnFunc(options...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -69,24 +76,26 @@ type Attester_Attest_Call struct {
 }
 
 // Attest is a helper method to define mock.On call
-//   - userdata
-func (_e *Attester_Expecter) Attest(userdata interface{}) *Attester_Attest_Call {
-	return &Attester_Attest_Call{Call: _e.mock.On("Attest", userdata)}
+//   - options
+func (_e *Attester_Expecter) Attest(options ...interface{}) *Attester_Attest_Call {
+	return &Attester_Attest_Call{Call: _e.mock.On("Attest",
+		append([]interface{}{}, options...)...)}
 }
 
-func (_c *Attester_Attest_Call) Run(run func(userdata []byte)) *Attester_Attest_Call {
+func (_c *Attester_Attest_Call) Run(run func(options ...attestation.AttestOption)) *Attester_Attest_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		variadicArgs := args[0].([]attestation.AttestOption)
+		run(variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Attester_Attest_Call) Return(report []byte, err error) *Attester_Attest_Call {
-	_c.Call.Return(report, err)
+func (_c *Attester_Attest_Call) Return(result *attestation.AttestResult, err error) *Attester_Attest_Call {
+	_c.Call.Return(result, err)
 	return _c
 }
 
-func (_c *Attester_Attest_Call) RunAndReturn(run func(userdata []byte) ([]byte, error)) *Attester_Attest_Call {
+func (_c *Attester_Attest_Call) RunAndReturn(run func(options ...attestation.AttestOption) (*attestation.AttestResult, error)) *Attester_Attest_Call {
 	_c.Call.Return(run)
 	return _c
 }

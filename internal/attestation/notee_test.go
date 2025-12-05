@@ -14,11 +14,14 @@ import (
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
-func noTEEAttestation(t *testing.T, userdata []byte) ([]byte, string, time.Time) {
+func noTEEAttestation(
+	t *testing.T,
+	userdata []byte,
+) (*attestation.AttestResult, string, time.Time) {
 	attester, err := attestation.NewNoTEEAttester()
 	require.NoError(t, err)
 
-	report, err := attester.Attest(userdata)
+	report, err := attester.Attest(attestation.WithUserData(userdata))
 	require.NoError(t, err)
 
 	return report, attestation.NoTEEMeasurement, time.Now()
@@ -46,7 +49,7 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 		attester, err := attestation.NewNoTEEAttesterWithPrivateKey(privateKey)
 		require.NoError(t, err)
 
-		publicKey := append(
+		verifyKey := append(
 			privateKey.X.Bytes(),
 			privateKey.Y.Bytes()...,
 		)
@@ -56,19 +59,18 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 		userdata := []byte("hello world")
 		want := attestation.Report{
 			Userdata:  userdata,
-			Publickey: publicKey,
+			VerifyKey: verifyKey,
 		}
 
 		// when
-		attestationBytes, err := attester.Attest(userdata)
+		attestResult, err := attester.Attest(attestation.WithUserData(userdata))
 		require.NoError(t, err)
 
 		got := attestation.Report{}
-		err = json.Unmarshal(attestationBytes, &got)
+		err = json.Unmarshal(attestResult.Report, &got)
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, want.Publickey, got.Publickey)
 		assert.Equal(t, want.Userdata, got.Userdata)
 	})
 }
@@ -91,7 +93,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, want, got)
+		assert.Equal(t, want, got.UserData)
 	})
 
 	t.Run("happy path - no measurement", func(t *testing.T) {
@@ -107,12 +109,12 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, want, got)
+		assert.Equal(t, want, got.UserData)
 	})
 
 	t.Run("error - invalid attestation report", func(t *testing.T) {
 		// given
-		report := []byte("invalid attestation report")
+		report := &attestation.AttestResult{Report: []byte("invalid report")}
 
 		verifier, err := attestation.NewNoTEEVerifier()
 		require.NoError(t, err)
@@ -127,8 +129,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 	t.Run("error - invalid signature", func(t *testing.T) {
 		// given
 		report := attestation.Report{
-			Userdata:  []byte("hello world"),
-			Publickey: []byte("public key"),
+			VerifyKey: []byte("verify key"),
 			Signature: []byte("invalid signature"),
 		}
 		reportBytes, err := json.Marshal(report)
@@ -138,7 +139,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		_, err = verifier.Verify(reportBytes)
+		_, err = verifier.Verify(&attestation.AttestResult{Report: reportBytes})
 
 		// then
 		assert.ErrorContains(t, err, "invalid signature")

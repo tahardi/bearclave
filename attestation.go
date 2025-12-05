@@ -2,7 +2,6 @@ package bearclave
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/tahardi/bearclave/internal/attestation"
 )
@@ -24,6 +23,16 @@ func NewAttester(platform Platform) (Attester, error) {
 	}
 }
 
+type AttestResult = attestation.AttestResult
+type AttestOption = attestation.AttestOption
+type AttestOptions = attestation.AttestOptions
+
+var (
+	WithAttestNonce = attestation.WithAttestNonce
+	WithPublicKey   = attestation.WithPublicKey
+	WithUserData    = attestation.WithUserData
+)
+
 type Verifier = attestation.Verifier
 
 func NewVerifier(platform Platform) (Verifier, error) {
@@ -41,17 +50,13 @@ func NewVerifier(platform Platform) (Verifier, error) {
 	}
 }
 
+type VerifyResult = attestation.VerifyResult
 type VerifyOption = attestation.VerifyOption
 type VerifyOptions = attestation.VerifyOptions
 
-func WithDebug(debug bool) VerifyOption {
-	return attestation.WithDebug(debug)
-}
-
-func WithMeasurement(measurement string) VerifyOption {
-	return attestation.WithMeasurement(measurement)
-}
-
-func WithTimestamp(timestamp time.Time) VerifyOption {
-	return attestation.WithTimestamp(timestamp)
-}
+var (
+	WithDebug = attestation.WithDebug
+	WithMeasurement = attestation.WithMeasurement
+	WithTimestamp = attestation.WithTimestamp
+	WithVerifyNonce = attestation.WithVerifyNonce
+)

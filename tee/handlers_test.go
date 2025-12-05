@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 
 	"github.com/tahardi/bearclave/mocks"
@@ -32,9 +34,11 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		data := []byte("hello world")
-		attestation := []byte("attestation")
+		attestation := &bearclave.AttestResult{Report: []byte("attestation")}
 		attester := mocks.NewAttester(t)
-		attester.On("Attest", data).Return(attestation, nil).Once()
+		attester.
+			On("Attest", mock.AnythingOfType("[]attestation.AttestOption")).
+			Return(attestation, nil).Once()
 
 		var logBuffer bytes.Buffer
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
@@ -84,7 +88,9 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		// given
 		data := []byte("hello world")
 		attester := mocks.NewAttester(t)
-		attester.On("Attest", data).Return(nil, assert.AnError).Once()
+		attester.
+			On("Attest", mock.AnythingOfType("[]attestation.AttestOption")).
+			Return(nil, assert.AnError).Once()
 
 		var logBuffer bytes.Buffer
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))

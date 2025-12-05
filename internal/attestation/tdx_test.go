@@ -45,7 +45,7 @@ func tdxReportFromTestData(
 	t *testing.T,
 	reportB64 string,
 	timestamp time.Time,
-) ([]byte, *pb.QuoteV4) {
+) (*attestation.AttestResult, *pb.QuoteV4) {
 	report, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 
@@ -59,7 +59,7 @@ func tdxReportFromTestData(
 
 	quoteV4, ok := pbQuote.(*pb.QuoteV4)
 	require.True(t, ok)
-	return report, quoteV4
+	return &attestation.AttestResult{Report: report}, quoteV4
 }
 
 func TestTDX_Interfaces(t *testing.T) {
@@ -94,12 +94,12 @@ func TestTDXVerifier_Verify(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Contains(t, string(got), string(want))
+		assert.Contains(t, string(got.UserData), string(want))
 	})
 
 	t.Run("error - invalid report", func(t *testing.T) {
 		// given
-		report := []byte("invalid attestation report")
+		report := &attestation.AttestResult{Report: []byte("invalid attestation report")}
 
 		verifier, err := attestation.NewTDXVerifier()
 		require.NoError(t, err)

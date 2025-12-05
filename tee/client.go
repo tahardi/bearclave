@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/tahardi/bearclave"
 )
 
 type Client struct {
@@ -28,7 +30,7 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) AttestUserData(data []byte) ([]byte, error) {
+func (c *Client) AttestUserData(data []byte) (*bearclave.AttestResult, error) {
 	attestUserDataRequest := AttestUserDataRequest{Data: data}
 	attestUserDataResponse := AttestUserDataResponse{}
 	err := c.Do(
