@@ -1,49 +1,71 @@
-package ipc
+package tee
 
 import (
 	"context"
 	"encoding/base64"
 	"fmt"
 	"net"
+
+	"github.com/tahardi/bearclave"
 )
 
-type SocketIPC struct {
-	dial     func(network, address string) (net.Conn, error)
+type Socket struct {
+	platform bearclave.Platform
+	network  string
 	listener net.Listener
 }
 
-func NewSocketIPC(endpoint string) (*SocketIPC, error) {
-	listener, err := net.Listen("tcp", endpoint)
+func NewSocket(
+	platform bearclave.Platform,
+	network string,
+	addr string,
+) (*Socket, error) {
+	listener, err := bearclave.NewListener(platform, network, addr)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"initializing TCP listener on '%s': %w",
-			endpoint,
-			err,
-		)
+		return nil, err
 	}
-	return NewSocketIPCWithDialAndListener(net.Dial, listener)
-}
-
-func NewSocketIPCWithDialAndListener(
-	dial func(network, address string) (net.Conn, error),
-	listener net.Listener,
-) (*SocketIPC, error) {
-	return &SocketIPC{
-		dial:     dial,
+	return &Socket{
+		platform: platform,
+		network:  network,
 		listener: listener,
 	}, nil
 }
 
-func (s *SocketIPC) Close() error {
+func NewSocketWithListener(
+	platform bearclave.Platform,
+	network string,
+	listener net.Listener,
+) (*Socket, error) {
+	return &Socket{
+		platform: platform,
+		network:  network,
+		listener: listener,
+	}, nil
+}
+
+func (s *Socket) Close() error {
 	return s.listener.Close()
 }
 
-func (s *SocketIPC) Send(ctx context.Context, endpoint string, data []byte) error {
+func (s *Socket) Send(ctx context.Context, addr string, data []byte) error {
+	dialer, err := bearclave.NewDialer(s.platform)
+	if err != nil {
+		return fmt.Errorf("creating dialer: %w", err)
+	}
+	return s.SendWithDialer(ctx, dialer, addr, data)
+}
+
+func (s *Socket) SendWithDialer(
+	ctx context.Context,
+	dialer bearclave.Dialer,
+	addr string,
+	data []byte,
+) error {
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := s.dial("tcp", endpoint)
+		conn, err := dialer(s.network, addr)
 		if err != nil {
-			errChan <- fmt.Errorf("dialing '%s': %w", endpoint, err)
+			errChan <- fmt.Errorf("dialing '%s': %w", addr, err)
 			return
 		}
 		defer conn.Close()
@@ -63,13 +85,13 @@ func (s *SocketIPC) Send(ctx context.Context, endpoint string, data []byte) erro
 
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("send context cancelled: %w", ctx.Err())
+		return fmt.Errorf("deadline exceeded or context cancelled: %w", ctx.Err())
 	case err := <-errChan:
 		return err
 	}
 }
 
-func (s *SocketIPC) Receive(ctx context.Context) ([]byte, error) {
+func (s *Socket) Receive(ctx context.Context) ([]byte, error) {
 	dataChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
 	go func() {
@@ -98,7 +120,7 @@ func (s *SocketIPC) Receive(ctx context.Context) ([]byte, error) {
 
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("receive context cancelled: %w", ctx.Err())
+		return nil, fmt.Errorf("deadline exceeded or context cancelled: %w", ctx.Err())
 	case err := <-errChan:
 		return nil, err
 	case data := <-dataChan:
