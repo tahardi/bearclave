@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tahardi/bearclave/tee"
 
-	"github.com/tahardi/bearclave/internal/mocks"
+	"github.com/tahardi/bearclave/mocks"
 )
 
 func makeRequest(

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/tahardi/bearclave"
-	"github.com/tahardi/bearclave/internal/mocks"
+	"github.com/tahardi/bearclave/mocks"
 	"github.com/tahardi/bearclave/tee"
 )
 
