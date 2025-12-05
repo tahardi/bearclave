@@ -15,7 +15,7 @@ type AttestUserDataRequest struct {
 	Data []byte `json:"data"`
 }
 type AttestUserDataResponse struct {
-	Attestation []byte `json:"attestation"`
+	Attestation *bearclave.AttestResult `json:"attestation"`
 }
 
 func MakeAttestUserDataHandler(
@@ -34,7 +34,7 @@ func MakeAttestUserDataHandler(
 			"attesting userdata",
 			slog.String("userdata", string(req.Data)),
 		)
-		att, err := attester.Attest(req.Data)
+		att, err := attester.Attest(bearclave.WithUserData(req.Data))
 		if err != nil {
 			WriteError(w, fmt.Errorf("attesting userdata: %w", err))
 			return

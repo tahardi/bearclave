@@ -4,13 +4,13 @@ import (
 	"time"
 )
 
+type Verifier interface {
+	Verify(report *AttestResult, options ...VerifyOption) (result *VerifyResult, err error)
+}
+
 type VerifyResult struct {
 	UserData        []byte `json:"userdata"`
 	PublicKey       []byte `json:"publickey"`
-}
-
-type Verifier interface {
-	Verify(report *AttestResult, options ...VerifyOption) (result *VerifyResult, err error)
 }
 
 type VerifyOption func(*VerifyOptions)

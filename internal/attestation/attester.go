@@ -1,11 +1,11 @@
 package attestation
 
-type AttestResult struct {
-	Report []byte `json:"report"`
-}
-
 type Attester interface {
 	Attest(options ...AttestOption) (result *AttestResult, err error)
+}
+
+type AttestResult struct {
+	Report []byte `json:"report"`
 }
 
 type AttestOption func(*AttestOptions)

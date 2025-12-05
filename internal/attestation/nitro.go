@@ -172,7 +172,7 @@ func NitroVerifyMeasurement(measurementJSON string, document *nitrite.Document) 
 }
 
 func NitroVerifyNonce(nonce []byte, document *nitrite.Document) error {
-	if nonce == nil || len(nonce) == 0 {
+	if len(nonce) == 0 {
 		return nil
 	}
 	if !bytes.Equal(nonce, document.Nonce) {

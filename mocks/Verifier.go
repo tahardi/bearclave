@@ -37,7 +37,7 @@ func (_m *Verifier) EXPECT() *Verifier_Expecter {
 }
 
 // Verify provides a mock function for the type Verifier
-func (_mock *Verifier) Verify(report []byte, options ...attestation.VerifyOption) ([]byte, error) {
+func (_mock *Verifier) Verify(report *attestation.AttestResult, options ...attestation.VerifyOption) (*attestation.VerifyResult, error) {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(report, options)
@@ -50,19 +50,19 @@ func (_mock *Verifier) Verify(report []byte, options ...attestation.VerifyOption
 		panic("no return value specified for Verify")
 	}
 
-	var r0 []byte
+	var r0 *attestation.VerifyResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func([]byte, ...attestation.VerifyOption) ([]byte, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(*attestation.AttestResult, ...attestation.VerifyOption) (*attestation.VerifyResult, error)); ok {
 		return returnFunc(report, options...)
 	}
-	if returnFunc, ok := ret.Get(0).(func([]byte, ...attestation.VerifyOption) []byte); ok {
+	if returnFunc, ok := ret.Get(0).(func(*attestation.AttestResult, ...attestation.VerifyOption) *attestation.VerifyResult); ok {
 		r0 = returnFunc(report, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
+			r0 = ret.Get(0).(*attestation.VerifyResult)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func([]byte, ...attestation.VerifyOption) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(*attestation.AttestResult, ...attestation.VerifyOption) error); ok {
 		r1 = returnFunc(report, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -83,20 +83,20 @@ func (_e *Verifier_Expecter) Verify(report interface{}, options ...interface{}) 
 		append([]interface{}{report}, options...)...)}
 }
 
-func (_c *Verifier_Verify_Call) Run(run func(report []byte, options ...attestation.VerifyOption)) *Verifier_Verify_Call {
+func (_c *Verifier_Verify_Call) Run(run func(report *attestation.AttestResult, options ...attestation.VerifyOption)) *Verifier_Verify_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := args[1].([]attestation.VerifyOption)
-		run(args[0].([]byte), variadicArgs...)
+		run(args[0].(*attestation.AttestResult), variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Verifier_Verify_Call) Return(userdata []byte, err error) *Verifier_Verify_Call {
-	_c.Call.Return(userdata, err)
+func (_c *Verifier_Verify_Call) Return(result *attestation.VerifyResult, err error) *Verifier_Verify_Call {
+	_c.Call.Return(result, err)
 	return _c
 }
 
-func (_c *Verifier_Verify_Call) RunAndReturn(run func(report []byte, options ...attestation.VerifyOption) ([]byte, error)) *Verifier_Verify_Call {
+func (_c *Verifier_Verify_Call) RunAndReturn(run func(report *attestation.AttestResult, options ...attestation.VerifyOption) (*attestation.VerifyResult, error)) *Verifier_Verify_Call {
 	_c.Call.Return(run)
 	return _c
 }

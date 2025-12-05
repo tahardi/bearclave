@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 
 	"github.com/tahardi/bearclave/mocks"
@@ -31,7 +32,7 @@ func TestClient_AttestUserData(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		data := []byte("hello world")
-		want := []byte("attestation")
+		want := &bearclave.AttestResult{Report: []byte("attestation")}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.Equal(t, http.MethodPost, r.Method)
