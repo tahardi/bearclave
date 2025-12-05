@@ -1,16 +1,15 @@
-package networking
+package bearclave
 
 import (
 	"net/http"
 
 	"github.com/tahardi/bearclave/internal/networking"
-	"github.com/tahardi/bearclave/pkg/setup"
 )
 
 type Server = networking.Server
 
 func NewServer(
-	platform setup.Platform,
+	platform Platform,
 	port int,
 	mux *http.ServeMux,
 ) (*Server, error) {

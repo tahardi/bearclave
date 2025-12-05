@@ -1,4 +1,4 @@
-package networking
+package bearclave
 
 import "github.com/tahardi/bearclave/internal/networking"
 

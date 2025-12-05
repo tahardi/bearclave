@@ -1,14 +1,13 @@
-package networking
+package bearclave
 
 import (
 	"github.com/tahardi/bearclave/internal/networking"
-	"github.com/tahardi/bearclave/pkg/setup"
 )
 
 type Proxy = networking.Proxy
 
 func NewProxy(
-	platform setup.Platform,
+	platform Platform,
 	route string,
 	cid int,
 	port int,
@@ -19,7 +18,7 @@ func NewProxy(
 type MultiProxy = networking.MultiProxy
 
 func NewMultiProxy(
-	platform setup.Platform,
+	platform Platform,
 	routes []string,
 	cids []int,
 	ports []int,

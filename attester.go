@@ -1,12 +1,11 @@
-package attestation
+package bearclave
 
 import (
 	"github.com/tahardi/bearclave/internal/attestation"
-	"github.com/tahardi/bearclave/pkg/setup"
 )
 
 type Attester = attestation.Attester
 
-func NewAttester(platform setup.Platform) (Attester, error) {
+func NewAttester(platform Platform) (Attester, error) {
 	return attestation.NewAttester(platform)
 }
