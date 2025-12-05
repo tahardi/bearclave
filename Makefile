@@ -33,7 +33,8 @@ tidy:
 	@go mod tidy
 
 .PHONY: test-unit
-test-unit: tidy test-internal-unit
+test-unit: tidy
+	@go test -v -count=1 -race ./...
 
 .PHONY: test-internal-unit
 test-internal-unit:
