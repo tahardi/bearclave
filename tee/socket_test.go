@@ -15,7 +15,33 @@ import (
 )
 
 func TestSocketRoundTrip(t *testing.T) {
-	t.Run("happy path", func(t *testing.T) {
+	t.Run("happy path - unix socket", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		want := []byte("hello world")
+		platform := bearclave.NoTEE
+		network := "unix"
+		addr1 := "127.0.0.1:8080"
+		addr2 := "127.0.0.1:8081"
+		socket1, err := tee.NewSocket(platform, network, addr1)
+		require.NoError(t, err)
+		socket2, err := tee.NewSocket(platform, network, addr2)
+		require.NoError(t, err)
+		defer socket1.Close()
+		defer socket2.Close()
+
+		// when
+		err = socket1.Send(ctx, addr2, want)
+		require.NoError(t, err)
+
+		got, err := socket2.Receive(ctx)
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("happy path - tcp socket", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
@@ -40,6 +66,7 @@ func TestSocketRoundTrip(t *testing.T) {
 		// then
 		assert.Equal(t, want, got)
 	})
+
 }
 
 func TestSocket_Send(t *testing.T) {
@@ -48,7 +75,7 @@ func TestSocket_Send(t *testing.T) {
 		ctx := context.Background()
 		want := []byte("hello world")
 		platform := bearclave.NoTEE
-		network := "tcp"
+		network := "unix"
 		addr := "127.0.0.1:8080"
 
 		dialer := func(string, string) (net.Conn, error) {
@@ -71,7 +98,7 @@ func TestSocket_Send(t *testing.T) {
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		platform := bearclave.NoTEE
-		network := "tcp"
+		network := "unix"
 		addr := "127.0.0.1:8080"
 
 		conn := mocks.NewConn(t)
@@ -98,7 +125,7 @@ func TestSocket_Send(t *testing.T) {
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		platform := bearclave.NoTEE
-		network := "tcp"
+		network := "unix"
 		addr := "127.0.0.1:8080"
 
 		conn := mocks.NewConn(t)
@@ -125,7 +152,7 @@ func TestSocket_Send(t *testing.T) {
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		platform := bearclave.NoTEE
-		network := "tcp"
+		network := "unix"
 		addr := "127.0.0.1:8080"
 
 		conn := mocks.NewConn(t)
@@ -152,7 +179,7 @@ func TestSocket_Receive(t *testing.T) {
 	t.Run("error - accepting connection", func(t *testing.T) {
 		// given
 		ctx := context.Background()
-		network := "tcp"
+		network := "unix"
 		platform := bearclave.NoTEE
 
 		listener := mocks.NewListener(t)
@@ -173,7 +200,7 @@ func TestSocket_Receive(t *testing.T) {
 		ctx := context.Background()
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
-		network := "tcp"
+		network := "unix"
 		platform := bearclave.NoTEE
 
 		conn := mocks.NewConn(t)
@@ -197,7 +224,7 @@ func TestSocket_Receive(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
-		network := "tcp"
+		network := "unix"
 		platform := bearclave.NoTEE
 
 		conn := mocks.NewConn(t)
@@ -222,7 +249,7 @@ func TestSocket_Receive(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
-		network := "tcp"
+		network := "unix"
 		platform := bearclave.NoTEE
 
 		conn := mocks.NewConn(t)
