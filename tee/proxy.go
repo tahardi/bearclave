@@ -1,27 +1,28 @@
-package bearclave
+package tee
 
 import (
 	"fmt"
 
+	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
 type Proxy = networking.Proxy
 
 func NewProxy(
-	platform Platform,
+	platform bearclave.Platform,
 	route string,
 	cid int,
 	port int,
 ) (*Proxy, error) {
 	switch platform {
-	case Nitro:
+	case bearclave.Nitro:
 		return networking.NewVSocketProxy(route, cid, port)
-	case SEV:
+	case bearclave.SEV:
 		return networking.NewSocketProxy(route, port)
-	case TDX:
+	case bearclave.TDX:
 		return networking.NewSocketProxy(route, port)
-	case NoTEE:
+	case bearclave.NoTEE:
 		return networking.NewSocketProxy(route, port)
 	default:
 		return nil, fmt.Errorf("unsupported platform '%s'", platform)

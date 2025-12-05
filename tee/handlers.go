@@ -1,10 +1,12 @@
-package bearclave
+package tee
 
 import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/tahardi/bearclave"
 )
 
 const AttestUserDataPath = "/attest-user-data"
@@ -17,7 +19,7 @@ type AttestUserDataResponse struct {
 }
 
 func MakeAttestUserDataHandler(
-	attester Attester,
+	attester bearclave.Attester,
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,4 @@
-package bearclave
+package tee
 
 import (
 	"bytes"

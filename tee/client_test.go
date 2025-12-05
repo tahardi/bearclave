@@ -1,4 +1,4 @@
-package bearclave_test
+package tee_test
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/tahardi/bearclave/tee"
 
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/internal/mocks"
 )
 
@@ -35,21 +35,21 @@ func TestClient_AttestUserData(t *testing.T) {
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.Equal(t, http.MethodPost, r.Method)
-			require.Contains(t, r.URL.Path, bearclave.AttestUserDataPath)
+			require.Contains(t, r.URL.Path, tee.AttestUserDataPath)
 
-			req := bearclave.AttestUserDataRequest{}
+			req := tee.AttestUserDataRequest{}
 			err := json.NewDecoder(r.Body).Decode(&req)
 			require.NoError(t, err)
 			assert.Equal(t, data, req.Data)
 
-			resp := bearclave.AttestUserDataResponse{Attestation: want}
+			resp := tee.AttestUserDataResponse{Attestation: want}
 			writeResponse(t, w, resp)
 		})
 
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		client := bearclave.NewClientWithClient(server.URL, server.Client())
+		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
 		got, err := client.AttestUserData(data)
@@ -70,7 +70,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		client := bearclave.NewClientWithClient(server.URL, server.Client())
+		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
 		_, err := client.AttestUserData(data)
@@ -107,7 +107,7 @@ func TestClient_Do(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		client := bearclave.NewClientWithClient(server.URL, server.Client())
+		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
 		err := client.Do(method, api, apiReq, apiResp)
@@ -140,7 +140,7 @@ func TestClient_Do(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		client := bearclave.NewClientWithClient(server.URL, server.Client())
+		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
 		err := client.Do(method, api, apiReq, apiResp)
@@ -166,7 +166,7 @@ func TestClient_Do(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		client := bearclave.NewClientWithClient(server.URL, server.Client())
+		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
 		err := client.Do(method, api, apiReq, apiResp)
@@ -186,7 +186,7 @@ func TestClient_Do(t *testing.T) {
 		roundTripper.On("RoundTrip", mock.Anything).Return(nil, assert.AnError)
 
 		httpClient := &http.Client{Transport: roundTripper}
-		client := bearclave.NewClientWithClient("127.0.0.1", httpClient)
+		client := tee.NewClientWithClient("127.0.0.1", httpClient)
 
 		// when
 		err := client.Do(method, api, apiReq, apiResp)
@@ -210,7 +210,7 @@ func TestClient_Do(t *testing.T) {
 		roundTripper.On("RoundTrip", mock.Anything).Return(httpResp, nil)
 
 		httpClient := &http.Client{Transport: roundTripper}
-		client := bearclave.NewClientWithClient("127.0.0.1", httpClient)
+		client := tee.NewClientWithClient("127.0.0.1", httpClient)
 
 		// when
 		err := client.Do(method, api, apiReq, apiResp)
@@ -239,7 +239,7 @@ func TestClient_Do(t *testing.T) {
 		roundTripper.On("RoundTrip", mock.Anything).Return(httpResp, nil)
 
 		httpClient := &http.Client{Transport: roundTripper}
-		client := bearclave.NewClientWithClient("127.0.0.1", httpClient)
+		client := tee.NewClientWithClient("127.0.0.1", httpClient)
 
 		// when
 		err := client.Do(method, api, apiReq, apiResp)
