@@ -1,9 +1,11 @@
 package tee
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net"
 
 	"github.com/tahardi/bearclave"
@@ -102,15 +104,14 @@ func (s *Socket) Receive(ctx context.Context) ([]byte, error) {
 		}
 		defer conn.Close()
 
-		buf := make([]byte, 10000)
-		n, readErr := conn.Read(buf)
-		if readErr != nil {
-			errChan <- fmt.Errorf("reading data: %w", readErr)
+		var buf bytes.Buffer
+		_, err = io.Copy(&buf, conn)
+		if err != nil {
+			errChan <- fmt.Errorf("reading data: %w", err)
 			return
 		}
 
-		base64Data := buf[:n]
-		data, err := base64.StdEncoding.DecodeString(string(base64Data))
+		data, err := base64.StdEncoding.DecodeString(buf.String())
 		if err != nil {
 			errChan <- fmt.Errorf("decoding data: %w", err)
 			return
