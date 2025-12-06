@@ -8,11 +8,26 @@ import (
 )
 
 func TestParseVSocketAddr(t *testing.T) {
-	t.Run("happy path", func(t *testing.T) {
+	t.Run("happy path - no scheme", func(t *testing.T) {
 		// given
 		wantCID := uint32(4)
 		wantPort := uint32(8080)
 		addr := "4:8080"
+
+		// when
+		cid, port, err := networking.ParseVSocketAddr(addr)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, wantCID, cid)
+		assert.Equal(t, wantPort, port)
+	})
+
+	t.Run("happy path - with scheme", func(t *testing.T) {
+		// given
+		wantCID := uint32(4)
+		wantPort := uint32(8080)
+		addr := "http://4:8080"
 
 		// when
 		cid, port, err := networking.ParseVSocketAddr(addr)

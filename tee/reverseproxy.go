@@ -57,15 +57,7 @@ func NewReverseProxyWithTransport(
 	targetAddr string,
 	route string,
 ) (*httputil.ReverseProxy, error) {
-	// Target addresses for nitro are of the form "cid:port", which does not
-	// work with url.Parse. Extract the port and build a localhost URL since
-	// we assume the proxy and enclave run on the same machine.
-	tokens := strings.Split(targetAddr, ":")
-	if len(tokens) < 2 {
-		return nil, fmt.Errorf("invalid target address: %s", targetAddr)
-	}
-
-	targetURL, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%s", tokens[len(tokens)-1]))
+	targetURL, err := url.Parse(targetAddr)
 	if err != nil {
 		return nil, fmt.Errorf("parsing target URL: %w", err)
 	}

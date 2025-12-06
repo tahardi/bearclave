@@ -57,6 +57,11 @@ func NewVSocketListener(_ string, addr string) (net.Listener, error) {
 }
 
 func ParseVSocketAddr(addr string) (uint32, uint32, error) {
+	// Handle URLs like "http://cid:port" by stripping the scheme
+	if idx := strings.Index(addr, "://"); idx != -1 {
+		addr = addr[idx+3:]
+	}
+
 	var cid, port int
 	n, err := fmt.Sscanf(addr, "%d:%d", &cid, &port)
 	switch {
