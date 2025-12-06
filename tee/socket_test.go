@@ -231,7 +231,7 @@ func TestSocket_Receive(t *testing.T) {
 		conn := mocks.NewConn(t)
 		conn.On("Read", mock.Anything).Return(len(want), nil).Once()
 		conn.On("Read", mock.Anything).Return(0, io.EOF).Once()
-		conn.On("Close").Return(nil)
+		conn.On("Close").Return(nil).Maybe()
 
 		listener := mocks.NewListener(t)
 		listener.On("Accept").Return(conn, nil)
