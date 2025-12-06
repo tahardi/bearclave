@@ -10,13 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  notee-test:
+  lint:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        example: [hello-world, hello-http, hello-http-multi]
-
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -26,11 +21,22 @@ jobs:
         with:
           go-version-file: './go.mod'
 
-      - name: Install Process Compose
-        run: |
-          sh -c "$(curl --location https://raw.githubusercontent.com/F1bonacc1/process-compose/main/scripts/get-pc.sh)" -- -d -b /usr/local/bin
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6
+          args: --timeout=3m --config=./.golangci.yaml
 
-      - name: Run Notee Example - ${{ matrix.example }}
-        working-directory: examples/${{ matrix.example }}
-        run: make
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: './go.mod'
+
+      - name: Run Unit Tests
+        run: make test-unit

@@ -21,8 +21,17 @@ func NewTDXAttester() (*TDXAttester, error) {
 	return &TDXAttester{}, nil
 }
 
-func (n *TDXAttester) Attest(userdata []byte) ([]byte, error) {
-	if len(userdata) > INTEL_TDX_USERDATA_SIZE {
+func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
+	opts := AttestOptions{
+		nonce: nil,
+		publicKey: nil,
+		userData: nil,
+	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	if len(opts.userData) > INTEL_TDX_USERDATA_SIZE {
 		return nil, fmt.Errorf(
 			"userdata must be less than %d bytes",
 			INTEL_TDX_USERDATA_SIZE,
@@ -35,12 +44,14 @@ func (n *TDXAttester) Attest(userdata []byte) ([]byte, error) {
 	}
 
 	var reportData [64]byte
-	copy(reportData[:], userdata)
+	if opts.userData != nil {
+		copy(reportData[:], opts.userData)
+	}
 	quote, err := tdxQP.GetRawQuote(reportData)
 	if err != nil {
 		return nil, fmt.Errorf("getting tdx quote: %w", err)
 	}
-	return quote, nil
+	return &AttestResult{Report: quote}, nil
 }
 
 type TDXVerifier struct{}
@@ -50,9 +61,9 @@ func NewTDXVerifier() (*TDXVerifier, error) {
 }
 
 func (n *TDXVerifier) Verify(
-	report []byte,
+	attestResult *AttestResult,
 	options ...VerifyOption,
-) ([]byte, error) {
+) (*VerifyResult, error) {
 	opts := VerifyOptions{
 		debug:       false,
 		measurement: "",
@@ -62,7 +73,7 @@ func (n *TDXVerifier) Verify(
 		opt(&opts)
 	}
 
-	pbQuote, err := abi.QuoteToProto(report)
+	pbQuote, err := abi.QuoteToProto(attestResult.Report)
 	if err != nil {
 		return nil, fmt.Errorf("converting tdx report to proto: %w", err)
 	}
@@ -94,7 +105,11 @@ func (n *TDXVerifier) Verify(
 			debug,
 		)
 	}
-	return quoteV4.GetTdQuoteBody().GetReportData(), nil
+
+	verifyResult := &VerifyResult{
+		UserData: quoteV4.GetTdQuoteBody().GetReportData(),
+	}
+	return verifyResult, nil
 }
 
 func TDXIsDebugEnabled(quoteV4 *pb.QuoteV4) (bool, error) {

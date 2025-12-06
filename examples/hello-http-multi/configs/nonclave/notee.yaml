@@ -1,9 +1,0 @@
-platform: "notee"
-proxy:
-  port: 8080
-servers:
-  "enclave-server-1":
-    route: "/v1"
-  "enclave-server-2":
-    route: "/v2"
-measurement: "Not a TEE platform. Code measurements are not real."
