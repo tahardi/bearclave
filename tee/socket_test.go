@@ -3,6 +3,7 @@ package tee_test
 import (
 	"context"
 	"encoding/base64"
+	"io"
 	"net"
 	"testing"
 
@@ -228,8 +229,9 @@ func TestSocket_Receive(t *testing.T) {
 		platform := bearclave.NoTEE
 
 		conn := mocks.NewConn(t)
-		conn.On("Read", mock.Anything).Return(len(want), nil)
-		conn.On("Close").Return(nil).Maybe()
+		conn.On("Read", mock.Anything).Return(len(want), nil).Once()
+		conn.On("Read", mock.Anything).Return(0, io.EOF).Once()
+		conn.On("Close").Return(nil)
 
 		listener := mocks.NewListener(t)
 		listener.On("Accept").Return(conn, nil)
