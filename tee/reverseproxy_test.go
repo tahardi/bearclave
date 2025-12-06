@@ -5,8 +5,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,14 +23,9 @@ func TestReverseProxy(t *testing.T) {
 		)
 		defer backend.Close()
 
-		parsedURL, err := url.Parse(backend.URL)
-		require.NoError(t, err)
-		targetPort, err := strconv.Atoi(parsedURL.Port())
-		require.NoError(t, err)
-
 		platform := bearclave.NoTEE
 		route := "/api/v1"
-		proxy, err := tee.NewReverseProxy(platform, targetPort, route)
+		proxy, err := tee.NewReverseProxy(platform, backend.URL, route)
 		require.NoError(t, err)
 
 		usersPath := route + "/users"
@@ -50,13 +43,13 @@ func TestReverseProxy(t *testing.T) {
 	t.Run("happy path - verify path stripping", func(t *testing.T) {
 		// given
 		platform := bearclave.NoTEE
-		targetPort := 8080
+		backendURL := "http://127.0.0.1:8080"
 		route := "/api/v1"
-		proxy, err := tee.NewReverseProxy(platform, targetPort, route)
+		proxy, err := tee.NewReverseProxy(platform, backendURL, route)
 		require.NoError(t, err)
 
 		usersPath := route + "/users"
-		targetURL := fmt.Sprintf("%s%s", "http://localhost:8080", usersPath)
+		targetURL := fmt.Sprintf("%s%s", backendURL, usersPath)
 		req := makeRequest(t, "GET", targetURL, nil)
 
 		// when
@@ -69,16 +62,16 @@ func TestReverseProxy(t *testing.T) {
 
 	t.Run("error - dialing target", func(t *testing.T) {
 		// given
-		targetPort := 8080
+		backendURL := "http://127.0.0.1:8080"
 		route := "/api/v1"
 		dialer := func(string, string) (net.Conn, error) {
 			return nil, assert.AnError
 		}
-		proxy, err := tee.NewReverseProxyWithDialer(dialer, targetPort, route)
+		proxy, err := tee.NewReverseProxyWithDialer(dialer, backendURL, route)
 		require.NoError(t, err)
 
 		usersPath := route + "/users"
-		targetURL := fmt.Sprintf("http://localhost:%d%s", targetPort, usersPath)
+		targetURL := fmt.Sprintf("%s%s", backendURL, usersPath)
 		req := makeRequest(t, "GET", targetURL, nil)
 		recorder := httptest.NewRecorder()
 

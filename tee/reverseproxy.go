@@ -14,19 +14,19 @@ import (
 
 func NewReverseProxy(
 	platform bearclave.Platform,
-	targetPort int,
+	targetAddr string,
 	route string,
 ) (*httputil.ReverseProxy, error) {
 	dialer, err := bearclave.NewDialer(platform)
 	if err != nil {
 		return nil, fmt.Errorf("creating dialer: %w", err)
 	}
-	return NewReverseProxyWithDialer(dialer, targetPort, route)
+	return NewReverseProxyWithDialer(dialer, targetAddr, route)
 }
 
 func NewReverseProxyWithDialer(
 	dialer bearclave.Dialer,
-	targetPort int,
+	targetAddr string,
 	route string,
 ) (*httputil.ReverseProxy, error) {
 	dialContext := func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -49,16 +49,15 @@ func NewReverseProxyWithDialer(
 		}
 	}
 	transport := &http.Transport{DialContext: dialContext}
-	return NewReverseProxyWithTransport(transport, targetPort, route)
+	return NewReverseProxyWithTransport(transport, targetAddr, route)
 }
 
 func NewReverseProxyWithTransport(
 	transport *http.Transport,
-	targetPort int,
+	targetAddr string,
 	route string,
 ) (*httputil.ReverseProxy, error) {
-	addr := fmt.Sprintf("http://127.0.0.1:%d", targetPort)
-	targetURL, err := url.Parse(addr)
+	targetURL, err := url.Parse(targetAddr)
 	if err != nil {
 		return nil, fmt.Errorf("parsing target URL: %w", err)
 	}
