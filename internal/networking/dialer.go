@@ -10,7 +10,13 @@ import (
 type Dialer func(network string, addr string) (net.Conn, error)
 
 func NewSocketDialer() (Dialer, error) {
-	return net.Dial, nil
+	return func(network string, addr string) (net.Conn, error) {
+		sanitizedAddr, err := sanitizeAddr(addr)
+		if err != nil {
+			return nil, fmt.Errorf("sanitizing addr: %w", err)
+		}
+		return net.Dial(network, sanitizedAddr)
+	}, nil
 }
 
 func NewVSocketDialer() (Dialer, error) {

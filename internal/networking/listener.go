@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/mdlayher/vsock"
 )
 
 func sanitizeAddr(addr string) (string, error) {
-	u, err := url.Parse(addr)
-	if err != nil {
-		return "", err
+	if !strings.Contains(addr, "://") {
+		return addr, nil
 	}
 
-	if u.Scheme != "" {
-		return u.Host, nil
+	u, err := url.Parse(addr)
+	if err != nil {
+		return "", fmt.Errorf("parsing URL: %w", err)
 	}
-	return addr, nil
+	return u.Host, nil
 }
 
 func NewSocketListener(network string, addr string) (net.Listener, error) {
