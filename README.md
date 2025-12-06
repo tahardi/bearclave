@@ -1,5 +1,12 @@
 # UNDER CONSTRUCTION
+
+This repository was recently restructured, but the documentation is not yet
+updated.
+Note that examples have been moved to a separate repository:
+[bearclave-examples](https://github.com/tahardi/bearclave-examples).
+
 # Bearclave: Simplifying Cloud-Based TEE Development
+
 Trusted Execution Environments (TEEs) are a combination of specialized  
 hardware and software designed to enhance the confidentiality and integrity of  
 sensitive code and data. Curious developers often want to explore TEE technology  
@@ -104,13 +111,5 @@ If you wish to use AMD SEV-SNP or Intel TDX, refer to the
 ---
 
 ## Build and Deploy Examples
-The `examples/` directory contains code demonstrating the basics of TEE
-application development and deployment on the AWS Nitro Enclaves, GCP AMD-SEV,
-and GCP Intel TDX platforms.
-
-- [**Hello World:**](examples/hello-world/README.md) demonstrates how to deploy
-an application to a TEE and communicate with it via (virtual) sockets
-- [**Hello HTTP:**](examples/hello-http/README.md) demonstrates how to deploy an 
-HTTP server to a TEE
-- [**Hello HTTP Multi:**](examples/hello-http-multi/README.md) demonstrates how
-to deploy multiple HTTP servers to the same TEE
+Note that examples have been moved to a separate repository:
+[bearclave-examples](https://github.com/tahardi/bearclave-examples).
