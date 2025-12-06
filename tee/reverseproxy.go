@@ -65,7 +65,7 @@ func NewReverseProxyWithTransport(
 		return nil, fmt.Errorf("invalid target address: %s", targetAddr)
 	}
 
-	targetURL, err := url.Parse(fmt.Sprintf("127.0.0.1:%s", tokens[len(tokens)-1]))
+	targetURL, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%s", tokens[len(tokens)-1]))
 	if err != nil {
 		return nil, fmt.Errorf("parsing target URL: %w", err)
 	}
