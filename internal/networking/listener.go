@@ -3,17 +3,35 @@ package networking
 import (
 	"fmt"
 	"net"
+	"net/url"
 
 	"github.com/mdlayher/vsock"
 )
 
+func sanitizeAddr(addr string) (string, error) {
+	u, err := url.Parse(addr)
+	if err != nil {
+		return "", err
+	}
+
+	if u.Scheme != "" {
+		return u.Host, nil
+	}
+	return addr, nil
+}
+
 func NewSocketListener(network string, addr string) (net.Listener, error) {
-	listener, err := net.Listen(network, addr)
+	sanitizedAddr, err := sanitizeAddr(addr)
+	if err != nil {
+		return nil, fmt.Errorf("sanitizing addr: %w", err)
+	}
+
+	listener, err := net.Listen(network, sanitizedAddr)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"creating %s socket listener on %s: %w",
 			network,
-			addr,
+			sanitizedAddr,
 			err,
 		)
 	}
