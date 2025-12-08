@@ -49,10 +49,7 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 		attester, err := attestation.NewNoTEEAttesterWithPrivateKey(privateKey)
 		require.NoError(t, err)
 
-		verifyKey := append(
-			privateKey.X.Bytes(),
-			privateKey.Y.Bytes()...,
-		)
+		verifyKey := &attestation.PublicKey{X: privateKey.X, Y: privateKey.Y}
 
 		// ECDSA signatures are not deterministic, so we can't
 		// test that the signature is equal to a specific value
@@ -92,7 +89,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, got.UserData)
 	})
 
@@ -108,11 +105,11 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		got, err := verifier.Verify(report)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, got.UserData)
 	})
 
-	t.Run("error - invalid attestation report", func(t *testing.T) {
+	t.Run("error - unmarshalling report", func(t *testing.T) {
 		// given
 		report := &attestation.AttestResult{Report: []byte("invalid report")}
 
@@ -123,15 +120,11 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report)
 
 		// then
-		assert.ErrorContains(t, err, "unmarshaling report")
+		assert.ErrorContains(t, err, "unmarshalling report")
 	})
 
-	t.Run("error - invalid signature", func(t *testing.T) {
-		// given
-		report := attestation.Report{
-			VerifyKey: []byte("verify key"),
-			Signature: []byte("invalid signature"),
-		}
+	t.Run("error - verifying signature", func(t *testing.T) {
+		report := attestation.Report{}
 		reportBytes, err := json.Marshal(report)
 		require.NoError(t, err)
 
@@ -142,7 +135,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(&attestation.AttestResult{Report: reportBytes})
 
 		// then
-		assert.ErrorContains(t, err, "invalid signature")
+		assert.ErrorContains(t, err, "verifying signature")
 	})
 
 	t.Run("error - expired report", func(t *testing.T) {
@@ -158,7 +151,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
 
 		// then
-		assert.ErrorContains(t, err, "certificate has expired or is not yet valid")
+		assert.ErrorIs(t, err, attestation.ErrInvalidCertificate)
 	})
 
 	t.Run("error - wrong measurement", func(t *testing.T) {
@@ -178,7 +171,27 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorContains(t, err, "measurement mismatch")
+		assert.ErrorIs(t, err, attestation.ErrMeasurementMismatch)
+	})
+
+	t.Run("error - wrong nonce", func(t *testing.T) {
+		// given
+		want := []byte("hello world")
+		wrongNonce := []byte("wrong nonce")
+		report, _, timestamp := noTEEAttestation(t, want)
+
+		verifier, err := attestation.NewNoTEEVerifier()
+		require.NoError(t, err)
+
+		// when
+		_, err = verifier.Verify(
+			report,
+			attestation.WithVerifyNonce(wrongNonce),
+			attestation.WithTimestamp(timestamp),
+		)
+
+		// then
+		assert.ErrorIs(t, err, attestation.ErrNonceMismatch)
 	})
 }
 
@@ -193,7 +206,7 @@ func TestECDSASign(t *testing.T) {
 		signature, err := attestation.ECDSASign(privateKey, data)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, signature)
 	})
 }
@@ -208,19 +221,45 @@ func TestECDSAVerify(t *testing.T) {
 		signature, err := attestation.ECDSASign(privateKey, data)
 		require.NoError(t, err)
 
-		publicKey := append(
-			privateKey.X.Bytes(),
-			privateKey.Y.Bytes()...,
-		)
+		publicKey := &attestation.PublicKey{X: privateKey.X, Y: privateKey.Y}
 
 		// when
-		ok := attestation.ECDSAVerify(publicKey, data, signature)
+		err = attestation.ECDSAVerify(publicKey, data, signature)
 
 		// then
-		assert.True(t, ok)
+		require.NoError(t, err)
 	})
 
-	t.Run("wrong public key", func(t *testing.T) {
+	t.Run("error - invalid public key", func(t *testing.T) {
+		// given
+		data := []byte("Hello, World!")
+		privateKey := newTestPrivateKey(t)
+		signature, err := attestation.ECDSASign(privateKey, data)
+		require.NoError(t, err)
+
+		// when
+		err = attestation.ECDSAVerify(nil, data, signature)
+
+		// then
+		assert.ErrorIs(t, err, attestation.ErrInvalidPublicKey)
+	})
+
+	t.Run("error - invalid signature", func(t *testing.T) {
+		// given
+		data := []byte("Hello, World!")
+		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
+		require.NoError(t, err)
+
+		publicKey := &attestation.PublicKey{X: privateKey.X, Y: privateKey.Y}
+
+		// when
+		err = attestation.ECDSAVerify(publicKey, data, nil)
+
+		// then
+		assert.ErrorIs(t, err, attestation.ErrInvalidSignature)
+	})
+
+	t.Run("error - wrong public key", func(t *testing.T) {
 		// given
 		data := []byte("Hello, World!")
 		privateKey := newTestPrivateKey(t)
@@ -228,50 +267,28 @@ func TestECDSAVerify(t *testing.T) {
 		require.NoError(t, err)
 
 		wrongPrivateKey := newTestPrivateKey(t)
-		wrongPublicKey := append(
-			wrongPrivateKey.X.Bytes(),
-			wrongPrivateKey.Y.Bytes()...,
-		)
+		wrongPublicKey := &attestation.PublicKey{X: wrongPrivateKey.X, Y: wrongPrivateKey.Y}
 
 		// when
-		ok := attestation.ECDSAVerify(wrongPublicKey, data, signature)
+		err = attestation.ECDSAVerify(wrongPublicKey, data, signature)
 
 		// then
-		assert.False(t, ok)
+		assert.ErrorIs(t, err, attestation.ErrECDSAVerification)
 	})
 
-	t.Run("wrong data", func(t *testing.T) {
+	t.Run("error - wrong data", func(t *testing.T) {
 		// given
 		data := []byte("Hello, World!")
 		privateKey := newTestPrivateKey(t)
 		signature, err := attestation.ECDSASign(privateKey, data)
 		require.NoError(t, err)
 
-		publicKey := append(
-			privateKey.X.Bytes(),
-			privateKey.Y.Bytes()...,
-		)
+		publicKey := &attestation.PublicKey{X: privateKey.X, Y: privateKey.Y}
 
 		// when
-		ok := attestation.ECDSAVerify(publicKey, []byte("wrong data"), signature)
+		err = attestation.ECDSAVerify(publicKey, []byte("wrong data"), signature)
 
 		// then
-		assert.False(t, ok)
-	})
-
-	t.Run("wrong signature", func(t *testing.T) {
-		// given
-		data := []byte("Hello, World!")
-		privateKey := newTestPrivateKey(t)
-		publicKey := append(
-			privateKey.X.Bytes(),
-			privateKey.Y.Bytes()...,
-		)
-
-		// when
-		ok := attestation.ECDSAVerify(publicKey, data, []byte("wrong signature"))
-
-		// then
-		assert.False(t, ok)
+		assert.ErrorIs(t, err, attestation.ErrECDSAVerification)
 	})
 }

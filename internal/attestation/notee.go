@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -18,9 +19,38 @@ const (
 	NoTEEValidityPeriod = int64(31536000)
 )
 
+var (
+	ErrMeasurementMismatch = errors.New("measurement mismatch")
+	ErrNonceMismatch       = errors.New("nonce mismatch")
+	ErrInvalidCertificate  = errors.New("certificate has expired or is not yet valid")
+	ErrInvalidPublicKey    = errors.New("invalid public key")
+	ErrInvalidSignature    = errors.New("invalid signature")
+	ErrECDSAVerification   = errors.New("ecdsa verification failed")
+)
+
+type PublicKey struct {
+	X *big.Int `json:"x"`
+	Y *big.Int `json:"y"`
+}
+
+type Signature struct {
+	R *big.Int `json:"r"`
+	S *big.Int `json:"s"`
+}
+
+type Report struct {
+	Userdata    []byte     `json:"userdata"`
+	Nonce       []byte     `json:"nonce"`
+	PublicKey   []byte     `json:"publickey"`
+	Signature   *Signature `json:"signature"`
+	VerifyKey   *PublicKey `json:"verifykey"`
+	Timestamp   int64      `json:"timestamp"`
+	Measurement string     `json:"measurement"`
+}
+
 type NoTEEAttester struct {
 	privateKey *ecdsa.PrivateKey
-	publicKey  []byte
+	publicKey  *PublicKey
 }
 
 func NewNoTEEAttester() (*NoTEEAttester, error) {
@@ -34,21 +64,8 @@ func NewNoTEEAttester() (*NoTEEAttester, error) {
 func NewNoTEEAttesterWithPrivateKey(
 	privateKey *ecdsa.PrivateKey,
 ) (*NoTEEAttester, error) {
-	publicKey := append(
-		privateKey.X.Bytes(),
-		privateKey.Y.Bytes()...,
-	)
+	publicKey := &PublicKey{X: privateKey.X, Y: privateKey.Y}
 	return &NoTEEAttester{privateKey: privateKey, publicKey: publicKey}, nil
-}
-
-type Report struct {
-	Userdata    []byte `json:"userdata"`
-	Nonce       []byte `json:"nonce"`
-	PublicKey   []byte `json:"publickey"`
-	Signature   []byte `json:"signature"`
-	VerifyKey   []byte `json:"verifykey"`
-	Timestamp   int64  `json:"timestamp"`
-	Measurement string `json:"measurement"`
 }
 
 func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
@@ -94,7 +111,9 @@ func (n *NoTEEVerifier) Verify(
 	options ...VerifyOption,
 ) (*VerifyResult, error) {
 	opts := VerifyOptions{
+		debug:       false,
 		measurement: "",
+		nonce:       nil,
 		timestamp:   time.Now(),
 	}
 	for _, opt := range options {
@@ -104,29 +123,32 @@ func (n *NoTEEVerifier) Verify(
 	report := Report{}
 	err := json.Unmarshal(attestResult.Report, &report)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshaling report: %w", err)
+		return nil, fmt.Errorf("unmarshalling report: %w", err)
 	}
 
 	signDataHash := sha256.Sum256([]byte(NoTEEMeasurement))
-	if !ECDSAVerify(report.VerifyKey, signDataHash[:], report.Signature) {
-		return nil, fmt.Errorf("invalid signature")
+	err = ECDSAVerify(report.VerifyKey, signDataHash[:], report.Signature)
+	if err != nil {
+		return nil, fmt.Errorf("verifying signature: %w", err)
 	}
 
 	if opts.timestamp.Unix() < report.Timestamp ||
 		opts.timestamp.Unix() > report.Timestamp+NoTEEValidityPeriod {
-		return nil, fmt.Errorf("certificate has expired or is not yet valid")
+		return nil, ErrInvalidCertificate
 	}
 
 	if opts.measurement != "" && opts.measurement != report.Measurement {
 		return nil, fmt.Errorf(
-			"measurement mismatch: expected '%s' got '%s'",
+			"%w: expected '%s' got '%s'",
+			ErrMeasurementMismatch,
 			opts.measurement,
 			report.Measurement,
 		)
 	}
 
 	if opts.nonce != nil && !bytes.Equal(opts.nonce, report.Nonce) {
-		return nil, fmt.Errorf("nonce mismatch: expected '%s', got '%s'",
+		return nil, fmt.Errorf("%w: expected '%s', got '%s'",
+			ErrNonceMismatch,
 			base64.StdEncoding.EncodeToString(opts.nonce),
 			base64.StdEncoding.EncodeToString(report.Nonce),
 		)
@@ -134,33 +156,32 @@ func (n *NoTEEVerifier) Verify(
 
 	verifyResult := &VerifyResult{
 		PublicKey: report.PublicKey,
-		UserData: report.Userdata,
+		UserData:  report.Userdata,
 	}
 	return verifyResult, nil
 }
 
-func ECDSASign(privateKey *ecdsa.PrivateKey, data []byte) ([]byte, error) {
+func ECDSASign(privateKey *ecdsa.PrivateKey, data []byte) (*Signature, error) {
 	r, s, err := ecdsa.Sign(crand.Reader, privateKey, data)
 	if err != nil {
 		return nil, fmt.Errorf("ecdsa signing data: %w", err)
 	}
-	signature := append(r.Bytes(), s.Bytes()...)
+
+	signature := &Signature{R: r, S: s}
 	return signature, nil
 }
 
-func ECDSAVerify(publicKey []byte, data []byte, signature []byte) bool {
-	r := big.Int{}
-	s := big.Int{}
-	sigLen := len(signature)
-	r.SetBytes(signature[:(sigLen / 2)])
-	s.SetBytes(signature[(sigLen / 2):])
+func ECDSAVerify(publicKey *PublicKey, data []byte, signature *Signature) error {
+	if publicKey == nil || publicKey.X == nil || publicKey.Y == nil {
+		return ErrInvalidPublicKey
+	}
+	if signature == nil || signature.R == nil || signature.S == nil {
+		return ErrInvalidSignature
+	}
 
-	x := big.Int{}
-	y := big.Int{}
-	keyLen := len(publicKey)
-	x.SetBytes(publicKey[:(keyLen / 2)])
-	y.SetBytes(publicKey[(keyLen / 2):])
-
-	rawPubKey := ecdsa.PublicKey{Curve: elliptic.P256(), X: &x, Y: &y}
-	return ecdsa.Verify(&rawPubKey, data, &r, &s)
+	rawPubKey := ecdsa.PublicKey{Curve: elliptic.P256(), X: publicKey.X, Y: publicKey.Y}
+	if !ecdsa.Verify(&rawPubKey, data, signature.R, signature.S) {
+		return ErrECDSAVerification
+	}
+	return nil
 }
