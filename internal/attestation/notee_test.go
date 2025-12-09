@@ -34,10 +34,10 @@ func newTestPrivateKey(t *testing.T) *ecdsa.PrivateKey {
 }
 
 func TestNoTEE_Interfaces(t *testing.T) {
-	t.Run("Attester", func(t *testing.T) {
+	t.Run("Attester", func(_ *testing.T) {
 		var _ attestation.Attester = &attestation.NoTEEAttester{}
 	})
-	t.Run("Verifier", func(t *testing.T) {
+	t.Run("Verifier", func(_ *testing.T) {
 		var _ attestation.Verifier = &attestation.NoTEEVerifier{}
 	})
 }

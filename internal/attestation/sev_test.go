@@ -71,10 +71,10 @@ func sevReportFromTestData(
 }
 
 func TestSEV_Interfaces(t *testing.T) {
-	t.Run("Attester", func(t *testing.T) {
+	t.Run("Attester", func(_ *testing.T) {
 		var _ attestation.Attester = &attestation.SEVAttester{}
 	})
-	t.Run("Verifier", func(t *testing.T) {
+	t.Run("Verifier", func(_ *testing.T) {
 		var _ attestation.Verifier = &attestation.SEVVerifier{}
 	})
 }
@@ -268,21 +268,21 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 		{
 			name: "error - version mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.Version += 1
+				report.Version++
 			},
 			wantErr: "version mismatch",
 		},
 		{
 			name: "error - guest svn mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.GuestSvn += 1
+				report.GuestSvn++
 			},
 			wantErr: "guest svn mismatch",
 		},
 		{
 			name: "error - policy mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.Policy += 1
+				report.Policy++
 			},
 			wantErr: "policy mismatch",
 		},
@@ -303,28 +303,28 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 		{
 			name: "error - vmpl mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.Vmpl += 1
+				report.Vmpl++
 			},
 			wantErr: "vmpl mismatch",
 		},
 		{
 			name: "error - current tcb mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CurrentTcb += 1
+				report.CurrentTcb++
 			},
 			wantErr: "current tcb mismatch",
 		},
 		{
 			name: "error - platform info mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.PlatformInfo += 1
+				report.PlatformInfo++
 			},
 			wantErr: "platform info mismatch",
 		},
 		{
 			name: "error - signer info mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.SignerInfo += 1
+				report.SignerInfo++
 			},
 			wantErr: "signer info mismatch",
 		},
@@ -366,7 +366,7 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 		{
 			name: "error - reported tcb mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.ReportedTcb += 1
+				report.ReportedTcb++
 			},
 			wantErr: "reported tcb mismatch",
 		},
@@ -380,63 +380,63 @@ func TestSEVVerifyMeasurement(t *testing.T) {
 		{
 			name: "error - committed tcb mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CommittedTcb += 1
+				report.CommittedTcb++
 			},
 			wantErr: "committed tcb mismatch",
 		},
 		{
 			name: "error - current build mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CurrentBuild += 1
+				report.CurrentBuild++
 			},
 			wantErr: "current build mismatch",
 		},
 		{
 			name: "error - current minor mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CurrentMinor += 1
+				report.CurrentMinor++
 			},
 			wantErr: "current minor mismatch",
 		},
 		{
 			name: "error - current major mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CurrentMajor += 1
+				report.CurrentMajor++
 			},
 			wantErr: "current major mismatch",
 		},
 		{
 			name: "error - committed build mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CommittedBuild += 1
+				report.CommittedBuild++
 			},
 			wantErr: "committed build mismatch",
 		},
 		{
 			name: "error - committed minor mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CommittedMinor += 1
+				report.CommittedMinor++
 			},
 			wantErr: "committed minor mismatch",
 		},
 		{
 			name: "error - committed major mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.CommittedMajor += 1
+				report.CommittedMajor++
 			},
 			wantErr: "committed major mismatch",
 		},
 		{
 			name: "error - launch tcb mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.LaunchTcb += 1
+				report.LaunchTcb++
 			},
 			wantErr: "launch tcb mismatch",
 		},
 		{
 			name: "error - cpuid 1eax fms mismatch",
 			modifyReport: func(report *sevsnp.Report) {
-				report.Cpuid1EaxFms += 1
+				report.Cpuid1EaxFms++
 			},
 			wantErr: "cpuid 1eax fms mismatch",
 		},
