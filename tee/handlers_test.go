@@ -80,7 +80,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-		assert.Equal(t, logBuffer.Len(), 0)
+		assert.Equal(t, 0, logBuffer.Len())
 		assert.Contains(t, recorder.Body.String(), "decoding request")
 	})
 

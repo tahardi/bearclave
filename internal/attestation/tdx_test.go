@@ -93,7 +93,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, string(got.UserData), string(want))
 	})
 
@@ -192,7 +192,7 @@ func TestTDXIsDebugEnabled(t *testing.T) {
 		got, err := attestation.TDXIsDebugEnabled(quoteV4)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, got)
 	})
 
@@ -208,7 +208,7 @@ func TestTDXIsDebugEnabled(t *testing.T) {
 		got, err := attestation.TDXIsDebugEnabled(quoteV4)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, got)
 	})
 }

@@ -98,7 +98,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, string(got.UserData), string(want))
 	})
 
@@ -189,7 +189,7 @@ func TestSEVIsDebugEnabled(t *testing.T) {
 		got, err := attestation.SEVIsDebugEnabled(sevReport)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, got)
 	})
 
@@ -202,7 +202,7 @@ func TestSEVIsDebugEnabled(t *testing.T) {
 		got, err := attestation.SEVIsDebugEnabled(sevReport)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, got)
 	})
 

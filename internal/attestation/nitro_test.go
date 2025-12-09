@@ -94,7 +94,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, got.UserData)
 	})
 
@@ -120,7 +120,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, got.UserData)
 	})
 
@@ -218,7 +218,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		got, err := attestation.NitroIsDebugEnabled(document)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, got)
 	})
 
@@ -235,7 +235,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		got, err := attestation.NitroIsDebugEnabled(document)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, got)
 	})
 
