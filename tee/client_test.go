@@ -64,7 +64,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		// given
 		data := []byte("data")
 
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			writeError(w, assert.AnError)
 		})
 

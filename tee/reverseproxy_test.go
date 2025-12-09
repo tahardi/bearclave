@@ -17,7 +17,7 @@ func TestReverseProxy(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		backend := httptest.NewServer(http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
+			func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			}),
 		)
