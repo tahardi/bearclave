@@ -183,7 +183,7 @@ func TestSEVIsDebugEnabled(t *testing.T) {
 		// According to Pg. 31 of the SEV ABI Specification document, the 19th
 		// bit of the Policy denotes whether debugging is enabled or not.
 		// https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/specifications/56860.pdf
-		sevReport.Policy = sevReport.Policy | uint64(1<<19)
+		sevReport.Policy |= uint64(1 << 19)
 
 		// when
 		got, err := attestation.SEVIsDebugEnabled(sevReport)
