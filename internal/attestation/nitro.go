@@ -114,7 +114,7 @@ func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
 	if len(document.PCRs) < 1 {
 		return false, fmt.Errorf("no pcrs provided")
 	}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		pcr, ok := document.PCRs[uint(i)]
 		if !ok {
 			return false, fmt.Errorf("missing pcr '%d'", i)
