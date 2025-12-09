@@ -24,7 +24,7 @@ func noTEEAttestation(
 	report, err := attester.Attest(attestation.WithUserData(userdata))
 	require.NoError(t, err)
 
-	return report, attestation.NoTEEMeasurement, time.Now()
+	return report, attestation.NoTeeMeasurement, time.Now()
 }
 
 func newTestPrivateKey(t *testing.T) *ecdsa.PrivateKey {

@@ -9,6 +9,8 @@ import (
 	"github.com/mdlayher/vsock"
 )
 
+const NumVSockAddrFields = 2
+
 func sanitizeAddr(addr string) (string, error) {
 	if !strings.Contains(addr, "://") {
 		return addr, nil
@@ -67,7 +69,7 @@ func ParseVSocketAddr(addr string) (uint32, uint32, error) {
 	switch {
 	case err != nil:
 		return 0, 0, fmt.Errorf("invalid format '%s': %w", addr, err)
-	case n != 2:
+	case n != NumVSockAddrFields:
 		return 0, 0, fmt.Errorf("expected '2' got '%d", n)
 	}
 	return uint32(cid), uint32(port), nil

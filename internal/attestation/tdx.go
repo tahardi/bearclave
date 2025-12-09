@@ -13,7 +13,10 @@ import (
 	"github.com/google/go-tdx-guest/verify"
 )
 
-const INTEL_TDX_USERDATA_SIZE = 64
+const (
+	IntelTdxRmrsLength      = 4
+	IntelTdxMaxUserdataSize = 64
+)
 
 type TDXAttester struct{}
 
@@ -31,10 +34,10 @@ func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > INTEL_TDX_USERDATA_SIZE {
+	if len(opts.userData) > IntelTdxMaxUserdataSize {
 		return nil, fmt.Errorf(
 			"userdata must be less than %d bytes",
-			INTEL_TDX_USERDATA_SIZE,
+			IntelTdxMaxUserdataSize,
 		)
 	}
 
@@ -201,11 +204,11 @@ func TDXVerifyMeasurement(measurementJSON string, quoteBody *pb.TDQuoteBody) err
 			base64.StdEncoding.EncodeToString(measurement.MrOwnerConfig),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrOwnerConfig()),
 		)
-	case len(measurement.RTMRs) != 4:
+	case len(measurement.RTMRs) != IntelTdxRmrsLength:
 		return fmt.Errorf("missing rtmrs (measurement): expected 4, got %d",
 			len(measurement.RTMRs),
 		)
-	case len(quoteBody.GetRtmrs()) != 4:
+	case len(quoteBody.GetRtmrs()) != IntelTdxRmrsLength:
 		return fmt.Errorf("missing rtmrs (quote): expected 4, got %d",
 			len(quoteBody.GetRtmrs()),
 		)

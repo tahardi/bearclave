@@ -13,7 +13,7 @@ import (
 	"github.com/google/go-sev-guest/verify"
 )
 
-const AMD_SEV_USERDATA_SIZE = 64
+const AmdSevMaxUserdataSize = 64
 
 type SEVAttester struct{}
 
@@ -31,10 +31,10 @@ func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > AMD_SEV_USERDATA_SIZE {
+	if len(opts.userData) > AmdSevMaxUserdataSize {
 		return nil, fmt.Errorf(
 			"userdata must be less than %d bytes",
-			AMD_SEV_USERDATA_SIZE,
+			AmdSevMaxUserdataSize,
 		)
 	}
 
