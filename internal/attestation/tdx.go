@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -26,9 +27,9 @@ func NewTDXAttester() (*TDXAttester, error) {
 
 func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := AttestOptions{
-		nonce: nil,
+		nonce:     nil,
 		publicKey: nil,
-		userData: nil,
+		userData:  nil,
 	}
 	for _, opt := range options {
 		opt(&opts)
@@ -90,7 +91,7 @@ func (n *TDXVerifier) Verify(
 
 	quoteV4, ok := pbQuote.(*pb.QuoteV4)
 	if !ok {
-		return nil, fmt.Errorf("unexpected quote type")
+		return nil, errors.New("unexpected quote type")
 	}
 
 	err = TDXVerifyMeasurement(opts.measurement, quoteV4.GetTdQuoteBody())
