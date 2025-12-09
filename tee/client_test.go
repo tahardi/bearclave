@@ -20,6 +20,7 @@ func writeError(w http.ResponseWriter, err error) {
 }
 
 func writeResponse(t *testing.T, w http.ResponseWriter, out any) {
+	t.Helper()
 	data, err := json.Marshal(out)
 	require.NoError(t, err)
 

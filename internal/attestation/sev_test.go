@@ -56,6 +56,7 @@ func sevReportFromTestData(
 	reportB64 string,
 	timestamp time.Time,
 ) (*attestation.AttestResult, *sevsnp.Report) {
+	t.Helper()
 	report, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 

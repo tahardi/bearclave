@@ -18,6 +18,7 @@ func noTEEAttestation(
 	t *testing.T,
 	userdata []byte,
 ) (*attestation.AttestResult, string, time.Time) {
+	t.Helper()
 	attester, err := attestation.NewNoTEEAttester()
 	require.NoError(t, err)
 
@@ -28,6 +29,7 @@ func noTEEAttestation(
 }
 
 func newTestPrivateKey(t *testing.T) *ecdsa.PrivateKey {
+	t.Helper()
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
 	require.NoError(t, err)
 	return privateKey

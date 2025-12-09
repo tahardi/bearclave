@@ -54,6 +54,7 @@ func nitroReportFromTestData(
 	reportB64 string,
 	timestamp time.Time,
 ) (*attestation.AttestResult, *nitrite.Document) {
+	t.Helper()
 	reportBytes, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 

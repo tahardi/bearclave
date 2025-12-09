@@ -46,6 +46,7 @@ func tdxReportFromTestData(
 	reportB64 string,
 	timestamp time.Time,
 ) (*attestation.AttestResult, *pb.QuoteV4) {
+	t.Helper()
 	report, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 
