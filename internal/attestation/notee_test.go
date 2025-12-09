@@ -18,26 +18,28 @@ func noTEEAttestation(
 	t *testing.T,
 	userdata []byte,
 ) (*attestation.AttestResult, string, time.Time) {
+	t.Helper()
 	attester, err := attestation.NewNoTEEAttester()
 	require.NoError(t, err)
 
 	report, err := attester.Attest(attestation.WithUserData(userdata))
 	require.NoError(t, err)
 
-	return report, attestation.NoTEEMeasurement, time.Now()
+	return report, attestation.NoTeeMeasurement, time.Now()
 }
 
 func newTestPrivateKey(t *testing.T) *ecdsa.PrivateKey {
+	t.Helper()
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
 	require.NoError(t, err)
 	return privateKey
 }
 
 func TestNoTEE_Interfaces(t *testing.T) {
-	t.Run("Attester", func(t *testing.T) {
+	t.Run("Attester", func(_ *testing.T) {
 		var _ attestation.Attester = &attestation.NoTEEAttester{}
 	})
-	t.Run("Verifier", func(t *testing.T) {
+	t.Run("Verifier", func(_ *testing.T) {
 		var _ attestation.Verifier = &attestation.NoTEEVerifier{}
 	})
 }

@@ -54,6 +54,7 @@ func nitroReportFromTestData(
 	reportB64 string,
 	timestamp time.Time,
 ) (*attestation.AttestResult, *nitrite.Document) {
+	t.Helper()
 	reportBytes, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 
@@ -64,10 +65,10 @@ func nitroReportFromTestData(
 }
 
 func TestNitro_Interfaces(t *testing.T) {
-	t.Run("Attester", func(t *testing.T) {
+	t.Run("Attester", func(_ *testing.T) {
 		var _ attestation.Attester = &attestation.NitroAttester{}
 	})
-	t.Run("Verifier", func(t *testing.T) {
+	t.Run("Verifier", func(_ *testing.T) {
 		var _ attestation.Verifier = &attestation.NitroVerifier{}
 	})
 }
@@ -94,7 +95,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, got.UserData)
 	})
 
@@ -120,7 +121,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, got.UserData)
 	})
 
@@ -210,7 +211,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		// given
 		document := &nitrite.Document{}
 		document.PCRs = make(map[uint][]byte, 3)
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			document.PCRs[uint(i)] = make([]byte, 32)
 		}
 
@@ -218,7 +219,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		got, err := attestation.NitroIsDebugEnabled(document)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, got)
 	})
 
@@ -226,7 +227,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		// given
 		document := &nitrite.Document{}
 		document.PCRs = make(map[uint][]byte, 3)
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			document.PCRs[uint(i)] = make([]byte, 32)
 			document.PCRs[uint(i)][0] = 1
 		}
@@ -235,7 +236,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		got, err := attestation.NitroIsDebugEnabled(document)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, got)
 	})
 
@@ -255,7 +256,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		// given
 		document := &nitrite.Document{}
 		document.PCRs = make(map[uint][]byte, 2)
-		for i := 0; i < 2; i++ {
+		for i := range 2 {
 			document.PCRs[uint(i)] = make([]byte, 32)
 		}
 

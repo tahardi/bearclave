@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,7 +14,10 @@ import (
 	"github.com/google/go-tdx-guest/verify"
 )
 
-const INTEL_TDX_USERDATA_SIZE = 64
+const (
+	IntelTdxRmrsLength      = 4
+	IntelTdxMaxUserdataSize = 64
+)
 
 type TDXAttester struct{}
 
@@ -23,18 +27,18 @@ func NewTDXAttester() (*TDXAttester, error) {
 
 func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := AttestOptions{
-		nonce: nil,
+		nonce:     nil,
 		publicKey: nil,
-		userData: nil,
+		userData:  nil,
 	}
 	for _, opt := range options {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > INTEL_TDX_USERDATA_SIZE {
+	if len(opts.userData) > IntelTdxMaxUserdataSize {
 		return nil, fmt.Errorf(
 			"userdata must be less than %d bytes",
-			INTEL_TDX_USERDATA_SIZE,
+			IntelTdxMaxUserdataSize,
 		)
 	}
 
@@ -87,7 +91,7 @@ func (n *TDXVerifier) Verify(
 
 	quoteV4, ok := pbQuote.(*pb.QuoteV4)
 	if !ok {
-		return nil, fmt.Errorf("unexpected quote type")
+		return nil, errors.New("unexpected quote type")
 	}
 
 	err = TDXVerifyMeasurement(opts.measurement, quoteV4.GetTdQuoteBody())
@@ -201,11 +205,11 @@ func TDXVerifyMeasurement(measurementJSON string, quoteBody *pb.TDQuoteBody) err
 			base64.StdEncoding.EncodeToString(measurement.MrOwnerConfig),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrOwnerConfig()),
 		)
-	case len(measurement.RTMRs) != 4:
+	case len(measurement.RTMRs) != IntelTdxRmrsLength:
 		return fmt.Errorf("missing rtmrs (measurement): expected 4, got %d",
 			len(measurement.RTMRs),
 		)
-	case len(quoteBody.GetRtmrs()) != 4:
+	case len(quoteBody.GetRtmrs()) != IntelTdxRmrsLength:
 		return fmt.Errorf("missing rtmrs (quote): expected 4, got %d",
 			len(quoteBody.GetRtmrs()),
 		)

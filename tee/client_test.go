@@ -20,6 +20,7 @@ func writeError(w http.ResponseWriter, err error) {
 }
 
 func writeResponse(t *testing.T, w http.ResponseWriter, out any) {
+	t.Helper()
 	data, err := json.Marshal(out)
 	require.NoError(t, err)
 
@@ -35,12 +36,12 @@ func TestClient_AttestUserData(t *testing.T) {
 		want := &bearclave.AttestResult{Report: []byte("attestation")}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.Equal(t, http.MethodPost, r.Method)
-			require.Contains(t, r.URL.Path, tee.AttestUserDataPath)
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Contains(t, r.URL.Path, tee.AttestUserDataPath)
 
 			req := tee.AttestUserDataRequest{}
 			err := json.NewDecoder(r.Body).Decode(&req)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, data, req.Data)
 
 			resp := tee.AttestUserDataResponse{Attestation: want}
@@ -56,7 +57,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		got, err := client.AttestUserData(data)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
 
@@ -64,7 +65,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		// given
 		data := []byte("data")
 
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			writeError(w, assert.AnError)
 		})
 
@@ -99,7 +100,7 @@ func TestClient_Do(t *testing.T) {
 		apiResp := &doResponse{}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.Equal(t, method, r.Method)
+			assert.Equal(t, method, r.Method)
 
 			resp := doResponse{Data: want}
 			writeResponse(t, w, resp)
@@ -114,7 +115,7 @@ func TestClient_Do(t *testing.T) {
 		err := client.Do(method, api, apiReq, apiResp)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, want, apiResp.Data)
 	})
 
@@ -127,11 +128,11 @@ func TestClient_Do(t *testing.T) {
 		apiResp := &doResponse{}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.Equal(t, method, r.Method)
+			assert.Equal(t, method, r.Method)
 
 			req := doRequest{}
 			err := json.NewDecoder(r.Body).Decode(&req)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, want, req.Data)
 
 			resp := doResponse{}
@@ -158,7 +159,7 @@ func TestClient_Do(t *testing.T) {
 		apiResp := &doResponse{}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.Equal(t, method, r.Method)
+			assert.Equal(t, method, r.Method)
 
 			resp := doResponse{}
 			writeResponse(t, w, resp)

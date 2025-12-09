@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	NoTEEMeasurement    = "Not a TEE platform. Code measurements are not real."
-	NoTEEValidityPeriod = int64(31536000)
+	NoTeeMeasurement    = "Not a TEE platform. Code measurements are not real."
+	NoTeeValidityPeriod = int64(31536000)
 )
 
 var (
@@ -78,7 +78,7 @@ func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		opt(&opts)
 	}
 
-	signDataHash := sha256.Sum256([]byte(NoTEEMeasurement))
+	signDataHash := sha256.Sum256([]byte(NoTeeMeasurement))
 	signature, err := ECDSASign(a.privateKey, signDataHash[:])
 	if err != nil {
 		return nil, fmt.Errorf("signing userdata: %w", err)
@@ -91,7 +91,7 @@ func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		Signature:   signature,
 		VerifyKey:   a.publicKey,
 		Timestamp:   time.Now().Unix(),
-		Measurement: NoTEEMeasurement,
+		Measurement: NoTeeMeasurement,
 	}
 	reportBytes, err := json.Marshal(report)
 	if err != nil {
@@ -126,14 +126,14 @@ func (n *NoTEEVerifier) Verify(
 		return nil, fmt.Errorf("unmarshalling report: %w", err)
 	}
 
-	signDataHash := sha256.Sum256([]byte(NoTEEMeasurement))
+	signDataHash := sha256.Sum256([]byte(NoTeeMeasurement))
 	err = ECDSAVerify(report.VerifyKey, signDataHash[:], report.Signature)
 	if err != nil {
 		return nil, fmt.Errorf("verifying signature: %w", err)
 	}
 
 	if opts.timestamp.Unix() < report.Timestamp ||
-		opts.timestamp.Unix() > report.Timestamp+NoTEEValidityPeriod {
+		opts.timestamp.Unix() > report.Timestamp+NoTeeValidityPeriod {
 		return nil, ErrInvalidCertificate
 	}
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -45,9 +46,9 @@ func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	case resp.Error != "":
 		return nil, fmt.Errorf("attestation error: %s", resp.Error)
 	case resp.Attestation == nil:
-		return nil, fmt.Errorf("attestation response missing attestation")
+		return nil, errors.New("attestation response missing attestation")
 	case resp.Attestation.Document == nil:
-		return nil, fmt.Errorf("attestation response missing document")
+		return nil, errors.New("attestation response missing document")
 	}
 	return &AttestResult{Report: resp.Attestation.Document}, nil
 }
@@ -112,9 +113,9 @@ func (n *NitroVerifier) Verify(
 
 func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
 	if len(document.PCRs) < 1 {
-		return false, fmt.Errorf("no pcrs provided")
+		return false, errors.New("no pcrs provided")
 	}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		pcr, ok := document.PCRs[uint(i)]
 		if !ok {
 			return false, fmt.Errorf("missing pcr '%d'", i)

@@ -46,6 +46,7 @@ func tdxReportFromTestData(
 	reportB64 string,
 	timestamp time.Time,
 ) (*attestation.AttestResult, *pb.QuoteV4) {
+	t.Helper()
 	report, err := base64.StdEncoding.DecodeString(reportB64)
 	require.NoError(t, err)
 
@@ -63,10 +64,10 @@ func tdxReportFromTestData(
 }
 
 func TestTDX_Interfaces(t *testing.T) {
-	t.Run("Attester", func(t *testing.T) {
+	t.Run("Attester", func(_ *testing.T) {
 		var _ attestation.Attester = &attestation.TDXAttester{}
 	})
-	t.Run("Verifier", func(t *testing.T) {
+	t.Run("Verifier", func(_ *testing.T) {
 		var _ attestation.Verifier = &attestation.TDXVerifier{}
 	})
 }
@@ -93,7 +94,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, string(got.UserData), string(want))
 	})
 
@@ -192,7 +193,7 @@ func TestTDXIsDebugEnabled(t *testing.T) {
 		got, err := attestation.TDXIsDebugEnabled(quoteV4)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, got)
 	})
 
@@ -208,7 +209,7 @@ func TestTDXIsDebugEnabled(t *testing.T) {
 		got, err := attestation.TDXIsDebugEnabled(quoteV4)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, got)
 	})
 }

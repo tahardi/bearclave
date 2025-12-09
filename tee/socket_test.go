@@ -67,7 +67,6 @@ func TestSocketRoundTrip(t *testing.T) {
 		// then
 		assert.Equal(t, want, got)
 	})
-
 }
 
 func TestSocket_Send(t *testing.T) {

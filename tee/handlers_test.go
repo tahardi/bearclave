@@ -23,6 +23,7 @@ func makeRequest(
 	path string,
 	body any,
 ) *http.Request {
+	t.Helper()
 	bodyBytes, err := json.Marshal(body)
 	require.NoError(t, err)
 	req, err := http.NewRequest(method, path, bytes.NewReader(bodyBytes))
@@ -80,7 +81,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-		assert.Equal(t, logBuffer.Len(), 0)
+		assert.Equal(t, 0, logBuffer.Len())
 		assert.Contains(t, recorder.Body.String(), "decoding request")
 	})
 

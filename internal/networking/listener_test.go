@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
@@ -18,7 +19,7 @@ func TestParseVSocketAddr(t *testing.T) {
 		cid, port, err := networking.ParseVSocketAddr(addr)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, wantCID, cid)
 		assert.Equal(t, wantPort, port)
 	})
@@ -33,7 +34,7 @@ func TestParseVSocketAddr(t *testing.T) {
 		cid, port, err := networking.ParseVSocketAddr(addr)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, wantCID, cid)
 		assert.Equal(t, wantPort, port)
 	})

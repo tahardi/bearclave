@@ -13,7 +13,7 @@ import (
 	"github.com/google/go-sev-guest/verify"
 )
 
-const AMD_SEV_USERDATA_SIZE = 64
+const AmdSevMaxUserdataSize = 64
 
 type SEVAttester struct{}
 
@@ -31,10 +31,10 @@ func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > AMD_SEV_USERDATA_SIZE {
+	if len(opts.userData) > AmdSevMaxUserdataSize {
 		return nil, fmt.Errorf(
 			"userdata must be less than %d bytes",
-			AMD_SEV_USERDATA_SIZE,
+			AmdSevMaxUserdataSize,
 		)
 	}
 
@@ -85,12 +85,12 @@ func (n *SEVVerifier) Verify(
 		return nil, fmt.Errorf("verifying sev report: %w", err)
 	}
 
-	err = SEVVerifyMeasurement(opts.measurement, pbReport.Report)
+	err = SEVVerifyMeasurement(opts.measurement, pbReport.GetReport())
 	if err != nil {
 		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
-	debug, err := SEVIsDebugEnabled(pbReport.Report)
+	debug, err := SEVIsDebugEnabled(pbReport.GetReport())
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("getting debug mode: %w", err)
@@ -102,7 +102,7 @@ func (n *SEVVerifier) Verify(
 	}
 
 	verifyResult := &VerifyResult{
-		UserData: pbReport.Report.GetReportData(),
+		UserData: pbReport.GetReport().GetReportData(),
 	}
 	return verifyResult, nil
 }

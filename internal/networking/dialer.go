@@ -20,7 +20,7 @@ func NewSocketDialer() (Dialer, error) {
 }
 
 func NewVSocketDialer() (Dialer, error) {
-	return func(network string, addr string) (net.Conn, error) {
+	return func(_ string, addr string) (net.Conn, error) {
 		cid, port, err := ParseVSocketAddr(addr)
 		if err != nil {
 			return nil, fmt.Errorf("parsing vsocket addr: %w", err)
