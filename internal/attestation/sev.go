@@ -85,12 +85,12 @@ func (n *SEVVerifier) Verify(
 		return nil, fmt.Errorf("verifying sev report: %w", err)
 	}
 
-	err = SEVVerifyMeasurement(opts.measurement, pbReport.Report)
+	err = SEVVerifyMeasurement(opts.measurement, pbReport.GetReport())
 	if err != nil {
 		return nil, fmt.Errorf("verifying measurement: %w", err)
 	}
 
-	debug, err := SEVIsDebugEnabled(pbReport.Report)
+	debug, err := SEVIsDebugEnabled(pbReport.GetReport())
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("getting debug mode: %w", err)
@@ -102,7 +102,7 @@ func (n *SEVVerifier) Verify(
 	}
 
 	verifyResult := &VerifyResult{
-		UserData: pbReport.Report.GetReportData(),
+		UserData: pbReport.GetReport().GetReportData(),
 	}
 	return verifyResult, nil
 }

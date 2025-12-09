@@ -67,7 +67,7 @@ func sevReportFromTestData(
 	err = verify.SnpAttestation(pbReport, opts)
 	require.NoError(t, err)
 
-	return &attestation.AttestResult{Report: report}, pbReport.Report
+	return &attestation.AttestResult{Report: report}, pbReport.GetReport()
 }
 
 func TestSEV_Interfaces(t *testing.T) {
