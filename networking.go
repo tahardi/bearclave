@@ -20,7 +20,7 @@ func NewDialer(platform Platform) (networking.Dialer, error) {
 	case NoTEE:
 		return networking.NewSocketDialer()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
 
@@ -35,6 +35,6 @@ func NewListener(platform Platform, network string, addr string) (net.Listener, 
 	case NoTEE:
 		return networking.NewSocketListener(network, addr)
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }

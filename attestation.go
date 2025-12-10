@@ -19,7 +19,7 @@ func NewAttester(platform Platform) (Attester, error) {
 	case NoTEE:
 		return attestation.NewNoTEEAttester()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
 
@@ -46,7 +46,7 @@ func NewVerifier(platform Platform) (Verifier, error) {
 	case NoTEE:
 		return attestation.NewNoTEEVerifier()
 	default:
-		return nil, fmt.Errorf("unsupported platform '%s'", platform)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
 
