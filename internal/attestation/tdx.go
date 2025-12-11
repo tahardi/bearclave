@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -36,15 +35,16 @@ func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	}
 
 	if len(opts.userData) > IntelTdxMaxUserdataSize {
-		return nil, fmt.Errorf(
+		msg := fmt.Sprintf(
 			"userdata must be less than %d bytes",
 			IntelTdxMaxUserdataSize,
 		)
+		return nil, attesterErrorUserDataTooLong(msg, nil)
 	}
 
 	tdxQP, err := client.GetQuoteProvider()
 	if err != nil {
-		return nil, fmt.Errorf("getting tdx quote provider: %w", err)
+		return nil, attesterError("getting tdx quote provider", err)
 	}
 
 	var reportData [64]byte
@@ -53,7 +53,7 @@ func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	}
 	quote, err := tdxQP.GetRawQuote(reportData)
 	if err != nil {
-		return nil, fmt.Errorf("getting tdx quote: %w", err)
+		return nil, attesterError("getting tdx quote", err)
 	}
 	return &AttestResult{Report: quote}, nil
 }
@@ -79,35 +79,36 @@ func (n *TDXVerifier) Verify(
 
 	pbQuote, err := abi.QuoteToProto(attestResult.Report)
 	if err != nil {
-		return nil, fmt.Errorf("converting tdx report to proto: %w", err)
+		return nil, verifierError("converting tdx report to proto", err)
 	}
 
 	tdxOptions := verify.DefaultOptions()
 	tdxOptions.Now = opts.timestamp
 	err = verify.TdxQuote(pbQuote, tdxOptions)
 	if err != nil {
-		return nil, fmt.Errorf("verifying tdx report: %w", err)
+		return nil, verifierError("verifying tdx report", err)
 	}
 
 	quoteV4, ok := pbQuote.(*pb.QuoteV4)
 	if !ok {
-		return nil, errors.New("unexpected quote type")
+		return nil, verifierError("unexpected quote type", nil)
 	}
 
 	err = TDXVerifyMeasurement(opts.measurement, quoteV4.GetTdQuoteBody())
 	if err != nil {
-		return nil, fmt.Errorf("verifying measurement: %w", err)
+		return nil, err
 	}
 
 	debug, err := TDXIsDebugEnabled(quoteV4)
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("getting debug mode: %w", err)
+		return nil, err
 	case opts.debug != debug:
-		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
+		msg := fmt.Sprintf("mode mismatch: expected %t, got %t",
 			opts.debug,
 			debug,
 		)
+		return nil, verifierErrorDebugMode(msg, nil)
 	}
 
 	verifyResult := &VerifyResult{
@@ -151,88 +152,104 @@ func TDXVerifyMeasurement(measurementJSON string, quoteBody *pb.TDQuoteBody) err
 	measurement := TDXMeasurement{}
 	err := json.Unmarshal([]byte(measurementJSON), &measurement)
 	if err != nil {
-		return fmt.Errorf("unmarshaling measurement: %w", err)
+		return verifierErrorMeasurement("unmarshaling measurement", err)
 	}
 
 	switch {
 	case !bytes.Equal(measurement.TEETCBSVN, quoteBody.GetTeeTcbSvn()):
-		return fmt.Errorf("tee tcb svn mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("tee tcb svn mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.TEETCBSVN),
 			base64.StdEncoding.EncodeToString(quoteBody.GetTeeTcbSvn()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.MrSeam, quoteBody.GetMrSeam()):
-		return fmt.Errorf("mr seam mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("mr seam mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.MrSeam),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrSeam()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.MrSignerSeam, quoteBody.GetMrSignerSeam()):
-		return fmt.Errorf("mr signer seam mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("mr signer seam mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.MrSignerSeam),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrSignerSeam()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.SeamAttributes, quoteBody.GetSeamAttributes()):
-		return fmt.Errorf("seam attributes mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("seam attributes mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.SeamAttributes),
 			base64.StdEncoding.EncodeToString(quoteBody.GetSeamAttributes()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.TDAttributes, quoteBody.GetTdAttributes()):
-		return fmt.Errorf("td attributes mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("td attributes mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.TDAttributes),
 			base64.StdEncoding.EncodeToString(quoteBody.GetTdAttributes()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.Xfam, quoteBody.GetXfam()):
-		return fmt.Errorf("xfam mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("xfam mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.Xfam),
 			base64.StdEncoding.EncodeToString(quoteBody.GetXfam()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.MrTD, quoteBody.GetMrTd()):
-		return fmt.Errorf("mr td mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("mr td mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.MrTD),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrTd()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.MrConfigID, quoteBody.GetMrConfigId()):
-		return fmt.Errorf("mr config id mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("mr config id mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.MrConfigID),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrConfigId()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.MrOwner, quoteBody.GetMrOwner()):
-		return fmt.Errorf("mr owner mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("mr owner mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.MrOwner),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrOwner()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.MrOwnerConfig, quoteBody.GetMrOwnerConfig()):
-		return fmt.Errorf("mr owner config mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("mr owner config mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.MrOwnerConfig),
 			base64.StdEncoding.EncodeToString(quoteBody.GetMrOwnerConfig()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case len(measurement.RTMRs) != IntelTdxRmrsLength:
-		return fmt.Errorf("missing rtmrs (measurement): expected 4, got %d",
+		msg := fmt.Sprintf("missing rtmrs (measurement): expected 4, got %d",
 			len(measurement.RTMRs),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case len(quoteBody.GetRtmrs()) != IntelTdxRmrsLength:
-		return fmt.Errorf("missing rtmrs (quote): expected 4, got %d",
+		msg := fmt.Sprintf("missing rtmrs (quote): expected 4, got %d",
 			len(quoteBody.GetRtmrs()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.RTMRs[0], quoteBody.GetRtmrs()[0]):
-		return fmt.Errorf("rtmrs[0] mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("rtmrs[0] mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.RTMRs[0]),
 			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[0]),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.RTMRs[1], quoteBody.GetRtmrs()[1]):
-		return fmt.Errorf("rtmrs[1] mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("rtmrs[1] mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.RTMRs[1]),
 			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[1]),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.RTMRs[2], quoteBody.GetRtmrs()[2]):
-		return fmt.Errorf("rtmrs[2] mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("rtmrs[2] mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.RTMRs[2]),
 			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[2]),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.RTMRs[3], quoteBody.GetRtmrs()[3]):
-		return fmt.Errorf("rtmrs[3] mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("rtmrs[3] mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.RTMRs[3]),
 			base64.StdEncoding.EncodeToString(quoteBody.GetRtmrs()[3]),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	}
 	return nil
 }

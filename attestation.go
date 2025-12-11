@@ -6,7 +6,18 @@ import (
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
+var (
+	ErrAttester = attestation.ErrAttester
+	ErrAttesterUserDataTooLong = attestation.ErrAttesterUserDataTooLong
+	WithAttestNonce = attestation.WithAttestNonce
+	WithPublicKey   = attestation.WithPublicKey
+	WithUserData    = attestation.WithUserData
+)
+
 type Attester = attestation.Attester
+type AttestResult = attestation.AttestResult
+type AttestOption = attestation.AttestOption
+type AttestOptions = attestation.AttestOptions
 
 func NewAttester(platform Platform) (Attester, error) {
 	switch platform {
@@ -23,17 +34,22 @@ func NewAttester(platform Platform) (Attester, error) {
 	}
 }
 
-type AttestResult = attestation.AttestResult
-type AttestOption = attestation.AttestOption
-type AttestOptions = attestation.AttestOptions
-
 var (
-	WithAttestNonce = attestation.WithAttestNonce
-	WithPublicKey   = attestation.WithPublicKey
-	WithUserData    = attestation.WithUserData
+	ErrVerifier = attestation.ErrVerifier
+	ErrVerifierDebugMode = attestation.ErrVerifierDebugMode
+	ErrVerifierMeasurement = attestation.ErrVerifierMeasurement
+	ErrVerifierNonce = attestation.ErrVerifierNonce
+	ErrVerifierTimestamp = attestation.ErrVerifierTimestamp
+	WithDebug = attestation.WithDebug
+	WithMeasurement = attestation.WithMeasurement
+	WithTimestamp = attestation.WithTimestamp
+	WithVerifyNonce = attestation.WithVerifyNonce
 )
 
 type Verifier = attestation.Verifier
+type VerifyResult = attestation.VerifyResult
+type VerifyOption = attestation.VerifyOption
+type VerifyOptions = attestation.VerifyOptions
 
 func NewVerifier(platform Platform) (Verifier, error) {
 	switch platform {
@@ -49,14 +65,3 @@ func NewVerifier(platform Platform) (Verifier, error) {
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
-
-type VerifyResult = attestation.VerifyResult
-type VerifyOption = attestation.VerifyOption
-type VerifyOptions = attestation.VerifyOptions
-
-var (
-	WithDebug = attestation.WithDebug
-	WithMeasurement = attestation.WithMeasurement
-	WithTimestamp = attestation.WithTimestamp
-	WithVerifyNonce = attestation.WithVerifyNonce
-)

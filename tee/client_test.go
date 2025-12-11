@@ -78,6 +78,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		_, err := client.AttestUserData(data)
 
 		// then
+		require.ErrorIs(t, err, tee.ErrClient)
 		assert.ErrorContains(t, err, "doing attest userdata request")
 	})
 }
@@ -174,6 +175,7 @@ func TestClient_Do(t *testing.T) {
 		err := client.Do(method, api, apiReq, apiResp)
 
 		// then
+		require.ErrorIs(t, err, tee.ErrClient)
 		assert.ErrorContains(t, err, "creating request")
 	})
 
@@ -194,6 +196,7 @@ func TestClient_Do(t *testing.T) {
 		err := client.Do(method, api, apiReq, apiResp)
 
 		// then
+		require.ErrorIs(t, err, tee.ErrClient)
 		assert.ErrorContains(t, err, "sending request")
 	})
 
@@ -218,7 +221,8 @@ func TestClient_Do(t *testing.T) {
 		err := client.Do(method, api, apiReq, apiResp)
 
 		// then
-		assert.ErrorContains(t, err, "received non-200 response")
+		require.ErrorIs(t, err, tee.ErrClientNon200Response)
+		assert.ErrorContains(t, err, "non-200 response")
 	})
 
 	t.Run("error - reading response body", func(t *testing.T) {
@@ -247,6 +251,7 @@ func TestClient_Do(t *testing.T) {
 		err := client.Do(method, api, apiReq, apiResp)
 
 		// then
+		require.ErrorIs(t, err, tee.ErrClient)
 		assert.ErrorContains(t, err, "reading response body")
 	})
 }

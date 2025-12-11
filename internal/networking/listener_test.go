@@ -8,6 +8,34 @@ import (
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
+func TestParseSocketAddr(t *testing.T) {
+	t.Run("happy path - no scheme", func(t *testing.T) {
+		// given
+		addr := "127.0.0.1:8080"
+		wantAddr := "127.0.0.1:8080"
+
+		// when
+		gotAddr, err := networking.ParseSocketAddr(addr)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, wantAddr, gotAddr)
+	})
+
+	t.Run("happy path - with scheme", func(t *testing.T) {
+		// given
+		addr := "http://127.0.0.1:8080"
+		wantAddr := "127.0.0.1:8080"
+
+		// when
+		gotAddr, err := networking.ParseSocketAddr(addr)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, wantAddr, gotAddr)
+	})
+}
+
 func TestParseVSocketAddr(t *testing.T) {
 	t.Run("happy path - no scheme", func(t *testing.T) {
 		// given
@@ -47,6 +75,7 @@ func TestParseVSocketAddr(t *testing.T) {
 		_, _, err := networking.ParseVSocketAddr(addr)
 
 		// then
-		assert.ErrorContains(t, err, "invalid format")
+		require.ErrorIs(t, err, networking.ErrVSocketParseAddr)
+		assert.ErrorContains(t, err, "expected format")
 	})
 }

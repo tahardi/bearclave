@@ -7,6 +7,8 @@ import (
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
+var ErrDialer = networking.ErrDialer
+
 type Dialer = networking.Dialer
 
 func NewDialer(platform Platform) (networking.Dialer, error) {
@@ -23,6 +25,8 @@ func NewDialer(platform Platform) (networking.Dialer, error) {
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
+
+var ErrListener = networking.ErrListener
 
 func NewListener(platform Platform, network string, addr string) (net.Listener, error) {
 	switch platform {

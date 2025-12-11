@@ -23,24 +23,25 @@ func NewSEVAttester() (*SEVAttester, error) {
 
 func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := AttestOptions{
-		nonce: nil,
+		nonce:     nil,
 		publicKey: nil,
-		userData: nil,
+		userData:  nil,
 	}
 	for _, opt := range options {
 		opt(&opts)
 	}
 
 	if len(opts.userData) > AmdSevMaxUserdataSize {
-		return nil, fmt.Errorf(
+		msg := fmt.Sprintf(
 			"userdata must be less than %d bytes",
 			AmdSevMaxUserdataSize,
 		)
+		return nil, attesterErrorUserDataTooLong(msg, nil)
 	}
 
 	sevQP, err := client.GetQuoteProvider()
 	if err != nil {
-		return nil, fmt.Errorf("getting sev quote provider: %w", err)
+		return nil, attesterError("getting sev quote provider", err)
 	}
 
 	var reportData [64]byte
@@ -49,7 +50,7 @@ func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	}
 	quote, err := sevQP.GetRawQuote(reportData)
 	if err != nil {
-		return nil, fmt.Errorf("getting sev quote: %w", err)
+		return nil, attesterError("getting sev quote", err)
 	}
 	return &AttestResult{Report: quote}, nil
 }
@@ -75,30 +76,28 @@ func (n *SEVVerifier) Verify(
 
 	pbReport, err := abi.ReportCertsToProto(attestResult.Report)
 	if err != nil {
-		return nil, fmt.Errorf("converting sev report to proto: %w", err)
+		return nil, verifierError("converting sev report to proto", err)
 	}
 
 	snpOptions := verify.DefaultOptions()
 	snpOptions.Now = opts.timestamp
 	err = verify.SnpAttestation(pbReport, snpOptions)
 	if err != nil {
-		return nil, fmt.Errorf("verifying sev report: %w", err)
+		return nil, verifierError("verifying sev report", err)
 	}
 
 	err = SEVVerifyMeasurement(opts.measurement, pbReport.GetReport())
 	if err != nil {
-		return nil, fmt.Errorf("verifying measurement: %w", err)
+		return nil, err
 	}
 
 	debug, err := SEVIsDebugEnabled(pbReport.GetReport())
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("getting debug mode: %w", err)
+		return nil, err
 	case opts.debug != debug:
-		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
-			opts.debug,
-			debug,
-		)
+		msg := fmt.Sprintf("mode mismatch: expected %t, got %t", opts.debug, debug)
+		return nil, verifierErrorDebugMode(msg, nil)
 	}
 
 	verifyResult := &VerifyResult{
@@ -110,7 +109,7 @@ func (n *SEVVerifier) Verify(
 func SEVIsDebugEnabled(report *sevsnp.Report) (bool, error) {
 	policy, err := abi.ParseSnpPolicy(report.GetPolicy())
 	if err != nil {
-		return false, fmt.Errorf("parsing policy: %w", err)
+		return false, verifierErrorDebugMode("parsing policy", err)
 	}
 	return policy.Debug, nil
 }
@@ -152,140 +151,191 @@ func SEVVerifyMeasurement(measurementJSON string, report *sevsnp.Report) error {
 	measurement := SEVMeasurement{}
 	err := json.Unmarshal([]byte(measurementJSON), &measurement)
 	if err != nil {
-		return fmt.Errorf("unmarshaling measurement: %w", err)
+		return verifierErrorMeasurement("unmarshaling measurement", err)
 	}
 
 	switch {
 	case measurement.Version != report.GetVersion():
-		return fmt.Errorf("version mismatch: expected %d, got %d",
-			measurement.Version,
-			report.GetVersion(),
+		msg := fmt.Sprintf(
+			"version mismatch: expected %d, got %d",
+			measurement.Version, report.GetVersion(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.GuestSVN != report.GetGuestSvn():
-		return fmt.Errorf("guest svn mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"guest svn mismatch: expected %d, got %d",
 			measurement.GuestSVN,
 			report.GetGuestSvn(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.Policy != report.GetPolicy():
-		return fmt.Errorf("policy mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"policy mismatch: expected %d, got %d",
 			measurement.Policy,
 			report.GetPolicy(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.FamilyID, report.GetFamilyId()):
-		return fmt.Errorf("family id mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"family id mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.FamilyID),
 			base64.StdEncoding.EncodeToString(report.GetFamilyId()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.ImageID, report.GetImageId()):
-		return fmt.Errorf("image id mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"image id mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.ImageID),
 			base64.StdEncoding.EncodeToString(report.GetImageId()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.VMPL != report.GetVmpl():
-		return fmt.Errorf("vmpl mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"vmpl mismatch: expected %d, got %d",
 			measurement.VMPL,
 			report.GetVmpl(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CurrentTCB != report.GetCurrentTcb():
-		return fmt.Errorf("current tcb mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"current tcb mismatch: expected %d, got %d",
 			measurement.CurrentTCB,
 			report.GetCurrentTcb(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.PlatformInfo != report.GetPlatformInfo():
-		return fmt.Errorf("platform info mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"platform info mismatch: expected %d, got %d",
 			measurement.PlatformInfo,
 			report.GetPlatformInfo(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.SignerInfo != report.GetSignerInfo():
-		return fmt.Errorf("signer info mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"signer info mismatch: expected %d, got %d",
 			measurement.SignerInfo,
 			report.GetSignerInfo(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.Measurement, report.GetMeasurement()):
-		return fmt.Errorf("measurement mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"measurement mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.Measurement),
 			base64.StdEncoding.EncodeToString(report.GetMeasurement()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.HostData, report.GetHostData()):
-		return fmt.Errorf("host data mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"host data mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.HostData),
 			base64.StdEncoding.EncodeToString(report.GetHostData()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.IDKeyDigest, report.GetIdKeyDigest()):
-		return fmt.Errorf("id key digest mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"id key digest mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.IDKeyDigest),
 			base64.StdEncoding.EncodeToString(report.GetIdKeyDigest()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.AuthorKeyDigest, report.GetAuthorKeyDigest()):
-		return fmt.Errorf("author key digest mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"author key digest mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.AuthorKeyDigest),
 			base64.StdEncoding.EncodeToString(report.GetAuthorKeyDigest()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.ReportID, report.GetReportId()):
-		return fmt.Errorf("report id mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"report id mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.ReportID),
 			base64.StdEncoding.EncodeToString(report.GetReportId()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.ReportIDMA, report.GetReportIdMa()):
-		return fmt.Errorf("report id ma mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"report id ma mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.ReportIDMA),
 			base64.StdEncoding.EncodeToString(report.GetReportIdMa()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.ReportedTCB != report.GetReportedTcb():
-		return fmt.Errorf("reported tcb mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"reported tcb mismatch: expected %d, got %d",
 			measurement.ReportedTCB,
 			report.GetReportedTcb(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case !bytes.Equal(measurement.ChipID, report.GetChipId()):
-		return fmt.Errorf("chip id mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf(
+			"chip id mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(measurement.ChipID),
 			base64.StdEncoding.EncodeToString(report.GetChipId()),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CommittedTCB != report.GetCommittedTcb():
-		return fmt.Errorf("committed tcb mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"committed tcb mismatch: expected %d, got %d",
 			measurement.CommittedTCB,
 			report.GetCommittedTcb(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CurrentBuild != report.GetCurrentBuild():
-		return fmt.Errorf("current build mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"current build mismatch: expected %d, got %d",
 			measurement.CurrentBuild,
 			report.GetCurrentBuild(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CurrentMinor != report.GetCurrentMinor():
-		return fmt.Errorf("current minor mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"current minor mismatch: expected %d, got %d",
 			measurement.CurrentMinor,
 			report.GetCurrentMinor(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CurrentMajor != report.GetCurrentMajor():
-		return fmt.Errorf("current major mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"current major mismatch: expected %d, got %d",
 			measurement.CurrentMajor,
 			report.GetCurrentMajor(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CommittedBuild != report.GetCommittedBuild():
-		return fmt.Errorf("committed build mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"committed build mismatch: expected %d, got %d",
 			measurement.CommittedBuild,
 			report.GetCommittedBuild(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CommittedMinor != report.GetCommittedMinor():
-		return fmt.Errorf("committed minor mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"committed minor mismatch: expected %d, got %d",
 			measurement.CommittedMinor,
 			report.GetCommittedMinor(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CommittedMajor != report.GetCommittedMajor():
-		return fmt.Errorf("committed major mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"committed major mismatch: expected %d, got %d",
 			measurement.CommittedMajor,
 			report.GetCommittedMajor(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.LaunchTCB != report.GetLaunchTcb():
-		return fmt.Errorf("launch tcb mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"launch tcb mismatch: expected %d, got %d",
 			measurement.LaunchTCB,
 			report.GetLaunchTcb(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	case measurement.CPUID1EAXFMS != report.GetCpuid1EaxFms():
-		return fmt.Errorf("cpuid 1eax fms mismatch: expected %d, got %d",
+		msg := fmt.Sprintf(
+			"cpuid 1eax fms mismatch: expected %d, got %d",
 			measurement.CPUID1EAXFMS,
 			report.GetCpuid1EaxFms(),
 		)
+		return verifierErrorMeasurement(msg, nil)
 	}
 	return nil
 }

@@ -72,6 +72,21 @@ func TestTDX_Interfaces(t *testing.T) {
 	})
 }
 
+func TestTDXAttester_Attest(t *testing.T) {
+	t.Run("error - user data too long", func(t *testing.T) {
+		// given
+		attester, err := attestation.NewTDXAttester()
+		require.NoError(t, err)
+		userData := make([]byte, attestation.IntelTdxMaxUserdataSize+1)
+
+		// when
+		_, err = attester.Attest(attestation.WithUserData(userData))
+
+		// then
+		require.ErrorIs(t, err, attestation.ErrAttesterUserDataTooLong)
+	})
+}
+
 func TestTDXVerifier_Verify(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
@@ -109,6 +124,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifier)
 		assert.ErrorContains(t, err, "converting tdx report to proto")
 	})
 
@@ -128,6 +144,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifier)
 		assert.ErrorContains(t, err, "certificate has expired or is not yet valid")
 	})
 
@@ -151,7 +168,7 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorContains(t, err, "verifying measurement")
+		require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 	})
 
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
@@ -175,7 +192,8 @@ func TestTDXVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorContains(t, err, "debug mode mismatch")
+		require.ErrorIs(t, err, attestation.ErrVerifierDebugMode)
+		assert.ErrorContains(t, err, "mode mismatch")
 	})
 }
 
@@ -260,6 +278,7 @@ func TestTDXVerifyMeasurement(t *testing.T) {
 		err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 		assert.ErrorContains(t, err, "unmarshaling measurement")
 	})
 
@@ -389,6 +408,7 @@ func TestTDXVerifyMeasurement(t *testing.T) {
 			err := attestation.TDXVerifyMeasurement(measurement, quoteV4.GetTdQuoteBody())
 
 			// then
+			require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 			assert.ErrorContains(t, err, tc.wantErr)
 		})
 	}
