@@ -2,11 +2,60 @@ package tee
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/tahardi/bearclave"
 )
+
+const (
+	Megabyte = 1 << 20
+	DefaultReadHeaderTimeout = 10 * time.Second
+	DefaultReadTimeout       = 15 * time.Second
+	DefaultWriteTimeout      = 15 * time.Second
+	DefaultIdleTimeout       = 60 * time.Second
+	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
+)
+
+type ServerOption func(server *http.Server)
+
+func WithErrorLog(logger *log.Logger) ServerOption {
+	return func(server *http.Server) {
+		server.ErrorLog = logger
+	}
+}
+
+func WithMaxHeaderBytes(bytes int) ServerOption {
+	return func(server *http.Server) {
+		server.MaxHeaderBytes = bytes
+	}
+}
+
+func WithIdleTimeout(timeout time.Duration) ServerOption {
+	return func(server *http.Server) {
+		server.IdleTimeout = timeout
+	}
+}
+
+func WithReadHeaderTimeout(timeout time.Duration) ServerOption {
+	return func(server *http.Server) {
+		server.ReadHeaderTimeout = timeout
+	}
+}
+
+func WithReadTimeout(timeout time.Duration) ServerOption {
+	return func(server *http.Server) {
+		server.ReadTimeout = timeout
+	}
+}
+
+func WithWriteTimeout(timeout time.Duration) ServerOption {
+	return func(server *http.Server) {
+		server.WriteTimeout = timeout
+	}
+}
 
 type Server struct {
 	listener net.Listener
@@ -18,21 +67,35 @@ func NewServer(
 	network string,
 	addr string,
 	mux *http.ServeMux,
+	opts ...ServerOption,
 ) (*Server, error) {
 	listener, err := bearclave.NewListener(platform, network, addr)
 	if err != nil {
 		return nil, fmt.Errorf("creating listener: %w", err)
 	}
-	return NewServerWithListener(listener, mux)
+	return NewServerWithListener(listener, mux, opts...)
 }
 
 func NewServerWithListener(
 	listener net.Listener,
 	mux *http.ServeMux,
+	opts ...ServerOption,
 ) (*Server, error) {
+	server := &http.Server{
+		Handler:           mux,
+		MaxHeaderBytes:    DefaultMaxHeaderBytes,
+		IdleTimeout:       DefaultIdleTimeout,
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		ReadTimeout:       DefaultReadTimeout,
+		WriteTimeout:      DefaultWriteTimeout,
+	}
+	for _, opt := range opts {
+		opt(server)
+	}
+
 	return &Server{
 		listener: listener,
-		server:   &http.Server{Handler: mux},
+		server:   server,
 	}, nil
 }
 
@@ -51,6 +114,6 @@ func (s *Server) Close() error {
 	return nil
 }
 
-func (s *Server) Serve() error {
+func (s *Server) ListenAndServe() error {
 	return s.server.Serve(s.listener)
 }
