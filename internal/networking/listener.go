@@ -1,7 +1,6 @@
 package networking
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -11,12 +10,6 @@ import (
 )
 
 const NumVSockAddrFields = 2
-
-var (
-	ErrListener         = errors.New("listener")
-	ErrSocketParseAddr   = errors.New("socket parse addr")
-	ErrVSocketParseAddr = errors.New("vsocket parse addr")
-)
 
 func NewSocketListener(network string, addr string) (net.Listener, error) {
 	parsedAddr, err := ParseSocketAddr(addr)
@@ -73,27 +66,10 @@ func ParseVSocketAddr(addr string) (uint32, uint32, error) {
 	switch {
 	case err != nil:
 		msg := fmt.Sprintf("expected format 'cid:port' got '%s'", addr)
-		return 0,0, fmt.Errorf("%w: %s: %w", ErrVSocketParseAddr, msg, err)
+		return 0, 0, fmt.Errorf("%w: %s: %w", ErrVSocketParseAddr, msg, err)
 	case n != NumVSockAddrFields:
 		msg := fmt.Sprintf("expected 2 fields got %d", n)
-		return 0,0, fmt.Errorf("%w: %s", ErrVSocketParseAddr, msg)
+		return 0, 0, fmt.Errorf("%w: %s", ErrVSocketParseAddr, msg)
 	}
 	return uint32(cid), uint32(port), nil
-}
-
-func wrapListenerError(listenerErr error, msg string, err error) error {
-	switch {
-	case msg == "" && err == nil:
-		return listenerErr
-	case msg != "" && err != nil:
-		return fmt.Errorf("%w: %s: %w", listenerErr, msg, err)
-	case msg != "":
-		return fmt.Errorf("%w: %s", listenerErr, msg)
-	default:
-		return fmt.Errorf("%w: %w", listenerErr, err)
-	}
-}
-
-func listenerError(msg string, err error) error {
-	return wrapListenerError(ErrListener, msg, err)
 }
