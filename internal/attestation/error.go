@@ -8,12 +8,11 @@ import (
 var (
 	ErrAttester                = errors.New("attester")
 	ErrAttesterUserDataTooLong = fmt.Errorf("%w: user data too long", ErrAttester)
-
-	ErrVerifier            = errors.New("verifier")
-	ErrVerifierDebugMode   = fmt.Errorf("%w: debug mode", ErrVerifier)
-	ErrVerifierMeasurement = fmt.Errorf("%w: measurement", ErrVerifier)
-	ErrVerifierNonce       = fmt.Errorf("%w: nonce", ErrVerifier)
-	ErrVerifierTimestamp   = fmt.Errorf("%w: timestamp", ErrVerifier)
+	ErrVerifier                = errors.New("verifier")
+	ErrVerifierDebugMode       = fmt.Errorf("%w: debug mode", ErrVerifier)
+	ErrVerifierMeasurement     = fmt.Errorf("%w: measurement", ErrVerifier)
+	ErrVerifierNonce           = fmt.Errorf("%w: nonce", ErrVerifier)
+	ErrVerifierTimestamp       = fmt.Errorf("%w: timestamp", ErrVerifier)
 )
 
 func wrapError(baseErr error, msg string, err error) error {
