@@ -36,6 +36,7 @@ linters:
     - gocritic
     - godoclint
     - godox
+    - gosec
     - govet
     - iface
     - importas
