@@ -4,6 +4,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "*"
-        source: "modfiles/*"
+    exclude-paths:
+      - "modfiles/*"
