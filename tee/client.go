@@ -3,11 +3,18 @@ package tee
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/tahardi/bearclave"
+)
+
+var (
+	ErrClient = errors.New("client")
+	ErrClientNon200Response = fmt.Errorf("%w: non-200 response", ErrClient)
 )
 
 type Client struct {
@@ -53,33 +60,55 @@ func (c *Client) Do(
 ) error {
 	bodyBytes, err := json.Marshal(apiReq)
 	if err != nil {
-		return fmt.Errorf("marshaling request body: %w", err)
+		return clientError("marshaling request body", err)
 	}
 
 	url := c.host + api
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
+		return clientError("creating request", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	switch {
 	case err != nil:
-		return fmt.Errorf("sending request: %w", err)
+		return clientError("sending request", err)
 	case resp.StatusCode != http.StatusOK:
-		return fmt.Errorf("received non-200 response: %d", resp.StatusCode)
+		msg := strconv.Itoa(resp.StatusCode)
+		return clientErrorNon200Response(msg, nil)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("reading response body: %w", err)
+		return clientError("reading response body", err)
 	}
 
 	err = json.Unmarshal(bodyBytes, apiResp)
 	if err != nil {
-		return fmt.Errorf("unmarshaling response: %w", err)
+		return clientError("unmarshaling response", err)
 	}
 	return nil
+}
+
+func wrapClientError(clientErr error, msg string, err error) error {
+	switch {
+	case msg == "" && err == nil:
+		return clientErr
+	case msg != "" && err != nil:
+		return fmt.Errorf("%w: %s: %w", clientErr, msg, err)
+	case msg != "":
+		return fmt.Errorf("%w: %s", clientErr, msg)
+	default:
+		return fmt.Errorf("%w: %w", clientErr, err)
+	}
+}
+
+func clientError(msg string, err error) error {
+	return wrapClientError(ErrClient, msg, err)
+}
+
+func clientErrorNon200Response(msg string, err error) error {
+	return wrapClientError(ErrClientNon200Response, msg, err)
 }

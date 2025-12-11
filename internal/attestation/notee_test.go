@@ -72,6 +72,20 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, want.Userdata, got.Userdata)
 	})
+
+	t.Run("error - user data too long", func(t *testing.T) {
+		// given
+		privateKey := newTestPrivateKey(t)
+		attester, err := attestation.NewNoTEEAttesterWithPrivateKey(privateKey)
+		require.NoError(t, err)
+		userdata := make([]byte, attestation.NoTeeMaxUserDataSize+1)
+
+		// when
+		_, err = attester.Attest(attestation.WithUserData(userdata))
+
+		// then
+		require.ErrorIs(t, err, attestation.ErrAttesterUserDataTooLong)
+	})
 }
 
 func TestNoTEEVerifier_Verify(t *testing.T) {
@@ -122,6 +136,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifier)
 		assert.ErrorContains(t, err, "unmarshalling report")
 	})
 
@@ -137,7 +152,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(&attestation.AttestResult{Report: reportBytes})
 
 		// then
-		assert.ErrorContains(t, err, "verifying signature")
+		require.ErrorIs(t, err, attestation.ErrVerifier)
 	})
 
 	t.Run("error - expired report", func(t *testing.T) {
@@ -153,7 +168,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
 
 		// then
-		assert.ErrorIs(t, err, attestation.ErrInvalidCertificate)
+		assert.ErrorIs(t, err, attestation.ErrVerifierTimestamp)
 	})
 
 	t.Run("error - wrong measurement", func(t *testing.T) {
@@ -173,7 +188,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorIs(t, err, attestation.ErrMeasurementMismatch)
+		assert.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 	})
 
 	t.Run("error - wrong nonce", func(t *testing.T) {
@@ -193,7 +208,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorIs(t, err, attestation.ErrNonceMismatch)
+		assert.ErrorIs(t, err, attestation.ErrVerifierNonce)
 	})
 }
 
@@ -243,7 +258,8 @@ func TestECDSAVerify(t *testing.T) {
 		err = attestation.ECDSAVerify(nil, data, signature)
 
 		// then
-		assert.ErrorIs(t, err, attestation.ErrInvalidPublicKey)
+		require.ErrorIs(t, err, attestation.ErrVerifier)
+		assert.ErrorContains(t, err, "invalid public key")
 	})
 
 	t.Run("error - invalid signature", func(t *testing.T) {
@@ -258,7 +274,8 @@ func TestECDSAVerify(t *testing.T) {
 		err = attestation.ECDSAVerify(publicKey, data, nil)
 
 		// then
-		assert.ErrorIs(t, err, attestation.ErrInvalidSignature)
+		require.ErrorIs(t, err, attestation.ErrVerifier)
+		assert.ErrorContains(t, err, "invalid signature")
 	})
 
 	t.Run("error - wrong public key", func(t *testing.T) {
@@ -275,7 +292,8 @@ func TestECDSAVerify(t *testing.T) {
 		err = attestation.ECDSAVerify(wrongPublicKey, data, signature)
 
 		// then
-		assert.ErrorIs(t, err, attestation.ErrECDSAVerification)
+		require.ErrorIs(t, err, attestation.ErrVerifier)
+		assert.ErrorContains(t, err, "ecdsa verification failed")
 	})
 
 	t.Run("error - wrong data", func(t *testing.T) {
@@ -291,6 +309,7 @@ func TestECDSAVerify(t *testing.T) {
 		err = attestation.ECDSAVerify(publicKey, []byte("wrong data"), signature)
 
 		// then
-		assert.ErrorIs(t, err, attestation.ErrECDSAVerification)
+		require.ErrorIs(t, err, attestation.ErrVerifier)
+		assert.ErrorContains(t, err, "ecdsa verification failed")
 	})
 }

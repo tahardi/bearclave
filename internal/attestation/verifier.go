@@ -9,8 +9,8 @@ type Verifier interface {
 }
 
 type VerifyResult struct {
-	UserData        []byte `json:"userdata"`
-	PublicKey       []byte `json:"publickey"`
+	UserData  []byte `json:"userdata"`
+	PublicKey []byte `json:"publickey"`
 }
 
 type VerifyOption func(*VerifyOptions)

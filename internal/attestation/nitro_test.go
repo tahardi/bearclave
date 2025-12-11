@@ -136,6 +136,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifier)
 		assert.ErrorContains(t, err, "verifying report")
 	})
 
@@ -155,6 +156,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifier)
 		assert.ErrorContains(t, err, "certificate has expired or is not yet valid")
 	})
 
@@ -178,7 +180,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorContains(t, err, "verifying measurement")
+		require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 	})
 
 	t.Run("error - debug mode mismatch", func(t *testing.T) {
@@ -202,7 +204,7 @@ func TestNitroVerifier_Verify(t *testing.T) {
 		)
 
 		// then
-		assert.ErrorContains(t, err, "debug mode mismatch")
+		require.ErrorIs(t, err, attestation.ErrVerifierDebugMode)
 	})
 }
 
@@ -249,6 +251,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		_, err := attestation.NitroIsDebugEnabled(document)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierDebugMode)
 		assert.ErrorContains(t, err, "no pcrs provided")
 	})
 
@@ -264,6 +267,7 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		_, err := attestation.NitroIsDebugEnabled(document)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierDebugMode)
 		assert.ErrorContains(t, err, "missing pcr '2'")
 	})
 }
@@ -333,6 +337,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 		assert.ErrorContains(t, err, "unmarshaling measurement")
 	})
 
@@ -350,6 +355,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 		assert.ErrorContains(t, err, "missing pcr")
 	})
 
@@ -367,6 +373,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 		assert.ErrorContains(t, err, "mismatch: expected")
 	})
 
@@ -384,6 +391,7 @@ func TestNitroVerifyMeasurement(t *testing.T) {
 		err := attestation.NitroVerifyMeasurement(measurementJSON, document)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierMeasurement)
 		assert.ErrorContains(t, err, "mismatch: expected")
 	})
 }
@@ -421,6 +429,7 @@ func TestNitroVerifyNonce(t *testing.T) {
 		err := attestation.NitroVerifyNonce([]byte("wrong nonce"), document)
 
 		// then
+		require.ErrorIs(t, err, attestation.ErrVerifierNonce)
 		assert.ErrorContains(t, err, "nonce mismatch")
 	})
 }

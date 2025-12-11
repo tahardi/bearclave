@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -31,7 +30,7 @@ func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 
 	session, err := nsm.OpenDefaultSession()
 	if err != nil {
-		return nil, fmt.Errorf("opening nsm session: %w", err)
+		return nil, attesterError("opening nsm session", err)
 	}
 	defer session.Close()
 
@@ -42,13 +41,14 @@ func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	})
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("sending attestation request: %w", err)
+		return nil, attesterError("sending attestation request", err)
 	case resp.Error != "":
-		return nil, fmt.Errorf("attestation error: %s", resp.Error)
+		msg := fmt.Sprintf("attestation error: %s", resp.Error)
+		return nil, attesterError(msg, nil)
 	case resp.Attestation == nil:
-		return nil, errors.New("attestation response missing attestation")
+		return nil, attesterError("attestation response missing attestation", nil)
 	case resp.Attestation.Document == nil:
-		return nil, errors.New("attestation response missing document")
+		return nil, attesterError("attestation response missing document", nil)
 	}
 	return &AttestResult{Report: resp.Attestation.Document}, nil
 }
@@ -80,28 +80,26 @@ func (n *NitroVerifier) Verify(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("verifying report: %w", err)
+		return nil, verifierError( "verifying report", err)
 	}
 
 	err = NitroVerifyMeasurement(opts.measurement, result.Document)
 	if err != nil {
-		return nil, fmt.Errorf("verifying measurement: %w", err)
+		return nil, err
 	}
 
 	err = NitroVerifyNonce(opts.nonce, result.Document)
 	if err != nil {
-		return nil, fmt.Errorf("verifying nonce: %w", err)
+		return nil, err
 	}
 
 	debug, err := NitroIsDebugEnabled(result.Document)
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("getting debug mode: %w", err)
+		return nil, err
 	case opts.debug != debug:
-		return nil, fmt.Errorf("debug mode mismatch: expected %t, got %t",
-			opts.debug,
-			debug,
-		)
+		msg := fmt.Sprintf("mode mismatch: expected %t got %t", opts.debug, debug)
+		return nil, verifierErrorDebugMode(msg, nil)
 	}
 
 	verifyResult := &VerifyResult{
@@ -113,12 +111,13 @@ func (n *NitroVerifier) Verify(
 
 func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
 	if len(document.PCRs) < 1 {
-		return false, errors.New("no pcrs provided")
+		return false, verifierErrorDebugMode("no pcrs provided", nil)
 	}
 	for i := range 3 {
 		pcr, ok := document.PCRs[uint(i)]
 		if !ok {
-			return false, fmt.Errorf("missing pcr '%d'", i)
+			msg := fmt.Sprintf("missing pcr '%d'", i)
+			return false, verifierErrorDebugMode(msg, nil)
 		}
 		for _, b := range pcr {
 			if b != 0 {
@@ -142,21 +141,23 @@ func NitroVerifyMeasurement(measurementJSON string, document *nitrite.Document) 
 	measurement := NitroMeasurement{}
 	err := json.Unmarshal([]byte(measurementJSON), &measurement)
 	if err != nil {
-		return fmt.Errorf("unmarshaling measurement: %w", err)
+		return verifierErrorMeasurement("unmarshaling measurement", err)
 	}
 
 	for i, expected := range measurement.PCRs {
 		got, ok := document.PCRs[i]
 		if !ok {
-			return fmt.Errorf("missing pcr '%d'", i)
+			msg := fmt.Sprintf("missing pcr '%d'", i)
+			return verifierErrorMeasurement(msg, nil)
 		}
 		if !bytes.Equal(expected, got) {
-			return fmt.Errorf(
+			msg := fmt.Sprintf(
 				"pcr '%d' mismatch: expected '%s', got '%s'",
 				i,
 				base64.StdEncoding.EncodeToString(expected),
 				base64.StdEncoding.EncodeToString(got),
 			)
+			return verifierErrorMeasurement(msg, nil)
 		}
 	}
 
@@ -164,10 +165,11 @@ func NitroVerifyMeasurement(measurementJSON string, document *nitrite.Document) 
 	case measurement.ModuleID == "":
 		return nil
 	case measurement.ModuleID != document.ModuleID:
-		return fmt.Errorf("module id mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("module id mismatch: expected '%s', got '%s'",
 			measurement.ModuleID,
 			document.ModuleID,
 		)
+		return verifierErrorMeasurement(msg, nil)
 	}
 	return nil
 }
@@ -177,10 +179,11 @@ func NitroVerifyNonce(nonce []byte, document *nitrite.Document) error {
 		return nil
 	}
 	if !bytes.Equal(nonce, document.Nonce) {
-		return fmt.Errorf("nonce mismatch: expected '%s', got '%s'",
+		msg := fmt.Sprintf("nonce mismatch: expected '%s', got '%s'",
 			base64.StdEncoding.EncodeToString(nonce),
 			base64.StdEncoding.EncodeToString(document.Nonce),
 		)
+		return verifierErrorNonce(msg, nil)
 	}
 	return nil
 }

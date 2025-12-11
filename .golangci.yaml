@@ -23,6 +23,7 @@ linters:
     - contextcheck
     - durationcheck
     - embeddedstructfieldcheck
+    - err113
     - errcheck
     - errchkjson
     - errname

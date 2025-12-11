@@ -1,5 +1,7 @@
 package bearclave
 
+import "errors"
+
 type Platform string
 
 const (
@@ -9,3 +11,4 @@ const (
 	NoTEE Platform = "notee"
 )
 
+var ErrUnsupportedPlatform = errors.New("unsupported platform")
