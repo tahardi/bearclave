@@ -21,11 +21,12 @@ type Socket struct {
 }
 
 func NewSocket(
+	ctx context.Context,
 	platform bearclave.Platform,
 	network string,
 	addr string,
 ) (*Socket, error) {
-	listener, err := bearclave.NewListener(platform, network, addr)
+	listener, err := bearclave.NewListener(ctx, platform, network, addr)
 	if err != nil {
 		return nil, err
 	}

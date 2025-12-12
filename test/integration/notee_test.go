@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -25,6 +26,7 @@ func runService(service func(), wait time.Duration) {
 
 func TestIntegration_NoTEE(t *testing.T) {
 	// given
+	ctx := context.Background()
 	platform := bearclave.NoTEE
 	attester, err := bearclave.NewAttester(platform)
 	require.NoError(t, err)
@@ -37,7 +39,7 @@ func TestIntegration_NoTEE(t *testing.T) {
 	)
 
 	serverAddr := "http://127.0.0.1:8081"
-	server, err := tee.NewServer(platform, "tcp", serverAddr, serverMux)
+	server, err := tee.NewServer(ctx, platform, "tcp", serverAddr, serverMux)
 	require.NoError(t, err)
 	defer server.Close()
 

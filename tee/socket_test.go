@@ -25,12 +25,12 @@ func TestSocketRoundTrip(t *testing.T) {
 		network := "unix"
 
 		addr1 := "127.0.0.1:8080"
-		socket1, err := tee.NewSocket(platform, network, addr1)
+		socket1, err := tee.NewSocket(ctx, platform, network, addr1)
 		require.NoError(t, err)
 		defer socket1.Close()
 
 		addr2 := "127.0.0.1:8081"
-		socket2, err := tee.NewSocket(platform, network, addr2)
+		socket2, err := tee.NewSocket(ctx, platform, network, addr2)
 		require.NoError(t, err)
 		defer socket2.Close()
 
@@ -52,12 +52,12 @@ func TestSocketRoundTrip(t *testing.T) {
 		platform := bearclave.NoTEE
 		network := "tcp"
 		addr1 := "127.0.0.1:8080"
-		socket1, err := tee.NewSocket(platform, network, addr1)
+		socket1, err := tee.NewSocket(ctx, platform, network, addr1)
 		require.NoError(t, err)
 		defer socket1.Close()
 
 		addr2 := "127.0.0.1:8081"
-		socket2, err := tee.NewSocket(platform, network, addr2)
+		socket2, err := tee.NewSocket(ctx, platform, network, addr2)
 		require.NoError(t, err)
 		defer socket2.Close()
 
@@ -86,7 +86,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		dialContext, err := bearclave.NewDialContext(platform)
 		require.NoError(t, err)
 
-		socket, err := tee.NewSocket(platform, network, addr)
+		socket, err := tee.NewSocket(ctx, platform, network, addr)
 		require.NoError(t, err)
 		defer socket.Close()
 
@@ -109,7 +109,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		dialContext := func(context.Context, string, string) (net.Conn, error) {
 			return nil, assert.AnError
 		}
-		socket, err := tee.NewSocket(platform, network, addr)
+		socket, err := tee.NewSocket(ctx, platform, network, addr)
 		require.NoError(t, err)
 		defer socket.Close()
 
@@ -137,7 +137,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 			return conn, nil
 		}
 
-		socket, err := tee.NewSocket(platform, network, addr)
+		socket, err := tee.NewSocket(ctx, platform, network, addr)
 		require.NoError(t, err)
 		defer socket.Close()
 
@@ -165,7 +165,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 			return conn, nil
 		}
 
-		socket, err := tee.NewSocket(platform, network, addr)
+		socket, err := tee.NewSocket(ctx, platform, network, addr)
 		require.NoError(t, err)
 		defer socket.Close()
 
@@ -193,7 +193,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 			return conn, nil
 		}
 
-		socket, err := tee.NewSocket(platform, network, addr)
+		socket, err := tee.NewSocket(ctx, platform, network, addr)
 		require.NoError(t, err)
 		defer socket.Close()
 
@@ -225,7 +225,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 			return dc(c, network, addr)
 		}
 
-		socket, err := tee.NewSocket(platform, network, addr)
+		socket, err := tee.NewSocket(ctx, platform, network, addr)
 		require.NoError(t, err)
 		defer socket.Close()
 
@@ -247,9 +247,11 @@ func TestSocket_Receive(t *testing.T) {
 
 		listener := mocks.NewListener(t)
 		listener.On("Accept").Return(nil, assert.AnError)
+		listener.On("Close").Return(nil).Maybe()
 
 		socket, err := tee.NewSocketWithListener(platform, network, listener)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		_, err = socket.Receive(ctx)
@@ -272,9 +274,11 @@ func TestSocket_Receive(t *testing.T) {
 
 		listener := mocks.NewListener(t)
 		listener.On("Accept").Return(conn, nil)
+		listener.On("Close").Return(nil).Maybe()
 
 		socket, err := tee.NewSocketWithListener(platform, network, listener)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		_, err = socket.Receive(ctx)
@@ -297,9 +301,11 @@ func TestSocket_Receive(t *testing.T) {
 
 		listener := mocks.NewListener(t)
 		listener.On("Accept").Return(conn, nil)
+		listener.On("Close").Return(nil).Maybe()
 
 		socket, err := tee.NewSocketWithListener(platform, network, listener)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		_, err = socket.Receive(ctx)
@@ -322,9 +328,11 @@ func TestSocket_Receive(t *testing.T) {
 
 		listener := mocks.NewListener(t)
 		listener.On("Accept").Return(conn, nil).Maybe()
+		listener.On("Close").Return(nil).Maybe()
 
 		socket, err := tee.NewSocketWithListener(platform, network, listener)
 		require.NoError(t, err)
+		defer socket.Close()
 
 		// when
 		cancel()

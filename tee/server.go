@@ -1,6 +1,7 @@
 package tee
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -63,13 +64,14 @@ type Server struct {
 }
 
 func NewServer(
+	ctx context.Context,
 	platform bearclave.Platform,
 	network string,
 	addr string,
 	mux *http.ServeMux,
 	opts ...ServerOption,
 ) (*Server, error) {
-	listener, err := bearclave.NewListener(platform, network, addr)
+	listener, err := bearclave.NewListener(ctx, platform, network, addr)
 	if err != nil {
 		return nil, fmt.Errorf("creating listener: %w", err)
 	}
