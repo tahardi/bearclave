@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	ErrDialContext      = networking.ErrDialContext
-	WithDialerControl   = networking.WithDialerControl
-	WithDialerKeepAlive = networking.WithDialerKeepAlive
-	WithDialerLocalAddr = networking.WithDialerLocalAddr
-	WithDialerTimeout   = networking.WithDialerTimeout
+	ErrDialContext    = networking.ErrDialContext
+	WithDialControl   = networking.WithDialControl
+	WithDialKeepAlive = networking.WithDialKeepAlive
+	WithDialLocalAddr = networking.WithDialLocalAddr
+	WithDialTimeout   = networking.WithDialTimeout
 )
 
 type DialContext = networking.DialContext

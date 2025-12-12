@@ -21,25 +21,25 @@ type VerifyOptions struct {
 	timestamp   time.Time
 }
 
-func WithDebug(debug bool) VerifyOption {
+func WithVerifyDebug(debug bool) VerifyOption {
 	return func(opts *VerifyOptions) {
 		opts.debug = debug
 	}
 }
 
-func WithMeasurement(measurement string) VerifyOption {
+func WithVerifyMeasurement(measurement string) VerifyOption {
 	return func(opts *VerifyOptions) {
 		opts.measurement = measurement
 	}
 }
 
-func WithVerifyNonce(nonce []byte) VerifyOption {
+func WithVerifyVerifyNonce(nonce []byte) VerifyOption {
 	return func(opts *VerifyOptions) {
 		opts.nonce = nonce
 	}
 }
 
-func WithTimestamp(timestamp time.Time) VerifyOption {
+func WithVerifyTimestamp(timestamp time.Time) VerifyOption {
 	return func(opts *VerifyOptions) {
 		opts.timestamp = timestamp
 	}

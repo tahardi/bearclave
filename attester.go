@@ -10,8 +10,8 @@ var (
 	ErrAttester                = attestation.ErrAttester
 	ErrAttesterUserDataTooLong = attestation.ErrAttesterUserDataTooLong
 	WithAttestNonce            = attestation.WithAttestNonce
-	WithPublicKey              = attestation.WithPublicKey
-	WithUserData               = attestation.WithUserData
+	WithAttestPublicKey        = attestation.WithAttestPublicKey
+	WithAttestUserData         = attestation.WithAttestUserData
 )
 
 type Attester = attestation.Attester

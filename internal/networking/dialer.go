@@ -20,7 +20,7 @@ type DialerOptions struct {
 	Timeout   time.Duration
 }
 
-func WithDialerControl(
+func WithDialControl(
 	control func(network, address string, c syscall.RawConn) error,
 ) DialerOption {
 	return func(opts *DialerOptions) {
@@ -28,19 +28,19 @@ func WithDialerControl(
 	}
 }
 
-func WithDialerKeepAlive(keepAlive time.Duration) DialerOption {
+func WithDialKeepAlive(keepAlive time.Duration) DialerOption {
 	return func(opts *DialerOptions) {
 		opts.KeepAlive = keepAlive
 	}
 }
 
-func WithDialerLocalAddr(localAddr net.Addr) DialerOption {
+func WithDialLocalAddr(localAddr net.Addr) DialerOption {
 	return func(opts *DialerOptions) {
 		opts.LocalAddr = localAddr
 	}
 }
 
-func WithDialerTimeout(timeout time.Duration) DialerOption {
+func WithDialTimeout(timeout time.Duration) DialerOption {
 	return func(opts *DialerOptions) {
 		opts.Timeout = timeout
 	}

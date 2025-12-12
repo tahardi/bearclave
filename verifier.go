@@ -12,10 +12,10 @@ var (
 	ErrVerifierMeasurement = attestation.ErrVerifierMeasurement
 	ErrVerifierNonce       = attestation.ErrVerifierNonce
 	ErrVerifierTimestamp   = attestation.ErrVerifierTimestamp
-	WithDebug              = attestation.WithDebug
-	WithMeasurement        = attestation.WithMeasurement
-	WithTimestamp          = attestation.WithTimestamp
-	WithVerifyNonce        = attestation.WithVerifyNonce
+	WithVerifyDebug        = attestation.WithVerifyDebug
+	WithVerifyMeasurement  = attestation.WithVerifyMeasurement
+	WithVerifyTimestamp    = attestation.WithVerifyTimestamp
+	WithVerifyNonce        = attestation.WithVerifyVerifyNonce
 )
 
 type Verifier = attestation.Verifier

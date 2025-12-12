@@ -19,7 +19,7 @@ type ListenerOptions struct {
 	KeepAliveConfig net.KeepAliveConfig
 }
 
-func WithListenerControl(
+func WithListenControl(
 	control func(network, address string, c syscall.RawConn) error,
 ) ListenerOption {
 	return func(opts *ListenerOptions) {
@@ -27,13 +27,13 @@ func WithListenerControl(
 	}
 }
 
-func WithListenerKeepAlive(keepAlive time.Duration) ListenerOption {
+func WithListenKeepAlive(keepAlive time.Duration) ListenerOption {
 	return func(opts *ListenerOptions) {
 		opts.KeepAlive = keepAlive
 	}
 }
 
-func WithListenerKeepAliveConfig(config net.KeepAliveConfig) ListenerOption {
+func WithListenKeepAliveConfig(config net.KeepAliveConfig) ListenerOption {
 	return func(opts *ListenerOptions) {
 		opts.KeepAliveConfig = config
 	}

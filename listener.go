@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	ErrListener                 = networking.ErrListener
-	WithListenerControl         = networking.WithListenerControl
-	WithListenerKeepAlive       = networking.WithListenerKeepAlive
-	WithListenerKeepAliveConfig = networking.WithListenerKeepAliveConfig
+	ErrListener               = networking.ErrListener
+	WithListenControl         = networking.WithListenControl
+	WithListenKeepAlive       = networking.WithListenKeepAlive
+	WithListenKeepAliveConfig = networking.WithListenKeepAliveConfig
 )
 
 func NewListener(
