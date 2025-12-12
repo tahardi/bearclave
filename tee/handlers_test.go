@@ -26,6 +26,8 @@ func makeRequest(
 	t.Helper()
 	bodyBytes, err := json.Marshal(body)
 	require.NoError(t, err)
+
+	// nolint:noctx
 	req, err := http.NewRequest(method, path, bytes.NewReader(bodyBytes))
 	require.NoError(t, err)
 	return req

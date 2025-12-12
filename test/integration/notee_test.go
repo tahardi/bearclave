@@ -60,7 +60,7 @@ func TestIntegration_NoTEE(t *testing.T) {
 	// when
 	runService(func() { _ = server.ListenAndServe() }, 100*time.Millisecond)
 	runService(func() { _ = proxyServer.ListenAndServe() }, 100*time.Millisecond)
-	attestation, err := client.AttestUserData(want)
+	attestation, err := client.AttestUserData(ctx, want)
 	require.NoError(t, err)
 
 	// then

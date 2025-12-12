@@ -2,6 +2,7 @@ package tee
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 )
 
 var (
-	ErrClient = errors.New("client")
+	ErrClient               = errors.New("client")
 	ErrClientNon200Response = fmt.Errorf("%w: non-200 response", ErrClient)
 )
 
@@ -37,10 +38,14 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) AttestUserData(data []byte) (*bearclave.AttestResult, error) {
+func (c *Client) AttestUserData(
+	ctx context.Context,
+	data []byte,
+) (*bearclave.AttestResult, error) {
 	attestUserDataRequest := AttestUserDataRequest{Data: data}
 	attestUserDataResponse := AttestUserDataResponse{}
 	err := c.Do(
+		ctx,
 		"POST",
 		AttestUserDataPath,
 		attestUserDataRequest,
@@ -53,6 +58,7 @@ func (c *Client) AttestUserData(data []byte) (*bearclave.AttestResult, error) {
 }
 
 func (c *Client) Do(
+	ctx context.Context,
 	method string,
 	api string,
 	apiReq any,
@@ -64,7 +70,7 @@ func (c *Client) Do(
 	}
 
 	url := c.host + api
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return clientError("creating request", err)
 	}
