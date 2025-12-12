@@ -50,6 +50,7 @@ linters:
     - musttag
     - nilnesserr
     - nilnil
+    - noctx
     - nosprintfhostport
     - perfsprint
     - prealloc
