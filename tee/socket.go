@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"github.com/tahardi/bearclave"
 )
+
+const DefaultConnTimeout = 5 * time.Second
 
 type Socket struct {
 	platform bearclave.Platform
@@ -49,23 +52,34 @@ func (s *Socket) Close() error {
 	return s.listener.Close()
 }
 
-func (s *Socket) Send(ctx context.Context, addr string, data []byte) error {
-	dialer, err := bearclave.NewDialer(s.platform)
+func (s *Socket) Send(
+	ctx context.Context,
+	addr string,
+	data []byte,
+) error {
+	dialer, err := bearclave.NewDialContext(s.platform)
 	if err != nil {
 		return fmt.Errorf("creating dialer: %w", err)
 	}
-	return s.SendWithDialer(ctx, dialer, addr, data)
+	return s.SendWithDialContext(ctx, DefaultConnTimeout, dialer, addr, data)
 }
 
-func (s *Socket) SendWithDialer(
+func (s *Socket) SendWithDialContext(
 	ctx context.Context,
-	dialer bearclave.Dialer,
+	connTimeout time.Duration,
+	dialContext bearclave.DialContext,
 	addr string,
 	data []byte,
 ) error {
 	errChan := make(chan error, 1)
 	go func() {
-		conn, err := dialer(s.network, addr)
+		// This context is used to establish the connection. Once the connection
+		// is established, this context no longer has any effect. The context
+		// passed to Send is used for the actual data transfer.
+		connCtx, cancel := context.WithTimeout(ctx, connTimeout)
+		defer cancel()
+
+		conn, err := dialContext(connCtx, s.network, addr)
 		if err != nil {
 			errChan <- fmt.Errorf("dialing '%s': %w", addr, err)
 			return

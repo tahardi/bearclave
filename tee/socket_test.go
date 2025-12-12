@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,13 +23,15 @@ func TestSocketRoundTrip(t *testing.T) {
 		want := []byte("hello world")
 		platform := bearclave.NoTEE
 		network := "unix"
+
 		addr1 := "127.0.0.1:8080"
-		addr2 := "127.0.0.1:8081"
 		socket1, err := tee.NewSocket(platform, network, addr1)
 		require.NoError(t, err)
+		defer socket1.Close()
+
+		addr2 := "127.0.0.1:8081"
 		socket2, err := tee.NewSocket(platform, network, addr2)
 		require.NoError(t, err)
-		defer socket1.Close()
 		defer socket2.Close()
 
 		// when
@@ -49,12 +52,13 @@ func TestSocketRoundTrip(t *testing.T) {
 		platform := bearclave.NoTEE
 		network := "tcp"
 		addr1 := "127.0.0.1:8080"
-		addr2 := "127.0.0.1:8081"
 		socket1, err := tee.NewSocket(platform, network, addr1)
 		require.NoError(t, err)
+		defer socket1.Close()
+
+		addr2 := "127.0.0.1:8081"
 		socket2, err := tee.NewSocket(platform, network, addr2)
 		require.NoError(t, err)
-		defer socket1.Close()
 		defer socket2.Close()
 
 		// when
@@ -69,16 +73,40 @@ func TestSocketRoundTrip(t *testing.T) {
 	})
 }
 
-func TestSocket_Send(t *testing.T) {
+func TestSocket_SendWithDialContext(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		want := []byte("hello world")
+		platform := bearclave.NoTEE
+		network := "tcp"
+		addr := "127.0.0.1:8080"
+
+		connTimeout := tee.DefaultConnTimeout
+		dialContext, err := bearclave.NewDialContext(platform)
+		require.NoError(t, err)
+
+		socket, err := tee.NewSocket(platform, network, addr)
+		require.NoError(t, err)
+		defer socket.Close()
+
+		// when
+		err = socket.SendWithDialContext(ctx, connTimeout, dialContext, addr, want)
+
+		// then
+		assert.NoError(t, err)
+	})
+
 	t.Run("error - dialing", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
 		platform := bearclave.NoTEE
-		network := "unix"
+		network := "tcp"
 		addr := "127.0.0.1:8080"
 
-		dialer := func(string, string) (net.Conn, error) {
+		connTimeout := tee.DefaultConnTimeout
+		dialContext := func(context.Context, string, string) (net.Conn, error) {
 			return nil, assert.AnError
 		}
 		socket, err := tee.NewSocket(platform, network, addr)
@@ -86,7 +114,7 @@ func TestSocket_Send(t *testing.T) {
 		defer socket.Close()
 
 		// when
-		err = socket.SendWithDialer(ctx, dialer, addr, want)
+		err = socket.SendWithDialContext(ctx, connTimeout, dialContext, addr, want)
 
 		// then
 		assert.ErrorContains(t, err, "dialing")
@@ -98,13 +126,14 @@ func TestSocket_Send(t *testing.T) {
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		platform := bearclave.NoTEE
-		network := "unix"
+		network := "tcp"
 		addr := "127.0.0.1:8080"
 
+		connTimeout := tee.DefaultConnTimeout
 		conn := mocks.NewConn(t)
 		conn.On("Write", []byte(wantB64)).Return(len(wantB64), assert.AnError)
 		conn.On("Close").Return(nil).Maybe()
-		dialer := func(string, string) (net.Conn, error) {
+		dialContext := func(context.Context, string, string) (net.Conn, error) {
 			return conn, nil
 		}
 
@@ -113,7 +142,7 @@ func TestSocket_Send(t *testing.T) {
 		defer socket.Close()
 
 		// when
-		err = socket.SendWithDialer(ctx, dialer, addr, want)
+		err = socket.SendWithDialContext(ctx, connTimeout, dialContext, addr, want)
 
 		// then
 		assert.ErrorContains(t, err, "writing data")
@@ -125,13 +154,14 @@ func TestSocket_Send(t *testing.T) {
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		platform := bearclave.NoTEE
-		network := "unix"
+		network := "tcp"
 		addr := "127.0.0.1:8080"
 
+		connTimeout := tee.DefaultConnTimeout
 		conn := mocks.NewConn(t)
 		conn.On("Write", []byte(wantB64)).Return(len(wantB64)-1, nil)
 		conn.On("Close").Return(nil).Maybe()
-		dialer := func(string, string) (net.Conn, error) {
+		dialContext := func(context.Context, string, string) (net.Conn, error) {
 			return conn, nil
 		}
 
@@ -140,25 +170,26 @@ func TestSocket_Send(t *testing.T) {
 		defer socket.Close()
 
 		// when
-		err = socket.SendWithDialer(ctx, dialer, addr, want)
+		err = socket.SendWithDialContext(ctx, connTimeout, dialContext, addr, want)
 
 		// then
 		assert.ErrorContains(t, err, "failed to write all data")
 	})
 
-	t.Run("error - context cancelled", func(t *testing.T) {
+	t.Run("error - send context cancelled", func(t *testing.T) {
 		// given
 		ctx, cancel := context.WithCancel(context.Background())
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		platform := bearclave.NoTEE
-		network := "unix"
+		network := "tcp"
 		addr := "127.0.0.1:8080"
 
+		connTimeout := tee.DefaultConnTimeout
 		conn := mocks.NewConn(t)
 		conn.On("Write", []byte(wantB64)).Return(len(wantB64), nil).Maybe()
 		conn.On("Close").Return(nil).Maybe()
-		dialer := func(string, string) (net.Conn, error) {
+		dialContext := func(context.Context, string, string) (net.Conn, error) {
 			return conn, nil
 		}
 
@@ -168,10 +199,42 @@ func TestSocket_Send(t *testing.T) {
 
 		// when
 		cancel()
-		err = socket.SendWithDialer(ctx, dialer, addr, want)
+		err = socket.SendWithDialContext(ctx, connTimeout, dialContext, addr, want)
 
 		// then
 		assert.ErrorContains(t, err, "context cancelled")
+	})
+
+	t.Run("error - dial context timeout", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		want := []byte("hello world")
+		platform := bearclave.NoTEE
+		network := "tcp"
+		addr := "127.0.0.1:8080"
+
+		// I want to test that the actual Bearclave.DialContext implementation
+		// respects context timeouts. Thus, I'm wrapping it so that I can
+		// ensure that enough time has passed for the context to timeout.
+		connTimeout := 10 * time.Millisecond
+		dialContext := func(c context.Context, network string, addr string) (net.Conn, error) {
+			// Make sure "establishing the connection" takes longer than connTimeout
+			time.Sleep(connTimeout * 2)
+			dc, err := bearclave.NewDialContext(platform)
+			require.NoError(t, err)
+			return dc(c, network, addr)
+		}
+
+		socket, err := tee.NewSocket(platform, network, addr)
+		require.NoError(t, err)
+		defer socket.Close()
+
+		// when
+		err = socket.SendWithDialContext(ctx, connTimeout, dialContext, addr, want)
+
+		// then
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "timeout")
 	})
 }
 
@@ -179,7 +242,7 @@ func TestSocket_Receive(t *testing.T) {
 	t.Run("error - accepting connection", func(t *testing.T) {
 		// given
 		ctx := context.Background()
-		network := "unix"
+		network := "tcp"
 		platform := bearclave.NoTEE
 
 		listener := mocks.NewListener(t)
@@ -200,7 +263,7 @@ func TestSocket_Receive(t *testing.T) {
 		ctx := context.Background()
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
-		network := "unix"
+		network := "tcp"
 		platform := bearclave.NoTEE
 
 		conn := mocks.NewConn(t)
@@ -224,7 +287,7 @@ func TestSocket_Receive(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
-		network := "unix"
+		network := "tcp"
 		platform := bearclave.NoTEE
 
 		conn := mocks.NewConn(t)
@@ -250,7 +313,7 @@ func TestSocket_Receive(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
-		network := "unix"
+		network := "tcp"
 		platform := bearclave.NoTEE
 
 		conn := mocks.NewConn(t)

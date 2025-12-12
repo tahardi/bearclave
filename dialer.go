@@ -6,20 +6,31 @@ import (
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
-var ErrDialer = networking.ErrDialer
+var (
+	ErrDialContext     = networking.ErrDialContext
+	WithControlContext = networking.WithControlContext
+	WithKeepAlive      = networking.WithKeepAlive
+	WithLocalAddr      = networking.WithLocalAddr
+	WithTimeout        = networking.WithTimeout
+)
 
-type Dialer = networking.Dialer
+type DialContext = networking.DialContext
+type DialerOption = networking.DialerOption
+type DialerOptions = networking.DialerOptions
 
-func NewDialer(platform Platform) (networking.Dialer, error) {
+func NewDialContext(
+	platform Platform,
+	options ...DialerOption,
+) (networking.DialContext, error) {
 	switch platform {
 	case Nitro:
-		return networking.NewVSocketDialer()
+		return networking.NewVSocketDialContext(options...)
 	case SEV:
-		return networking.NewSocketDialer()
+		return networking.NewSocketDialContext(options...)
 	case TDX:
-		return networking.NewSocketDialer()
+		return networking.NewSocketDialContext(options...)
 	case NoTEE:
-		return networking.NewSocketDialer()
+		return networking.NewSocketDialContext(options...)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
