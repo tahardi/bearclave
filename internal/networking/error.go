@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	ErrDialer           = errors.New("dialer")
-	ErrListener         = errors.New("listener")
-	ErrSocketParseAddr  = errors.New("socket parse addr")
+	ErrDialContext     = errors.New("dial context")
+	ErrListener        = errors.New("listener")
+	ErrSocketParseAddr = errors.New("socket parse addr")
 	ErrVSocketParseAddr = errors.New("vsocket parse addr")
 )
 
@@ -25,8 +25,8 @@ func wrapError(baseErr error, msg string, err error) error {
 	}
 }
 
-func dialerError(msg string, err error) error {
-	return wrapError(ErrDialer, msg, err)
+func dialContextError(msg string, err error) error {
+	return wrapError(ErrDialContext, msg, err)
 }
 
 func listenerError(msg string, err error) error {

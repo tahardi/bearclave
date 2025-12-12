@@ -88,7 +88,7 @@ func TestSEVAttester_Attest(t *testing.T) {
 		userData := make([]byte, attestation.AmdSevMaxUserdataSize+1)
 
 		// when
-		_, err = attester.Attest(attestation.WithUserData(userData))
+		_, err = attester.Attest(attestation.WithAttestUserData(userData))
 
 		// then
 		require.ErrorIs(t, err, attestation.ErrAttesterUserDataTooLong)
@@ -109,8 +109,8 @@ func TestSEVVerifier_Verify(t *testing.T) {
 		// when
 		got, err := verifier.Verify(
 			report,
-			attestation.WithMeasurement(measurement),
-			attestation.WithTimestamp(timestamp),
+			attestation.WithVerifyMeasurement(measurement),
+			attestation.WithVerifyTimestamp(timestamp),
 		)
 
 		// then
@@ -143,7 +143,7 @@ func TestSEVVerifier_Verify(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
+		_, err = verifier.Verify(report, attestation.WithVerifyTimestamp(timestamp))
 
 		// then
 		require.ErrorIs(t, err, attestation.ErrVerifier)
@@ -162,8 +162,8 @@ func TestSEVVerifier_Verify(t *testing.T) {
 		// when
 		_, err = verifier.Verify(
 			report,
-			attestation.WithMeasurement(measurement),
-			attestation.WithTimestamp(timestamp),
+			attestation.WithVerifyMeasurement(measurement),
+			attestation.WithVerifyTimestamp(timestamp),
 		)
 
 		// then
@@ -182,9 +182,9 @@ func TestSEVVerifier_Verify(t *testing.T) {
 		// when
 		_, err = verifier.Verify(
 			report,
-			attestation.WithDebug(true),
-			attestation.WithMeasurement(measurement),
-			attestation.WithTimestamp(timestamp),
+			attestation.WithVerifyDebug(true),
+			attestation.WithVerifyMeasurement(measurement),
+			attestation.WithVerifyTimestamp(timestamp),
 		)
 
 		// then

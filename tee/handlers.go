@@ -34,7 +34,7 @@ func MakeAttestUserDataHandler(
 			"attesting userdata",
 			slog.String("userdata", string(req.Data)),
 		)
-		att, err := attester.Attest(bearclave.WithUserData(req.Data))
+		att, err := attester.Attest(bearclave.WithAttestUserData(req.Data))
 		if err != nil {
 			WriteError(w, fmt.Errorf("attesting userdata: %w", err))
 			return

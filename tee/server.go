@@ -1,6 +1,7 @@
 package tee
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -21,37 +22,37 @@ const (
 
 type ServerOption func(server *http.Server)
 
-func WithErrorLog(logger *log.Logger) ServerOption {
+func WithServerErrorLog(logger *log.Logger) ServerOption {
 	return func(server *http.Server) {
 		server.ErrorLog = logger
 	}
 }
 
-func WithMaxHeaderBytes(bytes int) ServerOption {
+func WithServerMaxHeaderBytes(bytes int) ServerOption {
 	return func(server *http.Server) {
 		server.MaxHeaderBytes = bytes
 	}
 }
 
-func WithIdleTimeout(timeout time.Duration) ServerOption {
+func WithServerIdleTimeout(timeout time.Duration) ServerOption {
 	return func(server *http.Server) {
 		server.IdleTimeout = timeout
 	}
 }
 
-func WithReadHeaderTimeout(timeout time.Duration) ServerOption {
+func WithServerReadHeaderTimeout(timeout time.Duration) ServerOption {
 	return func(server *http.Server) {
 		server.ReadHeaderTimeout = timeout
 	}
 }
 
-func WithReadTimeout(timeout time.Duration) ServerOption {
+func WithServerReadTimeout(timeout time.Duration) ServerOption {
 	return func(server *http.Server) {
 		server.ReadTimeout = timeout
 	}
 }
 
-func WithWriteTimeout(timeout time.Duration) ServerOption {
+func WithServerWriteTimeout(timeout time.Duration) ServerOption {
 	return func(server *http.Server) {
 		server.WriteTimeout = timeout
 	}
@@ -63,13 +64,14 @@ type Server struct {
 }
 
 func NewServer(
+	ctx context.Context,
 	platform bearclave.Platform,
 	network string,
 	addr string,
 	mux *http.ServeMux,
 	opts ...ServerOption,
 ) (*Server, error) {
-	listener, err := bearclave.NewListener(platform, network, addr)
+	listener, err := bearclave.NewListener(ctx, platform, network, addr)
 	if err != nil {
 		return nil, fmt.Errorf("creating listener: %w", err)
 	}

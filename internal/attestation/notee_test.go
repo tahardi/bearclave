@@ -22,7 +22,7 @@ func noTEEAttestation(
 	attester, err := attestation.NewNoTEEAttester()
 	require.NoError(t, err)
 
-	report, err := attester.Attest(attestation.WithUserData(userdata))
+	report, err := attester.Attest(attestation.WithAttestUserData(userdata))
 	require.NoError(t, err)
 
 	return report, attestation.NoTeeMeasurement, time.Now()
@@ -62,7 +62,7 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 		}
 
 		// when
-		attestResult, err := attester.Attest(attestation.WithUserData(userdata))
+		attestResult, err := attester.Attest(attestation.WithAttestUserData(userdata))
 		require.NoError(t, err)
 
 		got := attestation.Report{}
@@ -81,7 +81,7 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 		userdata := make([]byte, attestation.NoTeeMaxUserDataSize+1)
 
 		// when
-		_, err = attester.Attest(attestation.WithUserData(userdata))
+		_, err = attester.Attest(attestation.WithAttestUserData(userdata))
 
 		// then
 		require.ErrorIs(t, err, attestation.ErrAttesterUserDataTooLong)
@@ -100,8 +100,8 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		// when
 		got, err := verifier.Verify(
 			report,
-			attestation.WithMeasurement(measurement),
-			attestation.WithTimestamp(timestamp),
+			attestation.WithVerifyMeasurement(measurement),
+			attestation.WithVerifyTimestamp(timestamp),
 		)
 
 		// then
@@ -165,7 +165,7 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		_, err = verifier.Verify(report, attestation.WithTimestamp(timestamp))
+		_, err = verifier.Verify(report, attestation.WithVerifyTimestamp(timestamp))
 
 		// then
 		assert.ErrorIs(t, err, attestation.ErrVerifierTimestamp)
@@ -183,8 +183,8 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		// when
 		_, err = verifier.Verify(
 			report,
-			attestation.WithMeasurement(wrongMeasurement),
-			attestation.WithTimestamp(timestamp),
+			attestation.WithVerifyMeasurement(wrongMeasurement),
+			attestation.WithVerifyTimestamp(timestamp),
 		)
 
 		// then
@@ -203,8 +203,8 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		// when
 		_, err = verifier.Verify(
 			report,
-			attestation.WithVerifyNonce(wrongNonce),
-			attestation.WithTimestamp(timestamp),
+			attestation.WithVerifyVerifyNonce(wrongNonce),
+			attestation.WithVerifyTimestamp(timestamp),
 		)
 
 		// then

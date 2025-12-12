@@ -1,6 +1,7 @@
 package tee_test
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -64,10 +65,10 @@ func TestReverseProxy(t *testing.T) {
 		// given
 		backendURL := "http://127.0.0.1:8080"
 		route := "/api/v1"
-		dialer := func(string, string) (net.Conn, error) {
+		dialContext := func(context.Context, string, string) (net.Conn, error) {
 			return nil, assert.AnError
 		}
-		proxy, err := tee.NewReverseProxyWithDialer(dialer, backendURL, route)
+		proxy, err := tee.NewReverseProxyWithDialContext(dialContext, backendURL, route)
 		require.NoError(t, err)
 
 		usersPath := route + "/users"

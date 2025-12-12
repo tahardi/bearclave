@@ -1,6 +1,7 @@
 package tee_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -32,6 +33,7 @@ func writeResponse(t *testing.T, w http.ResponseWriter, out any) {
 func TestClient_AttestUserData(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		data := []byte("hello world")
 		want := &bearclave.AttestResult{Report: []byte("attestation")}
 
@@ -54,7 +56,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		got, err := client.AttestUserData(data)
+		got, err := client.AttestUserData(ctx, data)
 
 		// then
 		require.NoError(t, err)
@@ -63,6 +65,7 @@ func TestClient_AttestUserData(t *testing.T) {
 
 	t.Run("error - doing attest userdata request", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		data := []byte("data")
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -75,7 +78,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		_, err := client.AttestUserData(data)
+		_, err := client.AttestUserData(ctx, data)
 
 		// then
 		require.ErrorIs(t, err, tee.ErrClient)
@@ -94,6 +97,7 @@ type doResponse struct {
 func TestClient_Do(t *testing.T) {
 	t.Run("happy path - GET", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		want := []byte("data")
 		method := http.MethodGet
 		api := "/"
@@ -113,7 +117,7 @@ func TestClient_Do(t *testing.T) {
 		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		err := client.Do(method, api, apiReq, apiResp)
+		err := client.Do(ctx, method, api, apiReq, apiResp)
 
 		// then
 		require.NoError(t, err)
@@ -122,6 +126,7 @@ func TestClient_Do(t *testing.T) {
 
 	t.Run("happy path - POST", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		want := []byte("data")
 		method := http.MethodPost
 		api := "/"
@@ -146,14 +151,45 @@ func TestClient_Do(t *testing.T) {
 		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		err := client.Do(method, api, apiReq, apiResp)
+		err := client.Do(ctx, method, api, apiReq, apiResp)
 
 		// then
 		assert.NoError(t, err)
 	})
 
+	t.Run("error - context canceled", func(t *testing.T) {
+		// given
+		ctx, cancel := context.WithCancel(context.Background())
+		want := []byte("data")
+		method := http.MethodGet
+		api := "/"
+		apiReq := &doRequest{}
+		apiResp := &doResponse{}
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, method, r.Method)
+
+			resp := doResponse{Data: want}
+			writeResponse(t, w, resp)
+		})
+
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		client := tee.NewClientWithClient(server.URL, server.Client())
+
+		// when
+		cancel()
+		err := client.Do(ctx, method, api, apiReq, apiResp)
+
+		// then
+		require.ErrorIs(t, err, tee.ErrClient)
+		assert.ErrorContains(t, err, "context canceled")
+	})
+
 	t.Run("error - creating request", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		method := "invalid method"
 		api := "/"
 		apiReq := &doRequest{}
@@ -172,7 +208,7 @@ func TestClient_Do(t *testing.T) {
 		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		err := client.Do(method, api, apiReq, apiResp)
+		err := client.Do(ctx, method, api, apiReq, apiResp)
 
 		// then
 		require.ErrorIs(t, err, tee.ErrClient)
@@ -181,6 +217,7 @@ func TestClient_Do(t *testing.T) {
 
 	t.Run("error - sending request", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		method := http.MethodPost
 		api := "/"
 		apiReq := &doRequest{}
@@ -193,7 +230,7 @@ func TestClient_Do(t *testing.T) {
 		client := tee.NewClientWithClient("127.0.0.1", httpClient)
 
 		// when
-		err := client.Do(method, api, apiReq, apiResp)
+		err := client.Do(ctx, method, api, apiReq, apiResp)
 
 		// then
 		require.ErrorIs(t, err, tee.ErrClient)
@@ -202,6 +239,7 @@ func TestClient_Do(t *testing.T) {
 
 	t.Run("error - received non-200 response", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		method := http.MethodPost
 		api := "/"
 		apiReq := &doRequest{}
@@ -218,7 +256,7 @@ func TestClient_Do(t *testing.T) {
 		client := tee.NewClientWithClient("127.0.0.1", httpClient)
 
 		// when
-		err := client.Do(method, api, apiReq, apiResp)
+		err := client.Do(ctx, method, api, apiReq, apiResp)
 
 		// then
 		require.ErrorIs(t, err, tee.ErrClientNon200Response)
@@ -227,6 +265,7 @@ func TestClient_Do(t *testing.T) {
 
 	t.Run("error - reading response body", func(t *testing.T) {
 		// given
+		ctx := context.Background()
 		method := http.MethodPost
 		api := "/"
 		apiReq := &doRequest{}
@@ -248,7 +287,7 @@ func TestClient_Do(t *testing.T) {
 		client := tee.NewClientWithClient("127.0.0.1", httpClient)
 
 		// when
-		err := client.Do(method, api, apiReq, apiResp)
+		err := client.Do(ctx, method, api, apiReq, apiResp)
 
 		// then
 		require.ErrorIs(t, err, tee.ErrClient)
