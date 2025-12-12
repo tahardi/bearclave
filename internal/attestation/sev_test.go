@@ -85,7 +85,7 @@ func TestSEVAttester_Attest(t *testing.T) {
 		// given
 		attester, err := attestation.NewSEVAttester()
 		require.NoError(t, err)
-		userData := make([]byte, attestation.AmdSevMaxUserdataSize+1)
+		userData := make([]byte, attestation.AmdSevMaxUserDataSize+1)
 
 		// when
 		_, err = attester.Attest(attestation.WithAttestUserData(userData))

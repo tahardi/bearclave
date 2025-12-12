@@ -77,7 +77,7 @@ func TestTDXAttester_Attest(t *testing.T) {
 		// given
 		attester, err := attestation.NewTDXAttester()
 		require.NoError(t, err)
-		userData := make([]byte, attestation.IntelTdxMaxUserdataSize+1)
+		userData := make([]byte, attestation.IntelTdxMaxUserDataSize+1)
 
 		// when
 		_, err = attester.Attest(attestation.WithAttestUserData(userData))

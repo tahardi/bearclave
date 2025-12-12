@@ -15,7 +15,7 @@ import (
 
 const (
 	IntelTdxRmrsLength      = 4
-	IntelTdxMaxUserdataSize = 64
+	IntelTdxMaxUserDataSize = 64
 )
 
 type TDXAttester struct{}
@@ -34,10 +34,10 @@ func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > IntelTdxMaxUserdataSize {
+	if len(opts.userData) > IntelTdxMaxUserDataSize {
 		msg := fmt.Sprintf(
-			"userdata must be less than %d bytes",
-			IntelTdxMaxUserdataSize,
+			"user data must be %d bytes or less",
+			IntelTdxMaxUserDataSize,
 		)
 		return nil, attesterErrorUserDataTooLong(msg, nil)
 	}
