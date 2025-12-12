@@ -12,6 +12,8 @@ import (
 	"github.com/hf/nsm/request"
 )
 
+const AwsNitroMaxUserDataSize = 1024
+
 type NitroAttester struct{}
 
 func NewNitroAttester() (*NitroAttester, error) {
@@ -26,6 +28,14 @@ func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	}
 	for _, opt := range options {
 		opt(&opts)
+	}
+
+	if len(opts.userData) > AwsNitroMaxUserDataSize {
+		msg := fmt.Sprintf(
+			"user data must be %d bytes or less",
+			AwsNitroMaxUserDataSize,
+		)
+		return nil, attesterErrorUserDataTooLong(msg, nil)
 	}
 
 	session, err := nsm.OpenDefaultSession()
