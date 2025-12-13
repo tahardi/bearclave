@@ -1,30 +1,24 @@
-# UNDER CONSTRUCTION
-
-This repository was recently restructured, but the documentation is not yet
-updated.
-Note that examples have been moved to a separate repository:
-[bearclave-examples](https://github.com/tahardi/bearclave-examples).
-
 # Bearclave: Simplifying Cloud-Based TEE Development
 
-Trusted Execution Environments (TEEs) are a combination of specialized  
-hardware and software designed to enhance the confidentiality and integrity of  
-sensitive code and data. Curious developers often want to explore TEE technology  
-but find themselves overwhelmed by steep learning curves and complicated  
-requirements. These challenges include:
+Trusted Execution Environments (TEEs) use specialized hardware and software to
+provide stronger confidentiality and integrity guarantees than what is normally
+afforded to your application code and data in traditional computing environments.
+Curious developers often want to explore TEE technology for securing their
+sensitive workloads, but find themselves overwhelmed by steep learning curves
+and complicated requirements. These challenges include:
 
 - Limited documentation that can be dense, scattered, or difficult to understand
 - The need for specialized hardware that is either costly or requires complex setup
-- A deep understanding of how TEEs function and how to configure them on cloud platforms
+- An understanding of how to write and build applications for different TEE platforms
 
-Bearclave is here to bridge that knowledge gap! This repository is tailored for  
+Bearclave is here to bridge that knowledge gap! These repositories are tailored for  
 developers who want to take their first steps into the world of cloud-based TEE 
 application development. Bearclave provides all the necessary resources to go 
 from zero to a working example, while keeping the process approachable and affordable.
 
 ---
 
-### What Bearclave Offers
+## What Bearclave Offers
 This repository offers a holistic, step-by-step guide to developing TEE  
 applications, including:
 
@@ -45,24 +39,13 @@ significantly, making the barrier to entry even lower.
 
 ---
 
-### A Note on Costs
+## A Note on Costs
 Building and deploying TEE applications typically requires specialized hardware,  
 which isn't free. Unless you own and manage the hardware yourself, you'll need to  
 rent resources through cloud providers like AWS or GCP. Fortunately, these  
 providers offer affordable, TEE-enabled instances starting at $0.17 to $0.40 per  
 hour. Paired with Bearclave's "No TEE" mode, you can develop and test your  
 applications for just a few dollars a month if you carefully manage your resources.
-
----
-
-### Important Reminder
-Bearclave is designed as an educational tool. While the repository provides  
-practical examples and working code, it should not be considered production-ready.  
-We encourage you to use it as a learning resource and adapt it for your unique  
-production needs.
-
-We hope Bearclave inspires you to explore the exciting world of Trusted Execution  
-Environments and eases your journey into TEE-enabled cloud applications!
 
 ---
 
