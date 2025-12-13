@@ -16,8 +16,6 @@ development cycles and reducing cloud costs.
 and run Bearclave applications.
 2. Install [Process Compose](https://github.com/F1bonacc1/process-compose)
 (v1.78.0 or higher) to orchestrate and run applications in "No TEE" mode.
-[Examples](https://github.com/tahardi/bearclave-examples) repository to run
-and orchestrate applications in "No TEE" mode.
 
 You now have the minimum set of tools required to build and run Bearclave
 applications locally. Try them out with one of the examples in our
