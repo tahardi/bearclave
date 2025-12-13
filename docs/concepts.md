@@ -22,12 +22,12 @@ and its applications from the rest of the system.
 
 Not only do TEEs provide isolation, they also provide a mechanism for proving
 the integrity and authenticity of isolated code to outside parties. This
-process is known as **remote attestation**. TEEs generate a "report" containing
+process is known as **remote attestation**. TEEs generate a report containing
 platform information (e.g., CPU vendor, firmware version) and a measurement of
 the isolated code. This report is cryptographically signed with a key available
-only to the TEE. The public component of this key is made publicly available
-and can be used by anyone to verify the signature (and thus the information
-contained in the report).
+only to the TEE. The public component of this key is made widely available
+so that anyone can verify the signature (and thus the information contained 
+within the report).
 
 While TEEs provide stronger integrity and confidentiality guarantees than
 traditional systems, they do so at the cost of performance and usability.
