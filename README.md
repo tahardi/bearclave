@@ -1,23 +1,21 @@
-# Simplifying Cloud-Based TEE Development
+# Cloud-Based TEE Development
 
 **Trusted Execution Environments (TEEs)** use specialized hardware and software to
 provide stronger confidentiality and integrity guarantees than what is afforded
 by traditional computing systems. For this reason, curious developers often
 want to explore TEE technology for securing sensitive workloads, but find
 themselves overwhelmed by steep learning curves and complicated requirements.
-The **Bearclave** project is a collection of code and documentation that aims to
+The _Bearclave_ project is a collection of code and documentation that aims to
 address these challenges.
 
 ## What's Included?
 
-- **Concepts** An overview of popular TEE platforms, including AWS Nitro,
+- **Explanations** of TEE concepts and popular TEE platforms, including AWS Nitro,
 AMD SEV-SNP, and Intel TDX.
-- **Guides** Instructions for building and deploying TEE-based applications to
-the AWS and GCP clout platforms.
-- **SDK** A library that allows you to develop platform-agnostic Golang
-applications without having to worry about the underlying TEE implementations.
-- **Examples** Practical code examples that demonstrate how to write, build, and
-deploy TEE-based applications.
+- **Guides** for building and deploying TEE-based applications to AWS and GCP.
+- **SDK** for developing platform-agnostic Golang TEE applications.
+- **Examples** demonstrating how to write, build, and deploy real-world
+TEE-based applications.
 
 ## A Note on Costs
 
