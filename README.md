@@ -10,16 +10,14 @@ address those challenges.
 
 ## What's Included?
 
-- **Introduction to TEEs** A high-level overview of TEEs and popular
-platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX
-- **Setup Guides** Instructions for configuring the cloud resources needed to
-build and deploy TEE applications on AWS and GCP
-- **Platform-Agnostic Code** A framework for developing applications on various
-TEE platforms. Bearclave abstracts away platform-specific details so you can
-more easily write portable applications without worrying about the
-idiosyncrasies of the underlying TEE implementation
-- **Practical Code Examples** Demonstrations of how to compile, deploy, and
-interact with real-world applications on different TEE platforms
+- **Introduction to TEEs** An overview of TEEs and popular platforms, including
+AWS Nitro, AMD SEV-SNP, and Intel TDX
+- **How-to Guides** Steps for building and deploying applications to TEE
+platforms on cloud providers like AWS and GCP
+- **SDK** A library that allows you to develop platform-agnostic Golang
+applications without having to worry about the underlying TEE implementation
+- **Examples** Practical code examples that demonstrate how to build, deploy,
+and interact with real-world applications on different TEE platforms
 
 Additionally, Bearclave includes a **"No TEE" development mode**, allowing you to
 develop and test your application without a TEE instance. This reduces costs
@@ -29,12 +27,11 @@ significantly, making the barrier to entry even lower.
 
 ## A Note on Costs
 
-Building and deploying TEE applications typically requires specialized hardware,
-which isn't free. Unless you own and manage the hardware yourself, you'll need to
-rent resources through cloud providers like AWS or GCP. Fortunately, these
-providers offer affordable, TEE-enabled instances starting at $0.17 to $0.40 per
-hour. Paired with Bearclave's "No TEE" mode, you can develop and test your
-applications for just a few dollars a month if you carefully manage your resources.
+Running cloud-based TEE applications is not free. AWS and GCP TEE-capable
+compute instances are typically priced between $0.20 to $0.50 per hour.
+Fortunately, Bearclave provides a "No TEE" mode that allows you to develop
+and test applications locally. Using this mode, you should be able to
+prototype and test TEE applications for just a few dollars a month.
 
 ---
 
