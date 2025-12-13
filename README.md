@@ -25,55 +25,9 @@ Fortunately, Bearclave provides a _No TEE_ mode that allows you to develop
 and test applications locally. Using this mode, you should be able to
 prototype and test TEE applications for just a few dollars a month.
 
-# Getting Started
+## Getting Started
 
-Bearclave has only been tested on **Ubuntu 24.04 LTS**. Modifications to the
-example Makefiles and Dockerfiles may be required if you wish to build and
-deploy from other systems.
-
----
-
-## TEE Overview
-
-Please refer to [this](docs/TEE.md) document for a high-level overview of TEEs
-and popular implementations such as AWS Nitro, AMD SEV-SNP, and Intel TDX.
-
----
-
-## Install Dependencies
-
-Please ensure that all tools are properly installed and added to your system's
-`PATH` for seamless use.
-
-- **[Golang (version 1.24.3 or higher):](https://go.dev/dl/)** this project
-  is written in Go and is required for building and running the examples.
-
-- **[Docker Engine:](https://docs.docker.com/engine/install/)** cloud-based TEE
-  platforms require you to provide your application packaged as an OCI-compliant
-  image. While you could use any OCI-compliant tool, the build and deploy
-  commands in the examples assume you have `docker`.
-
-- **[Process Compose:](https://github.com/F1bonacc1/process-compose)** a simple
-  tool modeled after `docker-compose` for initializing non-containerized
-  applications. This is a convenience for running the "No TEE" versions of the
-  example applications, but is not strictly necessary for running on cloud-based
-  TEEs.
-
-These are the minimum set of tools required to build and run the Bearclave
-examples locally in "No TEE" mode. If you wish to run on real TEE platforms,
-follow the steps detailed in [Configure Cloud Resources](#configure-cloud-resources).
-
----
-
-## Configure Cloud Resources
-
-If you wish to use Nitro Enclaves, refer to the [AWS setup guide](docs/AWS.md).
-If you wish to use AMD SEV-SNP or Intel TDX, refer to the
-[GCP setup guide](docs/GCP.md).
-
----
-
-## Build and Deploy Examples
-
-Note that examples have been moved to a separate repository:
-[bearclave-examples](https://github.com/tahardi/bearclave-examples).
+Use the links below to get started with the Bearclave project:
+- [TEE Concepts]()
+- [Install & Setup]()
+- [Examples](github.com/tahardi/bearclave-examples)
