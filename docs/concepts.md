@@ -26,19 +26,19 @@ process is known as **remote attestation**. TEEs generate a report containing
 platform information (e.g., CPU vendor, firmware version) and a measurement of
 the isolated code. This report is cryptographically signed with a key available
 only to the TEE. The public component of this key is made widely available
-so that anyone can verify the signature (and thus the information contained 
-within the report).
+so that anyone can verify the signature and information contained within the
+report.
 
 While TEEs provide stronger integrity and confidentiality guarantees than
 traditional systems, they do so at the cost of performance and usability.
 TEEs encrypt and authenticate data that crosses the CPU boundary to ensure
 that only trusted code can access it. This means that I/O intensive workloads
-may see slowdowns of 5 to 20%. Certain system resources are not directly
+may see slowdowns of 5 to 20%. Additionally, certain system resources are not
 available to code running in a TEE. For instance, TEEs cannot directly access
 network interfaces or storage devices. To do so, they must go through the
-untrusted OS and hypervisor. Careful consideration must be taken to ensure
-that any request passed to the untrusted OS is safe and secure (i.e.,
-encrypted and authenticated).
+untrusted OS and hypervisor. This may add to the complexity of the code, as
+precautions must be taken to ensure any requests passed to the untrusted OS
+are properly sanitized or otherwise protected.
 
 ## AWS Nitro Enclaves
 
