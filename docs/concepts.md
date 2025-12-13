@@ -7,7 +7,7 @@ The larger the TCB, the greater the potential for attackers to compromise your
 system. Thus, one of the primary goals for any secure system is to reduce the size
 of the TCB.
 
-**Trusted Execution Environments (TEEs)** achieve this through a combination
+**Trusted Execution Environments (TEEs)** do this through a combination
 of specialized hardware and software. They employ separate page tables,
 special CPU instructions, customized firmware, and other such mechanisms to
 isolate your code and data from the rest of the system. Instead of trusting the
