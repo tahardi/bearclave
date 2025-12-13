@@ -1,11 +1,10 @@
 # Overview
 
-The collection of hardware, firmware, and software responsible for the security
-of a system is often referred to as the **Trusted Computing Base (TCB)**.
-Normally, this consists of your hypervisor, operating system, and computer.
-The larger the TCB, the greater the potential for attackers to compromise your
-system. Thus, one of the primary goals for any secure system is to reduce the size
-of the TCB.
+The **Trusted Computing Base (TCB)** is the collection of hardware, firmware,
+and software that protects a system. Normally, this consists of your hypervisor,
+operating system, and computer. The larger the TCB, the greater the potential
+for attackers to compromise your system. Thus, one of the primary goals for any
+secure system is to reduce the size of the TCB.
 
 **Trusted Execution Environments (TEEs)** do this through a combination
 of specialized hardware and software. They employ separate page tables,
@@ -41,10 +40,10 @@ precautions must be taken to ensure any requests passed to the untrusted OS
 are properly sanitized or otherwise protected.
 
 In summary, TEEs provide stronger security guarantees than traditional systems
-at the cost of increased complexity and performance. They _can_ isolate code and
+at the cost of increased complexity and performance. They can isolate code and
 data from privileged software in a way that is verifiable and auditable. They
-_cannot_ protect against physical attacks, nor guarantee access to
-system resources managed by the untrusted OS and hypervisor.
+cannot protect against physical attacks, nor guarantee access to system
+resources managed by the untrusted OS and hypervisor.
 
 ## AWS Nitro Enclaves
 
