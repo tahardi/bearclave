@@ -11,11 +11,11 @@ address those challenges.
 ## What's Included?
 
 **Introduction to TEEs** An overview of TEEs and popular platforms, including
-AWS Nitro, AMD SEV-SNP, and Intel TDX 
+AWS Nitro, AMD SEV-SNP, and Intel TDX  
 **How-to Guides** Steps for building and deploying applications to TEE
-platforms on cloud providers like AWS and GCP 
+platforms on cloud providers like AWS and GCP  
 **SDK** A library that allows you to develop platform-agnostic Golang
-applications without having to worry about the underlying TEE implementation 
+applications without having to worry about the underlying TEE implementation  
 **Examples** Practical code examples that demonstrate how to build, deploy,
 and interact with real-world applications on different TEE platforms
 
