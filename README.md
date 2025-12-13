@@ -1,14 +1,14 @@
 # Bearclave: Simplifying Cloud-Based TEE Development
 
-Trusted Execution Environments (TEEs) use specialized hardware and software to
+**Trusted Execution Environments (TEEs)** use specialized hardware and software to
 provide stronger confidentiality and integrity guarantees than what is normally
-afforded by traditional computing environments. For this reason, curious
+afforded by traditional computing systems. For this reason, curious
 developers often want to explore TEE technology for securing sensitive workloads,
 but find themselves overwhelmed by steep learning curves and complicated
-requirements.
+requirements. The Bearclave project is a collection of code and documentation
+that aims to address those challenges.
 
-The Bearclave project is a collection of code and documentation resources that
-aims to address those challenges. This includes:
+## What's Included?
 
 - **Introduction to TEEs**: A high-level overview of TEEs and popular
   platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX
