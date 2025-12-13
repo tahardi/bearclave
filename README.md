@@ -1,35 +1,31 @@
-# Bearclave: Simplifying Cloud-Based TEE Development
+# Simplifying Cloud-Based TEE Development
 
 **Trusted Execution Environments (TEEs)** use specialized hardware and software to
 provide stronger confidentiality and integrity guarantees than what is afforded
 by traditional computing systems. For this reason, curious developers often
 want to explore TEE technology for securing sensitive workloads, but find
 themselves overwhelmed by steep learning curves and complicated requirements.
-The Bearclave project is a collection of code and documentation that aims to
+The **Bearclave** project is a collection of code and documentation that aims to
 address those challenges.
 
 ## What's Included?
 
-- **Introduction to TEEs** An overview of TEEs and popular platforms, including
-AWS Nitro, AMD SEV-SNP, and Intel TDX
-- **How-to Guides** Steps for building and deploying applications to TEE
-platforms on cloud providers like AWS and GCP
-- **SDK** A library that allows you to develop platform-agnostic Golang
-applications without having to worry about the underlying TEE implementation
-- **Examples** Practical code examples that demonstrate how to build, deploy,
+**Introduction to TEEs** An overview of TEEs and popular platforms, including
+AWS Nitro, AMD SEV-SNP, and Intel TDX 
+**How-to Guides** Steps for building and deploying applications to TEE
+platforms on cloud providers like AWS and GCP 
+**SDK** A library that allows you to develop platform-agnostic Golang
+applications without having to worry about the underlying TEE implementation 
+**Examples** Practical code examples that demonstrate how to build, deploy,
 and interact with real-world applications on different TEE platforms
-
-Additionally, Bearclave includes a **"No TEE" development mode**, allowing you to
-develop and test your application without a TEE instance. This reduces costs
-significantly, making the barrier to entry even lower.
 
 ---
 
 ## A Note on Costs
 
 Running cloud-based TEE applications is not free. AWS and GCP TEE-capable
-compute instances are typically priced between $0.20 to $0.50 per hour.
-Fortunately, Bearclave provides a "No TEE" mode that allows you to develop
+compute instances typically cost between $0.20 to $0.50 per hour.
+Fortunately, Bearclave provides a _No TEE_ mode that allows you to develop
 and test applications locally. Using this mode, you should be able to
 prototype and test TEE applications for just a few dollars a month.
 
