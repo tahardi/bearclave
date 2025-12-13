@@ -6,18 +6,18 @@ by traditional computing systems. For this reason, curious developers often
 want to explore TEE technology for securing sensitive workloads, but find
 themselves overwhelmed by steep learning curves and complicated requirements.
 The **Bearclave** project is a collection of code and documentation that aims to
-address those challenges.
+address these challenges.
 
 ## What's Included?
 
-- **Concepts** An overview of TEEs and popular platforms, including
-AWS Nitro, AMD SEV-SNP, and Intel TDX
-- **Guides** How to deploy TEE-based applications to cloud platforms such as AWS
-and GCP
+- **Concepts** An overview of popular TEE platforms, including AWS Nitro,
+AMD SEV-SNP, and Intel TDX.
+- **Guides** Instructions for building and deploying TEE-based applications to
+the AWS and GCP clout platforms.
 - **SDK** A library that allows you to develop platform-agnostic Golang
-applications without having to worry about the underlying TEE implementation
-- **Examples** Practical code examples that demonstrate how to build, deploy,
-and interact with real-world applications on different TEE platforms
+applications without having to worry about the underlying TEE implementations.
+- **Examples** Practical code examples that demonstrate how to write, build, and
+deploy TEE-based applications.
 
 ## A Note on Costs
 
