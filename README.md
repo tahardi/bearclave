@@ -10,8 +10,8 @@ address these challenges.
 
 ## What's Included?
 
-- **Explanations** of TEE concepts and popular platforms, including AWS Nitro,
-AMD SEV-SNP, and Intel TDX.
+- **Explanations** of TEE concepts and popular platforms, including **AWS Nitro**,
+**AMD SEV-SNP**, and **Intel TDX**.
 - **Guides** for building and deploying TEE-based applications to AWS and GCP.
 - **SDK** for developing platform-agnostic Golang TEE applications.
 - **Examples** demonstrating how to write, build, and deploy real-world
@@ -19,7 +19,7 @@ TEE-based applications.
 
 ## A Note on Costs
 
-Running cloud-based TEE applications is not free. AWS and GCP TEE-capable
+Running cloud-based TEE applications is not free. AWS and GCP TEE
 compute instances typically cost between $0.20 to $0.50 per hour.
 Fortunately, Bearclave provides a _No TEE_ mode that allows you to develop
 and test applications locally. Using this mode, you should be able to
