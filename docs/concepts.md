@@ -14,14 +14,31 @@ isolate your code and data from the rest of the system. Instead of trusting the
 entire OS and hypervisor, you need only trust the small subset of specialized
 hardware and firmware that TEEs use to secure your code. 
 
-The isolated space that TEEs create is known as an **Enclave**. Previous
-implementations (e.g., Intel SGX) provided enclaves that isolated code at the
-process level. This meant that you could protect a single program from the rest
-of the system. There were a number of drawbacks to this approach. Most notably,
-enclaves did not have access to system resources (e.g., network interfaces,
-storage devices) without having to go through the untrusted OS or hypervisor.
+Previous implementations (e.g., Intel SGX) isolated code at the _process_ level.
+Meaning, you could protect a single program from the rest of the system.
+Modern TEEs (e.g., AWS Nitro Enclaves, AMD SEV-SNP, Intel TDX), however,
+provide isolation at the _VM_ level. So, you can protect an entire guest OS
+and its applications from the rest of the system.
 
-TODO: [finish concepts overview](https://taylor-a-hardin.atlassian.net/browse/BCL-55)
+Not only do TEEs provide isolation, they also provide a mechanism for proving
+the integrity and authenticity of isolated code to outside parties. This
+process is known as **remote attestation**. TEEs generate a "report" containing
+platform information (e.g., CPU vendor, firmware version) and a measurement of
+the isolated code. This report is cryptographically signed with a key available
+only to the TEE. The public component of this key is made publicly available
+and can be used by anyone to verify the signature (and thus the information
+contained in the report).
+
+While TEEs provide stronger integrity and confidentiality guarantees than
+traditional systems, they do so at the cost of performance and usability.
+TEEs encrypt and authenticate data that crosses the CPU boundary to ensure
+that only trusted code can access it. This means that I/O intensive workloads
+may see slowdowns of 5 to 20%. Certain system resources are not directly
+available to code running in a TEE. For instance, TEEs cannot directly access
+network interfaces or storage devices. To do so, they must go through the
+untrusted OS and hypervisor. Careful consideration must be taken to ensure
+that any request passed to the untrusted OS is safe and secure (i.e.,
+encrypted and authenticated).
 
 ## AWS Nitro Enclaves
 
