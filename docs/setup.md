@@ -1,8 +1,10 @@
 # Overview
 
 Follow the steps below to install and setup the tools necessary for
-developing and running Bearclave applications. _Note that these steps, and the
-Bearclave SDK, have only been tested on Ubuntu 24.04.3 LTS_
+developing and running Bearclave applications.
+
+> Note that these steps, and the Bearclave SDK, have only been tested on
+> Ubuntu 24.04.3 LTS
 
 ## Install & Setup (No TEE)
 
