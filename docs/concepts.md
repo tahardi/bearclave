@@ -23,10 +23,9 @@ Not only do TEEs provide isolation, they also provide a mechanism for proving
 the integrity and authenticity of isolated code to outside parties. This
 process is known as **remote attestation**. TEEs generate a report containing
 platform information (e.g., CPU vendor, firmware version) and a measurement of
-the isolated code. This report is cryptographically signed with a private
-key available only to the TEE. The public component is made widely available
-so that anyone can verify the signature and information contained within the
-report.
+the isolated code. The TEE signs this report with a secret key that only it has.
+The public component is made widely available so that anyone can verify the
+signature and information contained within the report.
 
 While TEEs provide stronger integrity and confidentiality guarantees than
 traditional systems, they do so at the cost of performance and usability.
@@ -40,9 +39,9 @@ precautions must be taken to ensure any requests passed to the untrusted OS
 are properly sanitized or otherwise protected.
 
 In summary, TEEs provide stronger security guarantees than traditional systems
-at the cost of increased complexity and performance. They can isolate code and
-data from privileged software in a way that is verifiable and auditable. They
-cannot protect against physical attacks, nor guarantee access to system
+at the cost of increased complexity and performance. They isolate code and
+data from privileged software in a way that can be verified and audited. They
+cannot protect against physical attacks nor guarantee access to system
 resources managed by the untrusted OS and hypervisor.
 
 ## AWS Nitro Enclaves
