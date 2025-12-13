@@ -3,35 +3,23 @@
 Trusted Execution Environments (TEEs) use specialized hardware and software to
 provide stronger confidentiality and integrity guarantees than what is normally
 afforded to your application code and data in traditional computing environments.
-Curious developers often want to explore TEE technology for securing their
-sensitive workloads, but find themselves overwhelmed by steep learning curves
-and complicated requirements. These challenges include:
-- Limited documentation that can be dense, scattered, or difficult to understand
-- The need for specialized hardware that is either costly or requires complex setup
-- An understanding of how to write and build applications for different TEE platforms
+For this reason, curious developers often want to explore TEE technology for
+securing their sensitive workloads, but find themselves overwhelmed by steep
+learning curves and complicated requirements.
 
-Bearclave is here to bridge that knowledge gap! These repositories are tailored for  
-developers who want to take their first steps into the world of cloud-based TEE 
-application development. Bearclave provides all the necessary resources to go 
-from zero to a working example, while keeping the process approachable and affordable.
-
----
-
-## What Bearclave Offers
-
-This repository offers a holistic, step-by-step guide to developing TEE
-applications, including:
+The Bearclave project is a collection of code and documentation resources that
+aims to address those challenges. This includes:
 
 - **Introduction to TEEs**: A high-level overview of TEEs and popular
   platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX
 - **Cloud Integration Guides**: Detailed instructions for configuring the cloud
   resources needed to build and deploy TEE applications on AWS and GCP
-- **Practical Code Examples**: Demonstrations of how to compile, deploy, and
-  interact with real-world applications on different TEE platforms
 - **Platform-Agnostic Code**: A framework for developing applications on various
   TEE platforms. Bearclave abstracts away platform-specific details so you can
   more easily write portable applications without worrying about the
   idiosyncrasies of the underlying TEE implementation
+- **Practical Code Examples**: Demonstrations of how to compile, deploy, and
+  interact with real-world applications on different TEE platforms
 
 Additionally, Bearclave includes a **"No TEE" development mode**, allowing you to
 develop and test your application without a TEE instance. This reduces costs
