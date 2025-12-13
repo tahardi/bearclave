@@ -10,16 +10,16 @@ address those challenges.
 
 ## What's Included?
 
-- **Introduction to TEEs**: A high-level overview of TEEs and popular
-  platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX
-- **Cloud Integration Guides**: Detailed instructions for configuring the cloud
-  resources needed to build and deploy TEE applications on AWS and GCP
-- **Platform-Agnostic Code**: A framework for developing applications on various
-  TEE platforms. Bearclave abstracts away platform-specific details so you can
-  more easily write portable applications without worrying about the
-  idiosyncrasies of the underlying TEE implementation
-- **Practical Code Examples**: Demonstrations of how to compile, deploy, and
-  interact with real-world applications on different TEE platforms
+- **Introduction to TEEs** A high-level overview of TEEs and popular
+platforms such as AWS Nitro, AMD SEV-SNP, and Intel TDX
+- **Setup Guides** Instructions for configuring the cloud resources needed to
+build and deploy TEE applications on AWS and GCP
+- **Platform-Agnostic Code** A framework for developing applications on various
+TEE platforms. Bearclave abstracts away platform-specific details so you can
+more easily write portable applications without worrying about the
+idiosyncrasies of the underlying TEE implementation
+- **Practical Code Examples** Demonstrations of how to compile, deploy, and
+interact with real-world applications on different TEE platforms
 
 Additionally, Bearclave includes a **"No TEE" development mode**, allowing you to
 develop and test your application without a TEE instance. This reduces costs
