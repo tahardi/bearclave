@@ -27,7 +27,6 @@ prototype and test TEE applications for just a few dollars a month.
 
 ## Getting Started
 
-Use the links below to get started with the Bearclave project:
-- [TEE Concepts]()
-- [Install & Setup]()
-- [Examples](github.com/tahardi/bearclave-examples)
+- [TEE Concepts](./docs/concepts.md)
+- [Install & Setup](./docs/setup.md)
+- [Examples](https://github.com/tahardi/bearclave-examples)
