@@ -41,10 +41,10 @@ precautions must be taken to ensure any requests passed to the untrusted OS
 are properly sanitized or otherwise protected.
 
 In summary, TEEs provide stronger security guarantees than traditional systems
-at the cost of increased complexity and performance. They can isolate code and
+at the cost of increased complexity and performance. They _can_ isolate code and
 data from privileged software in a way that is verifiable and auditable. They
-do not protect against _physical_ attacks, nor can they prevent the untrusted
-OS or hypervisor from blocking their access to system resources.
+_cannot_ protect against physical attacks, nor guarantee access to
+system resources managed by the untrusted OS and hypervisor.
 
 ## AWS Nitro Enclaves
 
