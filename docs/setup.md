@@ -12,16 +12,18 @@ your applications without needing to have access to a TEE platform. While this
 is not a true one-to-one replacement, it can be useful for speeding up
 development cycles and reducing cloud costs.
 
-1. Install [Golang](https://golang.org/doc/install) version 1.24.3 or higher.
-This is required to build and run Bearclave applications.
+1. Install [Golang](https://golang.org/doc/install) (v1.24.3 or higher) to build
+and run Bearclave applications.
 2. Install [Process Compose](https://github.com/F1bonacc1/process-compose)
-version 1.78.0 or higher. While not strictly required, it is used in
-the [Examples](https://github.com/tahardi/bearclave-examples) repository to run
+(v1.78.0 or higher) to orchestrate and run applications in "No TEE" mode.
+[Examples](https://github.com/tahardi/bearclave-examples) repository to run
 and orchestrate applications in "No TEE" mode.
 
 You now have the minimum set of tools required to build and run Bearclave
-applications locally. If you wish to run applications on genuine TEE platforms, 
-follow the AWS or GCP setup instructions below.
+applications locally. Try them out with one of the examples in our
+[examples](https://github.com/tahardi/bearclave-examples) repository. If you
+wish to run applications on genuine TEE platforms, continue on to the AWS or
+GCP setup guides below.
 
 ## Install & Setup (AWS)
 
