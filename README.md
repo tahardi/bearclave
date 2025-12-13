@@ -19,8 +19,6 @@ applications without having to worry about the underlying TEE implementation
 - **Examples** Practical code examples that demonstrate how to build, deploy,
 and interact with real-world applications on different TEE platforms
 
----
-
 ## A Note on Costs
 
 Running cloud-based TEE applications is not free. AWS and GCP TEE-capable
@@ -28,8 +26,6 @@ compute instances typically cost between $0.20 to $0.50 per hour.
 Fortunately, Bearclave provides a _No TEE_ mode that allows you to develop
 and test applications locally. Using this mode, you should be able to
 prototype and test TEE applications for just a few dollars a month.
-
----
 
 # Getting Started
 
