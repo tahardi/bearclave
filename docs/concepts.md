@@ -25,12 +25,12 @@ TODO: [finish concepts overview](https://taylor-a-hardin.atlassian.net/browse/BC
 
 ## AWS Nitro Enclaves
 
-TODO: [](https://taylor-a-hardin.atlassian.net/browse/BCL-49)
+TODO: [concepts - nitro](https://taylor-a-hardin.atlassian.net/browse/BCL-49)
 
 ## AMD Secure Encrypted Virtualization (SEV)
 
-TODO: [](https://taylor-a-hardin.atlassian.net/browse/BCL-50)
+TODO: [concepts - sev](https://taylor-a-hardin.atlassian.net/browse/BCL-50)
 
 ## Intel Trusted Domain Extensions (TDX)
 
-TODO: [](https://taylor-a-hardin.atlassian.net/browse/BCL-51)
+TODO: [concepts - tdx](https://taylor-a-hardin.atlassian.net/browse/BCL-51)
