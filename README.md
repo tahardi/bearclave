@@ -2,10 +2,10 @@
 
 Trusted Execution Environments (TEEs) use specialized hardware and software to
 provide stronger confidentiality and integrity guarantees than what is normally
-afforded to your application code and data in traditional computing environments.
-For this reason, curious developers often want to explore TEE technology for
-securing their sensitive workloads, but find themselves overwhelmed by steep
-learning curves and complicated requirements.
+afforded by traditional computing environments. For this reason, curious
+developers often want to explore TEE technology for securing sensitive workloads,
+but find themselves overwhelmed by steep learning curves and complicated
+requirements.
 
 The Bearclave project is a collection of code and documentation resources that
 aims to address those challenges. This includes:
