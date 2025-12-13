@@ -10,7 +10,7 @@ address these challenges.
 
 ## What's Included?
 
-- **Breakdowns** of TEE concepts and popular platforms, including AWS Nitro,
+- **Breakdowns** of TEE concepts and platforms, including AWS Nitro Enclaves,
 AMD SEV-SNP, and Intel TDX.
 - **Guides** on building and deploying TEE-based applications to AWS and GCP.
 - **Modules** for developing platform-agnostic Golang TEE applications.
