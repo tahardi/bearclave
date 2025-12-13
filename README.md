@@ -6,11 +6,9 @@ afforded to your application code and data in traditional computing environments
 Curious developers often want to explore TEE technology for securing their
 sensitive workloads, but find themselves overwhelmed by steep learning curves
 and complicated requirements. These challenges include:
-
 - Limited documentation that can be dense, scattered, or difficult to understand
 - The need for specialized hardware that is either costly or requires complex setup
 - An understanding of how to write and build applications for different TEE platforms
-
 Bearclave is here to bridge that knowledge gap! These repositories are tailored for  
 developers who want to take their first steps into the world of cloud-based TEE 
 application development. Bearclave provides all the necessary resources to go 
@@ -19,6 +17,7 @@ from zero to a working example, while keeping the process approachable and affor
 ---
 
 ## What Bearclave Offers
+
 This repository offers a holistic, step-by-step guide to developing TEE  
 applications, including:
 
