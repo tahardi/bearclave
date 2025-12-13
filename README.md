@@ -1,12 +1,12 @@
 # Bearclave: Simplifying Cloud-Based TEE Development
 
 **Trusted Execution Environments (TEEs)** use specialized hardware and software to
-provide stronger confidentiality and integrity guarantees than what is normally
-afforded by traditional computing systems. For this reason, curious
-developers often want to explore TEE technology for securing sensitive workloads,
-but find themselves overwhelmed by steep learning curves and complicated
-requirements. The Bearclave project is a collection of code and documentation
-that aims to address those challenges.
+provide stronger confidentiality and integrity guarantees than what is afforded
+by traditional computing systems. For this reason, curious developers often
+want to explore TEE technology for securing sensitive workloads, but find
+themselves overwhelmed by steep learning curves and complicated requirements.
+The Bearclave project is a collection of code and documentation that aims to
+address those challenges.
 
 ## What's Included?
 
