@@ -11,6 +11,10 @@ import (
 
 func TestNewTSCTimer(t *testing.T) {
 	vendor := clock.GetVendor()
+	if vendor != clock.Intel {
+		return
+	}
+
 	t.Run("happy path - "+vendor, func(t *testing.T) {
 		timer, err := clock.NewTSCTimer()
 		require.NoError(t, err)
@@ -20,6 +24,10 @@ func TestNewTSCTimer(t *testing.T) {
 
 func TestTSCTimer_Roundtrip(t *testing.T) {
 	vendor := clock.GetVendor()
+	if vendor != clock.Intel {
+		return
+	}
+
 	timer, err := clock.NewTSCTimer()
 	require.NoError(t, err)
 

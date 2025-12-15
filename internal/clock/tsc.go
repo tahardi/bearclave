@@ -12,7 +12,7 @@ type TSCTimer struct {
 func NewTSCTimer() (*TSCTimer, error) {
 	frequency, err := GetTSCFrequency()
 	if err != nil {
-		return nil, timerError("", nil)
+		return nil, timerError("", err)
 	}
 	return NewTSCTimerWithRDTSC(frequency, RDTSC)
 }
