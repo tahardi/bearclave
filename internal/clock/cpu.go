@@ -1,8 +1,11 @@
 package clock
 
 import (
+	"bufio"
 	"encoding/binary"
-	"fmt"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -116,26 +119,49 @@ func GetTSCFrequencyAMD() (int64, error) {
 		return int64(crystalHz) * int64(numerator) / int64(denominator), nil
 	}
 
-	return getTSCFrequencyFromMSR()
+	return parseProcCPUInfo()
 }
 
-func getTSCFrequencyFromMSR() (int64, error) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("insufficient privileges to read MSR\n")
+// parseProcCPUInfo reads /proc/cpuinfo and extracts the CPU frequency in MHz.
+// It searches for the "cpu MHz" field which is present on both Intel and AMD processors.
+// Returns the frequency in Hz.
+func parseProcCPUInfo() (int64, error) {
+	file, err := os.Open("/proc/cpuinfo")
+	if err != nil {
+		return 0, cpuErrorTSCFrequency("procinfo open", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Look for "cpu MHz" field - works on both Intel and AMD
+		if strings.Contains(line, "cpu MHz") {
+			// Parse the format: "cpu MHz         : 4388.937"
+			parts := strings.Split(line, ":")
+			if len(parts) != 2 {
+				continue
+			}
+
+			// Trim whitespace and parse the frequency value
+			freqStr := strings.TrimSpace(parts[1])
+			freqMHz, err := strconv.ParseFloat(freqStr, 64)
+			if err != nil {
+				continue
+			}
+
+			// Convert MHz to Hz
+			freqHz := int64(freqMHz * float64(Million))
+			if freqHz > 0 {
+				return freqHz, nil
+			}
 		}
-	}()
-
-	pstateMsr := RDMSR(AMD_PSTATE_0_MSR)
-
-	fid := uint32(pstateMsr & FID_MASK)
-	did := uint32((pstateMsr & DID_MASK) >> DID_SHIFT)
-
-	if fid == 0 {
-		return 0, cpuErrorTSCFrequency("AMD MSR", nil)
 	}
 
-	// Frequency = (100 MHz * FID) / (DID + 1)
-	frequencyMHz := (uint64(AMD_BASE_CLOCK) * uint64(fid)) / uint64(did+1)
-	return int64(frequencyMHz) * Million, nil
+	if err := scanner.Err(); err != nil {
+		return 0, cpuErrorTSCFrequency("procinfo scan", err)
+	}
+
+	return 0, cpuErrorTSCFrequency("procinfo parse", nil)
 }
