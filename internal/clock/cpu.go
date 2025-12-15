@@ -1,6 +1,9 @@
 package clock
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"fmt"
+)
 
 const (
 	Million = 1_000_000
@@ -19,6 +22,12 @@ const (
 	VendorLeafEax       = 0
 	VendorLeafEcx       = 0
 	VendorLength        = 12
+
+	AMD_PSTATE_0_MSR = 0xC0010064
+	FID_MASK         = 0xFF
+	DID_MASK         = 0xFF00
+	DID_SHIFT        = 8
+	AMD_BASE_CLOCK   = 100 // MHz
 )
 
 //go:nosplit
@@ -26,6 +35,9 @@ func CPUID(eax, ecx uint32) (reax, rebx, recx, redx uint32)
 
 //go:nosplit
 func RDTSC() int64
+
+//go:nosplit
+func RDMSR(msr uint32) uint64
 
 func CheckTSCInvariant() bool {
 	_, _, _, edx := CPUID(InvariantTscLeafEax, InvariantTscLeafEcx)
@@ -99,5 +111,31 @@ func GetTSCFrequencyAMD() (int64, error) {
 		return 0, cpuErrorTSCNotInvariant("", nil)
 	}
 
-	return 0, cpuErrorVendor("AMD", nil)
+	denominator, numerator, crystalHz, _ := CPUID(TscLeafEax, TscLeafEcx)
+	if denominator != 0 && numerator != 0 && crystalHz != 0 {
+		return int64(crystalHz) * int64(numerator) / int64(denominator), nil
+	}
+
+	return getTSCFrequencyFromMSR()
+}
+
+func getTSCFrequencyFromMSR() (int64, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("insufficient privileges to read MSR\n")
+		}
+	}()
+
+	pstateMsr := RDMSR(AMD_PSTATE_0_MSR)
+
+	fid := uint32(pstateMsr & FID_MASK)
+	did := uint32((pstateMsr & DID_MASK) >> DID_SHIFT)
+
+	if fid == 0 {
+		return 0, cpuErrorTSCFrequency("AMD MSR", nil)
+	}
+
+	// Frequency = (100 MHz * FID) / (DID + 1)
+	frequencyMHz := (uint64(AMD_BASE_CLOCK) * uint64(fid)) / uint64(did+1)
+	return int64(frequencyMHz) * Million, nil
 }
