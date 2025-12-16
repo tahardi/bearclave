@@ -2,6 +2,8 @@ package clock
 
 import (
 	"encoding/binary"
+	"fmt"
+	"os"
 	"time"
 )
 
@@ -11,6 +13,8 @@ const (
 
 	AMD   = "AuthenticAMD"
 	Intel = "GenuineIntel"
+	SystemClockSource = "/sys/devices/system/clocksource/clocksource0/current_clocksource"
+	TSC = "tsc"
 
 	CalibrationTime = 100 * time.Millisecond
 
@@ -31,9 +35,6 @@ func CPUID(eax, ecx uint32) (reax, rebx, recx, redx uint32)
 
 //go:nosplit
 func RDTSC() int64
-
-//go:nosplit
-func RDMSR(msr uint32) uint64
 
 func CheckTSCInvariant() bool {
 	_, _, _, edx := CPUID(InvariantTscLeafEax, InvariantTscLeafEcx)
@@ -82,10 +83,10 @@ func GetTSCFrequencyIntel() (int64, error) {
 
 	baseFreqMHz, _, _, _ := CPUID(ProcFreqLeafEax, ProcFreqLeafEcx)
 	baseFreqMHz &= 0xFFFF
-	if baseFreqMHz == 0 {
-		return 0, cpuErrorTSCFrequency("Intel", nil)
+	if baseFreqMHz != 0 {
+		return int64(baseFreqMHz) * Million, nil
 	}
-	return int64(baseFreqMHz) * Million, nil
+	return CalcTSCFrequencyFromTimer()
 }
 
 // GetTSCFrequencyAMD returns the Time Stamp Counter (TSC) frequency in Hz.
@@ -94,24 +95,36 @@ func GetTSCFrequencyIntel() (int64, error) {
 // provide TSC or processor frequency info via CPUID. Instead, they track that
 // information in MSRs, which require root privileges to read. Attempting to
 // read MSRs without root privileges will cause a panic. So, we calculate the
-// TSC frequency by using the system time as a reference. This is exactly
-// what we were hoping to avoid, as we consider the system time to be untrusted.
+// TSC frequency by using the system time as a reference.
 func GetTSCFrequencyAMD() (int64, error) {
 	if !CheckTSCInvariant() {
 		return 0, cpuErrorTSCNotInvariant("", nil)
 	}
-
-	return CalcTSCFrequencyFromTimer(CalibrationTime)
+	return CalcTSCFrequencyFromTimer()
 }
 
 // CalcTSCFrequencyFromTimer calculates the TSC frequency by measuring the number
-// of TSC ticks over a known time period.
-func CalcTSCFrequencyFromTimer(duration time.Duration) (int64, error) {
+// of TSC ticks over a known time period. Note that we actually check and
+// enforce that the system clock is the TSC. Meaning, we are essentially
+// measuring the TSC with itself. While it's great that the system is using
+// the secure TSC, it still uses insecure NTP to periodically sync the system
+// clock (i.e., the real wall clock time). Since we assume NTP servers to be
+// outside our trust boundary, we don't want to rely on the system clock.
+// Instead, we will use it briefly to figure out TSC frequency and then
+// implement our own clock via Network Time Security (NTS).
+func CalcTSCFrequencyFromTimer() (int64, error) {
+	source, err := os.ReadFile(SystemClockSource)
+	switch {
+	case err != nil:
+		return 0, cpuErrorTSCFrequency("reading system clock source", err)
+	case string(source) != TSC:
+		msg := fmt.Sprintf("expected clock source '%q' got '%q'", TSC, source)
+		return 0, cpuErrorTSCFrequency(msg, nil)
+	}
+
 	startTime := time.Now()
 	startTSC := RDTSC()
-
-	time.Sleep(duration)
-
+	time.Sleep(CalibrationTime)
 	endTime := time.Now()
 	endTSC := RDTSC()
 
@@ -121,7 +134,7 @@ func CalcTSCFrequencyFromTimer(duration time.Duration) (int64, error) {
 	// Calculate frequency: ticks per nanosecond * nanoseconds per second
 	// TSC frequency (Hz) = (tsc_ticks / elapsed_ns) * 1_000_000_000
 	if elapsedNs == 0 {
-		return 0, cpuErrorTSCFrequency("AMD", nil)
+		return 0, cpuErrorTSCFrequency("calibration period too short", nil)
 	}
 	return (tscDelta * Billion) / elapsedNs, nil
 }
