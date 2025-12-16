@@ -15,10 +15,3 @@ TEXT ·RDTSC(SB), NOSPLIT, $0-8
 	MOVL	AX, ret+0(FP)
 	MOVL	DX, ret+4(FP)
 	RET
-
-TEXT ·RDMSR(SB), NOSPLIT, $0-16
-	MOVL	msr+0(FP), CX
-	RDMSR
-	MOVL	AX, ret+8(FP)
-	MOVL	DX, ret+12(FP)
-	RET

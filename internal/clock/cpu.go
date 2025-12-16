@@ -25,12 +25,6 @@ const (
 	VendorLeafEax       = 0
 	VendorLeafEcx       = 0
 	VendorLength        = 12
-
-	AMD_PSTATE_0_MSR = 0xC0010064
-	FID_MASK         = 0xFF
-	DID_MASK         = 0xFF00
-	DID_SHIFT        = 8
-	AMD_BASE_CLOCK   = 100 // MHz
 )
 
 //go:nosplit
@@ -95,36 +89,22 @@ func GetTSCFrequencyIntel() (int64, error) {
 	return int64(baseFreqMHz) * Million, nil
 }
 
-// GetTSCFrequencyAMD Below are notes from AMD Family 17h Processors Models
-// 00h-2Fh reference manual.
-//
-// MSRC001_0015 bit 24 TSCFreqSel. 1=TSC increments at P0 freq
-// Bit 21 - LockTSCToCurrentP0, 0=TSC increments at P0, 1=TSC increments at
-// P0 and will never change from this point forward even if P0 does
-// Core::X86::Msr::MPERF and Msr::APERF
-// 1. Write 0 to Msr::MPERF and Msr::APERF
-// 2. wait for a bit
-// 3. Read Msr::MPERF and Msr::APERF
-// 4. P0 frequency = Msr::APERF / Msr::MPERF
-// MSR0000_0010 TSC 0:63 bits contain the TSC value
-// MSR0000_00E7 Max Performance Frequency Clock Count (MPERF)
-// MSR0000_00E8 Actual Performance Frequency Clock Count (APERF)
+// GetTSCFrequencyAMD returns the Time Stamp Counter (TSC) frequency in Hz.
+// If the TSC is not invariant, an error is returned because that means it is
+// not guaranteed to increase at a constant rate. Unfortunately, AMD does not
+// provide TSC or processor frequency info via CPUID. Instead, they track that
+// information in MSRs, which require root privileges to read. Attempting to
+// read MSRs without root privileges will cause a panic. So, we attempt to
+// parse the frequency from /proc/cpuinfo instead. It is both brittle and
+// insecure, but we have no other solutions at the moment.
 func GetTSCFrequencyAMD() (int64, error) {
 	if !CheckTSCInvariant() {
 		return 0, cpuErrorTSCNotInvariant("", nil)
 	}
 
-	denominator, numerator, crystalHz, _ := CPUID(TscLeafEax, TscLeafEcx)
-	if denominator != 0 && numerator != 0 && crystalHz != 0 {
-		return int64(crystalHz) * int64(numerator) / int64(denominator), nil
-	}
-
 	return parseProcCPUInfo()
 }
 
-// parseProcCPUInfo reads /proc/cpuinfo and extracts the CPU frequency in MHz.
-// It searches for the "cpu MHz" field which is present on both Intel and AMD processors.
-// Returns the frequency in Hz.
 func parseProcCPUInfo() (int64, error) {
 	file, err := os.Open("/proc/cpuinfo")
 	if err != nil {
@@ -136,22 +116,18 @@ func parseProcCPUInfo() (int64, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		// Look for "cpu MHz" field - works on both Intel and AMD
 		if strings.Contains(line, "cpu MHz") {
-			// Parse the format: "cpu MHz         : 4388.937"
 			parts := strings.Split(line, ":")
 			if len(parts) != 2 {
 				continue
 			}
 
-			// Trim whitespace and parse the frequency value
 			freqStr := strings.TrimSpace(parts[1])
 			freqMHz, err := strconv.ParseFloat(freqStr, 64)
 			if err != nil {
 				continue
 			}
 
-			// Convert MHz to Hz
 			freqHz := int64(freqMHz * float64(Million))
 			if freqHz > 0 {
 				return freqHz, nil
@@ -162,6 +138,5 @@ func parseProcCPUInfo() (int64, error) {
 	if err := scanner.Err(); err != nil {
 		return 0, cpuErrorTSCFrequency("procinfo scan", err)
 	}
-
 	return 0, cpuErrorTSCFrequency("procinfo parse", nil)
 }
