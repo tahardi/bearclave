@@ -13,6 +13,8 @@ const (
 
 	AMD   = "AuthenticAMD"
 	Intel = "GenuineIntel"
+	SystemClockSource = "/sys/devices/system/clocksource/clocksource0/current_clocksource"
+	TSC = "tsc"
 
 	CalibrationTime = 100 * time.Millisecond
 
@@ -26,12 +28,6 @@ const (
 	VendorLeafEax       = 0
 	VendorLeafEcx       = 0
 	VendorLength        = 12
-
-	AmdGuestTscScaleOffset  = 0x2F0
-	AmdGuestTscOffsetOffset = 0x2F8
-	AmdSevFeaturesOffset    = 0x3B0
-	AmdSecureTscEnabledBit  = 1 << 11 //Pg.750 arch. progr. man.
-	AmdGuestTscFrequencyMsr = 0xC0010134
 )
 
 //go:nosplit
@@ -39,9 +35,6 @@ func CPUID(eax, ecx uint32) (reax, rebx, recx, redx uint32)
 
 //go:nosplit
 func RDTSC() int64
-
-//go:nosplit
-func RDMSR(msr uint32) uint64
 
 func CheckTSCInvariant() bool {
 	_, _, _, edx := CPUID(InvariantTscLeafEax, InvariantTscLeafEcx)
@@ -90,10 +83,10 @@ func GetTSCFrequencyIntel() (int64, error) {
 
 	baseFreqMHz, _, _, _ := CPUID(ProcFreqLeafEax, ProcFreqLeafEcx)
 	baseFreqMHz &= 0xFFFF
-	if baseFreqMHz == 0 {
-		return 0, cpuErrorTSCFrequency("Intel", nil)
+	if baseFreqMHz != 0 {
+		return int64(baseFreqMHz) * Million, nil
 	}
-	return int64(baseFreqMHz) * Million, nil
+	return CalcTSCFrequencyFromTimer()
 }
 
 // GetTSCFrequencyAMD returns the Time Stamp Counter (TSC) frequency in Hz.
@@ -102,122 +95,36 @@ func GetTSCFrequencyIntel() (int64, error) {
 // provide TSC or processor frequency info via CPUID. Instead, they track that
 // information in MSRs, which require root privileges to read. Attempting to
 // read MSRs without root privileges will cause a panic. So, we calculate the
-// TSC frequency by using the system time as a reference. This is exactly
-// what we were hoping to avoid, as we consider the system time to be untrusted.
+// TSC frequency by using the system time as a reference.
 func GetTSCFrequencyAMD() (int64, error) {
 	if !CheckTSCInvariant() {
 		return 0, cpuErrorTSCNotInvariant("", nil)
 	}
-
-	// TODO: Consider checking SEV_FEATURES for SecureTSC enabled
-	// SEV_FEATURES_OFFSET = 0x3B0h - bit 11 SecureTSC. Pg.750 arch. progr. man.
-
-	// TODO: I don't know if reading this MSR requires root privileges. If not,
-	// you could read the TSC frequency from it.
-	// Guests may read GUEST_TSC_FREQ from MSR (C001_0134h) to get freq in MHz
-	//scalingInfo, err := readTSCScalingFromMSR()
-	//if err != nil {
-	//	return 0, err
-	//}
-	//
-	//fmt.Printf("Read scaling info: %x, %x\n", scalingInfo.Scale, scalingInfo.Offset)
-	//freq, err := readTSCFrequencyFromMSR()
-	//if err != nil {
-	//	return 0, err
-	//}
-	//fmt.Printf("Read MSR freq: %d\n", freq)
-	source, err := os.ReadFile("/sys/devices/system/clocksource/clocksource0/current_clocksource")
-	if err == nil {
-		fmt.Printf("Current clocksource: %s", source)
-	}
-	return CalcTSCFrequencyFromTimer(CalibrationTime)
+	return CalcTSCFrequencyFromTimer()
 }
-
-func readTSCFrequencyFromMSR() (uint64, error) {
-	return RDMSR(AmdGuestTscFrequencyMsr), nil
-}
-
-// TSCScalingInfo holds the TSC scaling parameters from /dev/cpu/CPUID/msr
-type TSCScalingInfo struct {
-	Scale  uint64 // GUEST_TSC_SCALE: 32-bit scale factor (high 32 bits of 64-bit MSR)
-	Offset uint64  // GUEST_TSC_OFFSET: 64-bit offset
-}
-
-// Pg. 749 AMD64 Architecture Programmer's Manual Vol 2: System Programming (24593)
-// specifies where the GUEST_TSC_SCALE and GUEST_TSC_OFFSET values are located
-// in VMSA layout.
-func readTSCScalingFromMSR() (*TSCScalingInfo, error) {
-	file, err := os.Open("/dev/cpu/0/msr")
-	if err != nil {
-		return nil, cpuErrorTSCFrequency("opening /dev/cpu/0/msr", err)
-	}
-	defer file.Close()
-
-	_, err = file.Seek(AmdGuestTscFrequencyMsr, 0)
-	if err != nil {
-		return nil, cpuErrorTSCFrequency("seeking to MSR_GUEST_TSC_FREQ", err)
-	}
-
-	freqBuffer := make([]byte, 8)
-	n, err := file.Read(freqBuffer)
-	if err != nil || n != 8 {
-		return nil, cpuErrorTSCFrequency("reading MSR_GUEST_TSC_FREQ", err)
-	}
-	freq := binary.LittleEndian.Uint64(freqBuffer)
-	fmt.Printf("MSR freq: %d\n", freq)
-
-	_, err = file.Seek(AmdGuestTscScaleOffset, 0)
-	if err != nil {
-		return nil, cpuErrorTSCFrequency("seeking to GUEST_TSC_SCALE", err)
-	}
-
-	// GUEST_TSC_SCALE - 8.32 fixed point binary number (8-bit int, 32-bit fraction)
-	scaleBuffer := make([]byte, 8)
-	n, err = file.Read(scaleBuffer)
-	if err != nil || n != 8 {
-		return nil, cpuErrorTSCFrequency("reading GUEST_TSC_SCALE", err)
-	}
-
-	_, err = file.Seek(AmdGuestTscOffsetOffset, 0)
-	if err != nil {
-		return nil, cpuErrorTSCFrequency("seeking to GUEST_TSC_OFFSET", err)
-	}
-
-	offsetBuffer := make([]byte, 8)
-	n, err = file.Read(offsetBuffer)
-	if err != nil || n != 8 {
-		return nil, cpuErrorTSCFrequency("reading GUEST_TSC_OFFSET", err)
-	}
-
-	_, err = file.Seek(AmdSevFeaturesOffset, 0)
-	if err != nil {
-		return nil, cpuErrorTSCFrequency("seeking to SEV_FEATURES", err)
-	}
-
-	featuresBuffer := make([]byte, 8)
-	n, err = file.Read(featuresBuffer)
-	if err != nil || n != 8 {
-		return nil, cpuErrorTSCFrequency("reading SEV_FEATURES", err)
-	}
-
-	scale := binary.LittleEndian.Uint64(scaleBuffer)
-	offset := binary.LittleEndian.Uint64(offsetBuffer)
-	features := binary.LittleEndian.Uint64(featuresBuffer)
-	if features&AmdSecureTscEnabledBit == 0 {
-		return nil, cpuErrorTSCFrequency("SEV SecureTSC not enabled", nil)
-	}
-	return &TSCScalingInfo{Scale: scale, Offset: offset}, nil
-}
-
 
 // CalcTSCFrequencyFromTimer calculates the TSC frequency by measuring the number
-// of TSC ticks over a known time period.
-func CalcTSCFrequencyFromTimer(duration time.Duration) (int64, error) {
+// of TSC ticks over a known time period. Note that we actually check and
+// enforce that the system clock is the TSC. Meaning, we are essentially
+// measuring the TSC with itself. While it's great that the system is using
+// the secure TSC, it still uses insecure NTP to periodically sync the system
+// clock (i.e., the real wall clock time). Since we assume NTP servers to be
+// outside our trust boundary, we don't want to rely on the system clock.
+// Instead, we will use it briefly to figure out TSC frequency and then
+// implement our own clock via Network Time Security (NTS).
+func CalcTSCFrequencyFromTimer() (int64, error) {
+	source, err := os.ReadFile(SystemClockSource)
+	switch {
+	case err != nil:
+		return 0, cpuErrorTSCFrequency("reading system clock source", err)
+	case string(source) != TSC:
+		msg := fmt.Sprintf("expected clock source '%q' got '%q'", TSC, source)
+		return 0, cpuErrorTSCFrequency(msg, nil)
+	}
+
 	startTime := time.Now()
 	startTSC := RDTSC()
-
-	time.Sleep(duration)
-
+	time.Sleep(CalibrationTime)
 	endTime := time.Now()
 	endTSC := RDTSC()
 
@@ -227,7 +134,7 @@ func CalcTSCFrequencyFromTimer(duration time.Duration) (int64, error) {
 	// Calculate frequency: ticks per nanosecond * nanoseconds per second
 	// TSC frequency (Hz) = (tsc_ticks / elapsed_ns) * 1_000_000_000
 	if elapsedNs == 0 {
-		return 0, cpuErrorTSCFrequency("AMD", nil)
+		return 0, cpuErrorTSCFrequency("calibration period too short", nil)
 	}
 	return (tscDelta * Billion) / elapsedNs, nil
 }
