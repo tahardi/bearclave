@@ -1,6 +1,9 @@
 package clock
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"time"
+)
 
 const (
 	Million = 1_000_000
@@ -8,6 +11,8 @@ const (
 
 	AMD   = "AuthenticAMD"
 	Intel = "GenuineIntel"
+
+	CalibrationTime = 100 * time.Millisecond
 
 	InvariantBit        = 1 << 8
 	InvariantTscLeafEax = 0x80000007
@@ -26,6 +31,9 @@ func CPUID(eax, ecx uint32) (reax, rebx, recx, redx uint32)
 
 //go:nosplit
 func RDTSC() int64
+
+//go:nosplit
+func RDMSR(msr uint32) uint64
 
 func CheckTSCInvariant() bool {
 	_, _, _, edx := CPUID(InvariantTscLeafEax, InvariantTscLeafEcx)
@@ -80,24 +88,40 @@ func GetTSCFrequencyIntel() (int64, error) {
 	return int64(baseFreqMHz) * Million, nil
 }
 
-// GetTSCFrequencyAMD Below are notes from AMD Family 17h Processors Models
-// 00h-2Fh reference manual.
-//
-// MSRC001_0015 bit 24 TSCFreqSel. 1=TSC increments at P0 freq
-// Bit 21 - LockTSCToCurrentP0, 0=TSC increments at P0, 1=TSC increments at
-// P0 and will never change from this point forward even if P0 does
-// Core::X86::Msr::MPERF and Msr::APERF
-// 1. Write 0 to Msr::MPERF and Msr::APERF
-// 2. wait for a bit
-// 3. Read Msr::MPERF and Msr::APERF
-// 4. P0 frequency = Msr::APERF / Msr::MPERF
-// MSR0000_0010 TSC 0:63 bits contain the TSC value
-// MSR0000_00E7 Max Performance Frequency Clock Count (MPERF)
-// MSR0000_00E8 Actual Performance Frequency Clock Count (APERF)
+// GetTSCFrequencyAMD returns the Time Stamp Counter (TSC) frequency in Hz.
+// If the TSC is not invariant, an error is returned because that means it is
+// not guaranteed to increase at a constant rate. Unfortunately, AMD does not
+// provide TSC or processor frequency info via CPUID. Instead, they track that
+// information in MSRs, which require root privileges to read. Attempting to
+// read MSRs without root privileges will cause a panic. So, we calculate the
+// TSC frequency by using the system time as a reference. This is exactly
+// what we were hoping to avoid, as we consider the system time to be untrusted.
 func GetTSCFrequencyAMD() (int64, error) {
 	if !CheckTSCInvariant() {
 		return 0, cpuErrorTSCNotInvariant("", nil)
 	}
 
-	return 0, cpuErrorVendor("AMD", nil)
+	return CalcTSCFrequencyFromTimer(CalibrationTime)
+}
+
+// CalcTSCFrequencyFromTimer calculates the TSC frequency by measuring the number
+// of TSC ticks over a known time period.
+func CalcTSCFrequencyFromTimer(duration time.Duration) (int64, error) {
+	startTime := time.Now()
+	startTSC := RDTSC()
+
+	time.Sleep(duration)
+
+	endTime := time.Now()
+	endTSC := RDTSC()
+
+	elapsedNs := endTime.Sub(startTime).Nanoseconds()
+	tscDelta := endTSC - startTSC
+
+	// Calculate frequency: ticks per nanosecond * nanoseconds per second
+	// TSC frequency (Hz) = (tsc_ticks / elapsed_ns) * 1_000_000_000
+	if elapsedNs == 0 {
+		return 0, cpuErrorTSCFrequency("AMD", nil)
+	}
+	return (tscDelta * Billion) / elapsedNs, nil
 }

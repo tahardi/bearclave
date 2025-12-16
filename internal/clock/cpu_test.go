@@ -9,10 +9,6 @@ import (
 
 func TestGetTSCFrequency(t *testing.T) {
 	vendor := clock.GetVendor()
-	if vendor != clock.Intel {
-		return
-	}
-
 	t.Run("happy path - "+vendor, func(t *testing.T) {
 		frequency, err := clock.GetTSCFrequency()
 		require.NoError(t, err)
