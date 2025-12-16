@@ -115,17 +115,17 @@ func GetTSCFrequencyAMD() (int64, error) {
 	// TODO: I don't know if reading this MSR requires root privileges. If not,
 	// you could read the TSC frequency from it.
 	// Guests may read GUEST_TSC_FREQ from MSR (C001_0134h) to get freq in MHz
-	//scalingInfo, err := readTSCScalingFromMSR()
-	//if err != nil {
-	//	return 0, err
-	//}
-	//
-	//fmt.Printf("Read scaling info: %x, %x\n", scalingInfo.Scale, scalingInfo.Offset)
-	freq, err := readTSCFrequencyFromMSR()
+	scalingInfo, err := readTSCScalingFromMSR()
 	if err != nil {
 		return 0, err
 	}
-	fmt.Printf("Read MSR freq: %d\n", freq)
+
+	fmt.Printf("Read scaling info: %x, %x\n", scalingInfo.Scale, scalingInfo.Offset)
+	//freq, err := readTSCFrequencyFromMSR()
+	//if err != nil {
+	//	return 0, err
+	//}
+	//fmt.Printf("Read MSR freq: %d\n", freq)
 	return CalcTSCFrequencyFromTimer(CalibrationTime)
 }
 
@@ -149,6 +149,19 @@ func readTSCScalingFromMSR() (*TSCScalingInfo, error) {
 	}
 	defer file.Close()
 
+	_, err = file.Seek(AmdGuestTscFrequencyMsr, 0)
+	if err != nil {
+		return nil, cpuErrorTSCFrequency("seeking to MSR_GUEST_TSC_FREQ", err)
+	}
+
+	freqBuffer := make([]byte, 8)
+	n, err := file.Read(freqBuffer)
+	if err != nil || n != 8 {
+		return nil, cpuErrorTSCFrequency("reading MSR_GUEST_TSC_FREQ", err)
+	}
+	freq := binary.LittleEndian.Uint64(freqBuffer)
+	fmt.Printf("MSR freq: %d\n", freq)
+
 	_, err = file.Seek(AmdGuestTscScaleOffset, 0)
 	if err != nil {
 		return nil, cpuErrorTSCFrequency("seeking to GUEST_TSC_SCALE", err)
@@ -156,7 +169,7 @@ func readTSCScalingFromMSR() (*TSCScalingInfo, error) {
 
 	// GUEST_TSC_SCALE - 8.32 fixed point binary number (8-bit int, 32-bit fraction)
 	scaleBuffer := make([]byte, 8)
-	n, err := file.Read(scaleBuffer)
+	n, err = file.Read(scaleBuffer)
 	if err != nil || n != 8 {
 		return nil, cpuErrorTSCFrequency("reading GUEST_TSC_SCALE", err)
 	}
