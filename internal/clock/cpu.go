@@ -115,12 +115,17 @@ func GetTSCFrequencyAMD() (int64, error) {
 	// TODO: I don't know if reading this MSR requires root privileges. If not,
 	// you could read the TSC frequency from it.
 	// Guests may read GUEST_TSC_FREQ from MSR (C001_0134h) to get freq in MHz
-	scalingInfo, err := readTSCScalingFromMSR()
+	//scalingInfo, err := readTSCScalingFromMSR()
+	//if err != nil {
+	//	return 0, err
+	//}
+	//
+	//fmt.Printf("Read scaling info: %x, %x\n", scalingInfo.Scale, scalingInfo.Offset)
+	freq, err := readTSCFrequencyFromMSR()
 	if err != nil {
 		return 0, err
 	}
-
-	fmt.Printf("Read scaling info: %x, %x\n", scalingInfo.Scale, scalingInfo.Offset)
+	fmt.Printf("Read MSR freq: %d\n", freq)
 	return CalcTSCFrequencyFromTimer(CalibrationTime)
 }
 
