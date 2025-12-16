@@ -2,6 +2,8 @@ package clock
 
 import (
 	"encoding/binary"
+	"fmt"
+	"os"
 	"time"
 )
 
@@ -24,6 +26,12 @@ const (
 	VendorLeafEax       = 0
 	VendorLeafEcx       = 0
 	VendorLength        = 12
+
+	AmdGuestTscScaleOffset  = 0x2F0
+	AmdGuestTscOffsetOffset = 0x2F8
+	AmdSevFeaturesOffset    = 0x3B0
+	AmdSecureTscEnabledBit  = 1 << 11 //Pg.750 arch. progr. man.
+	AmdGuestTscFrequencyMsr = 0xC0010134
 )
 
 //go:nosplit
@@ -101,8 +109,84 @@ func GetTSCFrequencyAMD() (int64, error) {
 		return 0, cpuErrorTSCNotInvariant("", nil)
 	}
 
+	// TODO: Consider checking SEV_FEATURES for SecureTSC enabled
+	// SEV_FEATURES_OFFSET = 0x3B0h - bit 11 SecureTSC. Pg.750 arch. progr. man.
+
+	// TODO: I don't know if reading this MSR requires root privileges. If not,
+	// you could read the TSC frequency from it.
+	// Guests may read GUEST_TSC_FREQ from MSR (C001_0134h) to get freq in MHz
+	scalingInfo, err := readTSCScalingFromMSR()
+	if err != nil {
+		return 0, err
+	}
+
+	fmt.Printf("Read scaling info: %x, %x\n", scalingInfo.Scale, scalingInfo.Offset)
 	return CalcTSCFrequencyFromTimer(CalibrationTime)
 }
+
+func readTSCFrequencyFromMSR() (uint64, error) {
+	return RDMSR(AmdGuestTscFrequencyMsr), nil
+}
+
+// TSCScalingInfo holds the TSC scaling parameters from /dev/cpu/CPUID/msr
+type TSCScalingInfo struct {
+	Scale  uint64 // GUEST_TSC_SCALE: 32-bit scale factor (high 32 bits of 64-bit MSR)
+	Offset uint64  // GUEST_TSC_OFFSET: 64-bit offset
+}
+
+// Pg. 749 AMD64 Architecture Programmer's Manual Vol 2: System Programming (24593)
+// specifies where the GUEST_TSC_SCALE and GUEST_TSC_OFFSET values are located
+// in VMSA layout.
+func readTSCScalingFromMSR() (*TSCScalingInfo, error) {
+	file, err := os.Open("/dev/cpu/0/msr")
+	if err != nil {
+		return nil, cpuErrorTSCFrequency("opening /dev/cpu/0/msr", err)
+	}
+	defer file.Close()
+
+	_, err = file.Seek(AmdGuestTscScaleOffset, 0)
+	if err != nil {
+		return nil, cpuErrorTSCFrequency("seeking to GUEST_TSC_SCALE", err)
+	}
+
+	// GUEST_TSC_SCALE - 8.32 fixed point binary number (8-bit int, 32-bit fraction)
+	scaleBuffer := make([]byte, 8)
+	n, err := file.Read(scaleBuffer)
+	if err != nil || n != 8 {
+		return nil, cpuErrorTSCFrequency("reading GUEST_TSC_SCALE", err)
+	}
+
+	_, err = file.Seek(AmdGuestTscOffsetOffset, 0)
+	if err != nil {
+		return nil, cpuErrorTSCFrequency("seeking to GUEST_TSC_OFFSET", err)
+	}
+
+	offsetBuffer := make([]byte, 8)
+	n, err = file.Read(offsetBuffer)
+	if err != nil || n != 8 {
+		return nil, cpuErrorTSCFrequency("reading GUEST_TSC_OFFSET", err)
+	}
+
+	_, err = file.Seek(AmdSevFeaturesOffset, 0)
+	if err != nil {
+		return nil, cpuErrorTSCFrequency("seeking to SEV_FEATURES", err)
+	}
+
+	featuresBuffer := make([]byte, 8)
+	n, err = file.Read(featuresBuffer)
+	if err != nil || n != 8 {
+		return nil, cpuErrorTSCFrequency("reading SEV_FEATURES", err)
+	}
+
+	scale := binary.LittleEndian.Uint64(scaleBuffer)
+	offset := binary.LittleEndian.Uint64(offsetBuffer)
+	features := binary.LittleEndian.Uint64(featuresBuffer)
+	if features&AmdSecureTscEnabledBit == 0 {
+		return nil, cpuErrorTSCFrequency("SEV SecureTSC not enabled", nil)
+	}
+	return &TSCScalingInfo{Scale: scale, Offset: offset}, nil
+}
+
 
 // CalcTSCFrequencyFromTimer calculates the TSC frequency by measuring the number
 // of TSC ticks over a known time period.
