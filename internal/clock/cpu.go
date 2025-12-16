@@ -1,11 +1,8 @@
 package clock
 
 import (
-	"bufio"
 	"encoding/binary"
-	"os"
-	"strconv"
-	"strings"
+	"time"
 )
 
 const (
@@ -14,6 +11,8 @@ const (
 
 	AMD   = "AuthenticAMD"
 	Intel = "GenuineIntel"
+
+	CalibrationTime = 100 * time.Millisecond
 
 	InvariantBit        = 1 << 8
 	InvariantTscLeafEax = 0x80000007
@@ -94,49 +93,35 @@ func GetTSCFrequencyIntel() (int64, error) {
 // not guaranteed to increase at a constant rate. Unfortunately, AMD does not
 // provide TSC or processor frequency info via CPUID. Instead, they track that
 // information in MSRs, which require root privileges to read. Attempting to
-// read MSRs without root privileges will cause a panic. So, we attempt to
-// parse the frequency from /proc/cpuinfo instead. It is both brittle and
-// insecure, but we have no other solutions at the moment.
+// read MSRs without root privileges will cause a panic. So, we calculate the
+// TSC frequency by using the system time as a reference. This is exactly
+// what we were hoping to avoid, as we consider the system time to be untrusted.
 func GetTSCFrequencyAMD() (int64, error) {
 	if !CheckTSCInvariant() {
 		return 0, cpuErrorTSCNotInvariant("", nil)
 	}
 
-	return parseProcCPUInfo()
+	return CalcTSCFrequencyFromTimer(CalibrationTime)
 }
 
-func parseProcCPUInfo() (int64, error) {
-	file, err := os.Open("/proc/cpuinfo")
-	if err != nil {
-		return 0, cpuErrorTSCFrequency("procinfo open", err)
+// CalcTSCFrequencyFromTimer calculates the TSC frequency by measuring the number
+// of TSC ticks over a known time period.
+func CalcTSCFrequencyFromTimer(duration time.Duration) (int64, error) {
+	startTime := time.Now()
+	startTSC := RDTSC()
+
+	time.Sleep(duration)
+
+	endTime := time.Now()
+	endTSC := RDTSC()
+
+	elapsedNs := endTime.Sub(startTime).Nanoseconds()
+	tscDelta := endTSC - startTSC
+
+	// Calculate frequency: ticks per nanosecond * nanoseconds per second
+	// TSC frequency (Hz) = (tsc_ticks / elapsed_ns) * 1_000_000_000
+	if elapsedNs == 0 {
+		return 0, cpuErrorTSCFrequency("AMD", nil)
 	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if strings.Contains(line, "cpu MHz") {
-			parts := strings.Split(line, ":")
-			if len(parts) != 2 {
-				continue
-			}
-
-			freqStr := strings.TrimSpace(parts[1])
-			freqMHz, err := strconv.ParseFloat(freqStr, 64)
-			if err != nil {
-				continue
-			}
-
-			freqHz := int64(freqMHz * float64(Million))
-			if freqHz > 0 {
-				return freqHz, nil
-			}
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return 0, cpuErrorTSCFrequency("procinfo scan", err)
-	}
-	return 0, cpuErrorTSCFrequency("procinfo parse", nil)
+	return (tscDelta * Billion) / elapsedNs, nil
 }
