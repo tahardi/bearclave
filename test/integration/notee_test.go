@@ -55,19 +55,20 @@ func TestIntegration_NoTEE(t *testing.T) {
 	defer proxyServer.Close()
 
 	client := tee.NewClient("http://127.0.0.1:8080")
+	nonce := []byte("nonce")
 	want := []byte("hello world")
 
 	// when
 	runService(func() { _ = server.ListenAndServe() }, 100*time.Millisecond)
 	runService(func() { _ = proxyServer.ListenAndServe() }, 100*time.Millisecond)
-	attestation, err := client.AttestUserData(ctx, want)
+	attestation, err := client.Attest(ctx, nonce, want)
 	require.NoError(t, err)
 
 	// then
 	verifier, err := bearclave.NewVerifier(platform)
 	require.NoError(t, err)
 
-	got, err := verifier.Verify(attestation)
+	got, err := verifier.Verify(attestation, bearclave.WithVerifyNonce(nonce))
 	require.NoError(t, err)
 	require.Equal(t, want, got.UserData)
 }

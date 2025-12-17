@@ -2,6 +2,7 @@ package tee_test
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -37,6 +38,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		data := []byte("hello world")
+		nonce := []byte("nonce")
 		attestation := &bearclave.AttestResult{Report: []byte("attestation")}
 		attester := mocks.NewAttester(t)
 		attester.
@@ -47,7 +49,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := tee.AttestRequest{Data: data}
+		body := tee.AttestRequest{Nonce: nonce, UserData: data}
 		req := makeRequest(t, "POST", tee.AttestPath, body)
 
 		handler := tee.MakeAttestHandler(attester, logger)
@@ -57,7 +59,8 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Contains(t, logBuffer.String(), string(data))
+		assert.Contains(t, logBuffer.String(), base64.StdEncoding.EncodeToString(nonce))
+		assert.Contains(t, logBuffer.String(), base64.StdEncoding.EncodeToString(data))
 
 		response := tee.AttestResponse{}
 		err := json.NewDecoder(recorder.Body).Decode(&response)
@@ -90,6 +93,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 	t.Run("error - attesting userdata", func(t *testing.T) {
 		// given
 		data := []byte("hello world")
+		nonce := []byte("nonce")
 		attester := mocks.NewAttester(t)
 		attester.
 			On("Attest", mock.AnythingOfType("[]attestation.AttestOption")).
@@ -99,7 +103,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := tee.AttestRequest{Data: data}
+		body := tee.AttestRequest{Nonce: nonce, UserData: data}
 		req := makeRequest(t, "POST", tee.AttestPath, body)
 
 		handler := tee.MakeAttestHandler(attester, logger)
@@ -109,7 +113,8 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 
 		// then
 		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-		assert.Contains(t, logBuffer.String(), string(data))
-		assert.Contains(t, recorder.Body.String(), "attesting userdata")
+		assert.Contains(t, logBuffer.String(), base64.StdEncoding.EncodeToString(nonce))
+		assert.Contains(t, logBuffer.String(), base64.StdEncoding.EncodeToString(data))
+		assert.Contains(t, recorder.Body.String(), "attesting")
 	})
 }

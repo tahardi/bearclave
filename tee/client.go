@@ -38,11 +38,12 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) AttestUserData(
+func (c *Client) Attest(
 	ctx context.Context,
-	data []byte,
+	nonce []byte,
+	userData []byte,
 ) (*bearclave.AttestResult, error) {
-	attestUserDataRequest := AttestRequest{Data: data}
+	attestUserDataRequest := AttestRequest{Nonce: nonce, UserData: userData}
 	attestUserDataResponse := AttestResponse{}
 	err := c.Do(
 		ctx,
@@ -52,7 +53,7 @@ func (c *Client) AttestUserData(
 		&attestUserDataResponse,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("doing attest userdata request: %w", err)
+		return nil, fmt.Errorf("doing attest request: %w", err)
 	}
 	return attestUserDataResponse.Attestation, nil
 }

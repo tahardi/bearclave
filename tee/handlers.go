@@ -1,6 +1,7 @@
 package tee
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -12,7 +13,8 @@ import (
 const AttestPath = "/attest"
 
 type AttestRequest struct {
-	Data []byte `json:"data"`
+	Nonce    []byte `json:"nonce,omitempty"`
+	UserData []byte `json:"userdata,omitempty"`
 }
 type AttestResponse struct {
 	Attestation *bearclave.AttestResult `json:"attestation"`
@@ -31,12 +33,16 @@ func MakeAttestHandler(
 		}
 
 		logger.Info(
-			"attesting userdata",
-			slog.String("userdata", string(req.Data)),
+			"attesting",
+			slog.String("nonce", base64.StdEncoding.EncodeToString(req.Nonce)),
+			slog.String("userdata", base64.StdEncoding.EncodeToString(req.UserData)),
 		)
-		att, err := attester.Attest(bearclave.WithAttestUserData(req.Data))
+		att, err := attester.Attest(
+			bearclave.WithAttestNonce(req.Nonce),
+			bearclave.WithAttestUserData(req.UserData),
+		)
 		if err != nil {
-			WriteError(w, fmt.Errorf("attesting userdata: %w", err))
+			WriteError(w, fmt.Errorf("attesting: %w", err))
 			return
 		}
 		WriteResponse(w, AttestResponse{Attestation: att})
