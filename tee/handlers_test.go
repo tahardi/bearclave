@@ -47,10 +47,10 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := tee.AttestUserDataRequest{Data: data}
-		req := makeRequest(t, "POST", tee.AttestUserDataPath, body)
+		body := tee.AttestRequest{Data: data}
+		req := makeRequest(t, "POST", tee.AttestPath, body)
 
-		handler := tee.MakeAttestUserDataHandler(attester, logger)
+		handler := tee.MakeAttestHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -59,7 +59,7 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Contains(t, logBuffer.String(), string(data))
 
-		response := tee.AttestUserDataResponse{}
+		response := tee.AttestResponse{}
 		err := json.NewDecoder(recorder.Body).Decode(&response)
 		require.NoError(t, err)
 		assert.Equal(t, attestation, response.Attestation)
@@ -74,9 +74,9 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 		body := []byte("invalid json")
-		req := makeRequest(t, "POST", tee.AttestUserDataPath, body)
+		req := makeRequest(t, "POST", tee.AttestPath, body)
 
-		handler := tee.MakeAttestUserDataHandler(attester, logger)
+		handler := tee.MakeAttestHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -99,10 +99,10 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := tee.AttestUserDataRequest{Data: data}
-		req := makeRequest(t, "POST", tee.AttestUserDataPath, body)
+		body := tee.AttestRequest{Data: data}
+		req := makeRequest(t, "POST", tee.AttestPath, body)
 
-		handler := tee.MakeAttestUserDataHandler(attester, logger)
+		handler := tee.MakeAttestHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)

@@ -9,21 +9,21 @@ import (
 	"github.com/tahardi/bearclave"
 )
 
-const AttestUserDataPath = "/attest-user-data"
+const AttestPath = "/attest"
 
-type AttestUserDataRequest struct {
+type AttestRequest struct {
 	Data []byte `json:"data"`
 }
-type AttestUserDataResponse struct {
+type AttestResponse struct {
 	Attestation *bearclave.AttestResult `json:"attestation"`
 }
 
-func MakeAttestUserDataHandler(
+func MakeAttestHandler(
 	attester bearclave.Attester,
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := AttestUserDataRequest{}
+		req := AttestRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("decoding request: %w", err))
@@ -39,7 +39,7 @@ func MakeAttestUserDataHandler(
 			WriteError(w, fmt.Errorf("attesting userdata: %w", err))
 			return
 		}
-		WriteResponse(w, AttestUserDataResponse{Attestation: att})
+		WriteResponse(w, AttestResponse{Attestation: att})
 	}
 }
 

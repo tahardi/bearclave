@@ -39,14 +39,14 @@ func TestClient_AttestUserData(t *testing.T) {
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Contains(t, r.URL.Path, tee.AttestUserDataPath)
+			assert.Contains(t, r.URL.Path, tee.AttestPath)
 
-			req := tee.AttestUserDataRequest{}
+			req := tee.AttestRequest{}
 			err := json.NewDecoder(r.Body).Decode(&req)
 			assert.NoError(t, err)
 			assert.Equal(t, data, req.Data)
 
-			resp := tee.AttestUserDataResponse{Attestation: want}
+			resp := tee.AttestResponse{Attestation: want}
 			writeResponse(t, w, resp)
 		})
 

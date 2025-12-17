@@ -34,8 +34,8 @@ func TestIntegration_NoTEE(t *testing.T) {
 	discardLogger := slog.New(slog.DiscardHandler)
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
-		"POST "+tee.AttestUserDataPath,
-		tee.MakeAttestUserDataHandler(attester, discardLogger),
+		"POST "+tee.AttestPath,
+		tee.MakeAttestHandler(attester, discardLogger),
 	)
 
 	serverAddr := "http://127.0.0.1:8081"

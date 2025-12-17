@@ -6,17 +6,9 @@ import (
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
-var (
-	ErrDialContext    = networking.ErrDialContext
-	WithDialControl   = networking.WithDialControl
-	WithDialKeepAlive = networking.WithDialKeepAlive
-	WithDialLocalAddr = networking.WithDialLocalAddr
-	WithDialTimeout   = networking.WithDialTimeout
-)
+var ErrDialContext = networking.ErrDialContext
 
 type DialContext = networking.DialContext
-type DialerOption = networking.DialerOption
-type DialerOptions = networking.DialerOptions
 
 func NewDialContext(
 	platform Platform,
@@ -35,3 +27,13 @@ func NewDialContext(
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
+
+type DialerOption = networking.DialerOption
+type DialerOptions = networking.DialerOptions
+
+var (
+	WithDialControl   = networking.WithDialControl
+	WithDialKeepAlive = networking.WithDialKeepAlive
+	WithDialLocalAddr = networking.WithDialLocalAddr
+	WithDialTimeout   = networking.WithDialTimeout
+)

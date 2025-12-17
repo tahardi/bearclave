@@ -9,15 +9,9 @@ import (
 var (
 	ErrAttester                = attestation.ErrAttester
 	ErrAttesterUserDataTooLong = attestation.ErrAttesterUserDataTooLong
-	WithAttestNonce            = attestation.WithAttestNonce
-	WithAttestPublicKey        = attestation.WithAttestPublicKey
-	WithAttestUserData         = attestation.WithAttestUserData
 )
 
 type Attester = attestation.Attester
-type AttestResult = attestation.AttestResult
-type AttestOption = attestation.AttestOption
-type AttestOptions = attestation.AttestOptions
 
 func NewAttester(platform Platform) (Attester, error) {
 	switch platform {
@@ -33,3 +27,13 @@ func NewAttester(platform Platform) (Attester, error) {
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
+
+type AttestResult = attestation.AttestResult
+type AttestOption = attestation.AttestOption
+type AttestOptions = attestation.AttestOptions
+
+var (
+	WithAttestNonce     = attestation.WithAttestNonce
+	WithAttestPublicKey = attestation.WithAttestPublicKey
+	WithAttestUserData  = attestation.WithAttestUserData
+)

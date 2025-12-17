@@ -12,16 +12,9 @@ var (
 	ErrVerifierMeasurement = attestation.ErrVerifierMeasurement
 	ErrVerifierNonce       = attestation.ErrVerifierNonce
 	ErrVerifierTimestamp   = attestation.ErrVerifierTimestamp
-	WithVerifyDebug        = attestation.WithVerifyDebug
-	WithVerifyMeasurement  = attestation.WithVerifyMeasurement
-	WithVerifyTimestamp    = attestation.WithVerifyTimestamp
-	WithVerifyNonce        = attestation.WithVerifyVerifyNonce
 )
 
 type Verifier = attestation.Verifier
-type VerifyResult = attestation.VerifyResult
-type VerifyOption = attestation.VerifyOption
-type VerifyOptions = attestation.VerifyOptions
 
 func NewVerifier(platform Platform) (Verifier, error) {
 	switch platform {
@@ -37,3 +30,14 @@ func NewVerifier(platform Platform) (Verifier, error) {
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
 	}
 }
+
+type VerifyResult = attestation.VerifyResult
+type VerifyOption = attestation.VerifyOption
+type VerifyOptions = attestation.VerifyOptions
+
+var (
+	WithVerifyDebug       = attestation.WithVerifyDebug
+	WithVerifyMeasurement = attestation.WithVerifyMeasurement
+	WithVerifyTimestamp   = attestation.WithVerifyTimestamp
+	WithVerifyNonce       = attestation.WithVerifyVerifyNonce
+)

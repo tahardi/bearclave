@@ -42,12 +42,12 @@ func (c *Client) AttestUserData(
 	ctx context.Context,
 	data []byte,
 ) (*bearclave.AttestResult, error) {
-	attestUserDataRequest := AttestUserDataRequest{Data: data}
-	attestUserDataResponse := AttestUserDataResponse{}
+	attestUserDataRequest := AttestRequest{Data: data}
+	attestUserDataResponse := AttestResponse{}
 	err := c.Do(
 		ctx,
 		"POST",
-		AttestUserDataPath,
+		AttestPath,
 		attestUserDataRequest,
 		&attestUserDataResponse,
 	)
