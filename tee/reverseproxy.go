@@ -7,19 +7,17 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
-
-	"github.com/tahardi/bearclave"
 )
 
 func NewReverseProxy(
 	ctx context.Context,
-	platform bearclave.Platform,
+	platform Platform,
 	network string,
 	proxyAddr string,
 	targetAddr string,
 	route string,
 ) (*Server, error) {
-	dialer, err := bearclave.NewDialContext(platform)
+	dialer, err := NewDialContext(platform)
 	if err != nil {
 		return nil, fmt.Errorf("creating dialer: %w", err)
 	}
@@ -36,8 +34,8 @@ func NewReverseProxy(
 
 func NewReverseProxyWithDialContext(
 	ctx context.Context,
-	platform bearclave.Platform,
-	dialContext bearclave.DialContext,
+	platform Platform,
+	dialContext DialContext,
 	network string,
 	proxyAddr string,
 	targetAddr string,

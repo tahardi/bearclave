@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/mocks"
 	"github.com/tahardi/bearclave/tee"
 )
@@ -21,7 +20,7 @@ func TestSocketRoundTrip(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "unix"
 
 		addr1 := "127.0.0.1:8080"
@@ -49,7 +48,7 @@ func TestSocketRoundTrip(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		addr1 := "127.0.0.1:8080"
 		socket1, err := tee.NewSocket(ctx, platform, network, addr1)
@@ -78,12 +77,12 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		addr := "127.0.0.1:8080"
 
 		connTimeout := tee.DefaultConnTimeout
-		dialContext, err := bearclave.NewDialContext(platform)
+		dialContext, err := tee.NewDialContext(platform)
 		require.NoError(t, err)
 
 		socket, err := tee.NewSocket(ctx, platform, network, addr)
@@ -101,7 +100,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		addr := "127.0.0.1:8080"
 
@@ -125,7 +124,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		ctx := context.Background()
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		addr := "127.0.0.1:8080"
 
@@ -153,7 +152,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		ctx := context.Background()
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		addr := "127.0.0.1:8080"
 
@@ -181,7 +180,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		addr := "127.0.0.1:8080"
 
@@ -209,7 +208,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		// given
 		ctx := context.Background()
 		want := []byte("hello world")
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		addr := "127.0.0.1:8080"
 
@@ -220,7 +219,7 @@ func TestSocket_SendWithDialContext(t *testing.T) {
 		dialContext := func(c context.Context, network string, addr string) (net.Conn, error) {
 			// Make sure "establishing the connection" takes longer than connTimeout
 			time.Sleep(connTimeout * 2)
-			dc, err := bearclave.NewDialContext(platform)
+			dc, err := tee.NewDialContext(platform)
 			require.NoError(t, err)
 			return dc(c, network, addr)
 		}
@@ -243,7 +242,7 @@ func TestSocket_Receive(t *testing.T) {
 		// given
 		ctx := context.Background()
 		network := "tcp"
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 
 		listener := mocks.NewListener(t)
 		listener.On("Accept").Return(nil, assert.AnError)
@@ -266,7 +265,7 @@ func TestSocket_Receive(t *testing.T) {
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		network := "tcp"
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 
 		conn := mocks.NewConn(t)
 		conn.On("Read", mock.Anything).Return(len(wantB64), assert.AnError)
@@ -292,7 +291,7 @@ func TestSocket_Receive(t *testing.T) {
 		ctx := context.Background()
 		want := []byte("hello world")
 		network := "tcp"
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 
 		conn := mocks.NewConn(t)
 		conn.On("Read", mock.Anything).Return(len(want), nil).Once()
@@ -320,7 +319,7 @@ func TestSocket_Receive(t *testing.T) {
 		want := []byte("hello world")
 		wantB64 := base64.StdEncoding.EncodeToString(want)
 		network := "tcp"
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 
 		conn := mocks.NewConn(t)
 		conn.On("Read", mock.Anything).Return(len(wantB64), nil).Maybe()

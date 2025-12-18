@@ -1,8 +1,6 @@
 package bearclave
 
 import (
-	"fmt"
-
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
@@ -13,20 +11,12 @@ var (
 
 type Attester = attestation.Attester
 
-func NewAttester(platform Platform) (Attester, error) {
-	switch platform {
-	case Nitro:
-		return attestation.NewNitroAttester()
-	case SEV:
-		return attestation.NewSEVAttester()
-	case TDX:
-		return attestation.NewTDXAttester()
-	case NoTEE:
-		return attestation.NewNoTEEAttester()
-	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
-	}
-}
+var (
+	NewNitroAttester = attestation.NewNitroAttester
+	NewSEVAttester   = attestation.NewSEVAttester
+	NewTDXAttester   = attestation.NewTDXAttester
+	NewNoTEEAttester = attestation.NewNoTEEAttester
+)
 
 type AttestResult = attestation.AttestResult
 type AttestOption = attestation.AttestOption

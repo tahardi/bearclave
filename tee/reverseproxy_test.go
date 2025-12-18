@@ -10,7 +10,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 )
 
@@ -25,7 +24,7 @@ func TestReverseProxy(t *testing.T) {
 		defer backend.Close()
 
 		ctx := context.Background()
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		proxyAddr := "http://127.0.0.1:8080"
 		targetAddr := backend.URL
@@ -51,7 +50,7 @@ func TestReverseProxy(t *testing.T) {
 	t.Run("error - dialing target", func(t *testing.T) {
 		// given
 		ctx := context.Background()
-		platform := bearclave.NoTEE
+		platform := tee.NoTEE
 		network := "tcp"
 		proxyAddr := "http://127.0.0.1:8080"
 		targetAddr := "http://127.0.0.1:8081"
