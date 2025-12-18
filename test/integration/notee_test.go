@@ -43,16 +43,14 @@ func TestIntegration_NoTEE(t *testing.T) {
 	require.NoError(t, err)
 	defer server.Close()
 
+	network := "tcp"
+	proxyAddr := "http://127.0.0.1:8080"
 	route := "app/v1"
-	proxy, err := tee.NewReverseProxy(platform, serverAddr, route)
+	proxy, err := tee.NewReverseProxy(
+		ctx, platform, network, proxyAddr, serverAddr, route,
+	)
 	require.NoError(t, err)
-
-	// #nosec G112 - this is just a test server. Ignore security warning
-	proxyServer := &http.Server{
-		Addr:    "0.0.0.0:8080",
-		Handler: proxy,
-	}
-	defer proxyServer.Close()
+	defer proxy.Close()
 
 	client := tee.NewClient("http://127.0.0.1:8080")
 	nonce := []byte("nonce")
@@ -60,7 +58,7 @@ func TestIntegration_NoTEE(t *testing.T) {
 
 	// when
 	runService(func() { _ = server.ListenAndServe() }, 100*time.Millisecond)
-	runService(func() { _ = proxyServer.ListenAndServe() }, 100*time.Millisecond)
+	runService(func() { _ = proxy.ListenAndServe() }, 100*time.Millisecond)
 	attestation, err := client.Attest(ctx, nonce, want)
 	require.NoError(t, err)
 
