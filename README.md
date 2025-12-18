@@ -1,4 +1,4 @@
-# Cloud-Based TEE Development
+# Cloud-Based TEE Development Made Easy
 
 **Trusted Execution Environments (TEEs)** use specialized hardware and software to
 provide stronger confidentiality and integrity guarantees than what is afforded
@@ -21,9 +21,27 @@ TEE-based applications.
 
 Running cloud-based TEE applications is not free. AWS and GCP TEE
 compute instances typically cost between $0.20 to $0.50 per hour.
-Fortunately, Bearclave provides a _No TEE_ mode that allows you to develop
-and test applications locally. Using this mode, you should be able to
-prototype and test TEE applications for just a few dollars a month.
+Fortunately, Bearclave provides a _NoTEE_ mode that allows you to develop
+and test applications locally. By limiting your cloud usage with _NoTEE_ you
+should be able to prototype and test TEE applications for just a few dollars
+a month.
+
+## Project Structure
+
+The Bearclave project is split across two repositories:
+- [bearclave](https://github.com/tahardi/bearclave): The core SDK and
+  documentation.
+- [bearclave-examples](https://github.com/tahardi/bearclave-examples): Reference
+  implementations of TEE applications.
+
+The SDK follows a layered architecture:
+- **Low-level Primitives**: Exported at the root `bearclave` package, these
+provide standardized interfaces for hardware-specific TEE features including
+attestation, networking (VSockets/Sockets), and secure timing.
+- **High-level Components**: Located in the `bearclave/tee` package, these build
+upon the primitives to provide platform-agnostic abstractions. They allow
+developers to easily deploy enclave-resident HTTP clients, servers, and reverse
+proxies that work across AWS, GCP, or local development (via _NoTEE_ mode).
 
 ## Getting Started
 
