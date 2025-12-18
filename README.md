@@ -19,20 +19,20 @@ TEE-based applications.
 
 ## Project Structure
 
-The Bearclave project is split across two repositories:
+The Bearclave project repositories are:
 - [bearclave](https://github.com/tahardi/bearclave): The core SDK and
   documentation.
 - [bearclave-examples](https://github.com/tahardi/bearclave-examples): Reference
   implementations of TEE applications.
 
-The SDK follows a layered architecture:
-- **Low-level Primitives** are in the root `bearclave` package, and provide
-  standardized interfaces for hardware-specific TEE features including
-  attestation, networking (VSockets/Sockets), and secure timing.
-- **High-level Components** are in the `bearclave/tee` package, and build
-  upon the primitives to provide platform-agnostic abstractions. They allow
-  developers to easily deploy enclave-resident HTTP clients, servers, and reverse
-  proxies that work across AWS, GCP, or local development (via _NoTEE_ mode).
+The SDK is split into low-level primitives and higher-level components. The
+low-level primitives consist of the code exported at the root of the
+`bearclave` package. These provide standardized interfaces for hardware-specific
+TEE features including attestation, networking (VSockets/Sockets), and secure
+timing. The higher-level components live in the `bearclave/tee` package and are
+built on top of the primitives. They provide platform-agnostic abstractions that
+allow developers to easily deploy enclave-based HTTP clients and servers across
+multiple cloud providers.
 
 ## A Note on Costs
 
