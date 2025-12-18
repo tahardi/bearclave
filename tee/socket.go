@@ -8,25 +8,23 @@ import (
 	"io"
 	"net"
 	"time"
-
-	"github.com/tahardi/bearclave"
 )
 
 const DefaultConnTimeout = 5 * time.Second
 
 type Socket struct {
-	platform bearclave.Platform
+	platform Platform
 	network  string
 	listener net.Listener
 }
 
 func NewSocket(
 	ctx context.Context,
-	platform bearclave.Platform,
+	platform Platform,
 	network string,
 	addr string,
 ) (*Socket, error) {
-	listener, err := bearclave.NewListener(ctx, platform, network, addr)
+	listener, err := NewListener(ctx, platform, network, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +36,7 @@ func NewSocket(
 }
 
 func NewSocketWithListener(
-	platform bearclave.Platform,
+	platform Platform,
 	network string,
 	listener net.Listener,
 ) (*Socket, error) {
@@ -58,7 +56,7 @@ func (s *Socket) Send(
 	addr string,
 	data []byte,
 ) error {
-	dialer, err := bearclave.NewDialContext(s.platform)
+	dialer, err := NewDialContext(s.platform)
 	if err != nil {
 		return fmt.Errorf("creating dialer: %w", err)
 	}
@@ -68,7 +66,7 @@ func (s *Socket) Send(
 func (s *Socket) SendWithDialContext(
 	ctx context.Context,
 	connTimeout time.Duration,
-	dialContext bearclave.DialContext,
+	dialContext DialContext,
 	addr string,
 	data []byte,
 ) error {

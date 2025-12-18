@@ -2,7 +2,6 @@ package tee
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,53 +9,12 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/tahardi/bearclave"
 )
 
 const (
-	AttestPath  = "/attest"
 	ForwardPath = "/"
-
 	DefaultForwardHTTPRequestTimeout = 30 * time.Second
 )
-
-type AttestRequest struct {
-	Nonce    []byte `json:"nonce,omitempty"`
-	UserData []byte `json:"userdata,omitempty"`
-}
-type AttestResponse struct {
-	Attestation *bearclave.AttestResult `json:"attestation"`
-}
-
-func MakeAttestHandler(
-	attester bearclave.Attester,
-	logger *slog.Logger,
-) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		req := AttestRequest{}
-		err := json.NewDecoder(r.Body).Decode(&req)
-		if err != nil {
-			WriteError(w, fmt.Errorf("decoding request: %w", err))
-			return
-		}
-
-		logger.Info(
-			"attesting",
-			slog.String("nonce", base64.StdEncoding.EncodeToString(req.Nonce)),
-			slog.String("userdata", base64.StdEncoding.EncodeToString(req.UserData)),
-		)
-		att, err := attester.Attest(
-			bearclave.WithAttestNonce(req.Nonce),
-			bearclave.WithAttestUserData(req.UserData),
-		)
-		if err != nil {
-			WriteError(w, fmt.Errorf("attesting: %w", err))
-			return
-		}
-		WriteResponse(w, AttestResponse{Attestation: att})
-	}
-}
 
 func MakeForwardHTTPRequestHandler(
 	client *http.Client,

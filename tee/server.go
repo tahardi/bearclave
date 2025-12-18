@@ -7,12 +7,10 @@ import (
 	"net"
 	"net/http"
 	"time"
-
-	"github.com/tahardi/bearclave"
 )
 
 const (
-	Megabyte = 1 << 20
+	Megabyte                 = 1 << 20
 	DefaultReadHeaderTimeout = 10 * time.Second
 	DefaultReadTimeout       = 15 * time.Second
 	DefaultWriteTimeout      = 15 * time.Second
@@ -65,13 +63,13 @@ type Server struct {
 
 func NewServer(
 	ctx context.Context,
-	platform bearclave.Platform,
+	platform Platform,
 	network string,
 	addr string,
 	handler http.Handler,
 	opts ...ServerOption,
 ) (*Server, error) {
-	listener, err := bearclave.NewListener(ctx, platform, network, addr)
+	listener, err := NewListener(ctx, platform, network, addr)
 	if err != nil {
 		return nil, fmt.Errorf("creating listener: %w", err)
 	}
