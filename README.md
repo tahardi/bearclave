@@ -19,13 +19,17 @@ TEE-based applications.
 
 ## Project Structure
 
-The Bearclave project repositories are:
-- `bearclave` - low-level primitives that provide standardized interfaces for
-hardware-specific TEE features including attestation, networking
-(VSockets/Sockets), and secure timing
-- `bearclave/tee` - higher-level components built on top of the primitives.
-These provide platform-agnostic abstractions that allow developers to easily
-deploy enclave-based HTTP clients and servers across multiple cloud providers.
+```text
+.
+├── bearclave/          # Low-level primitives for TEE features (attestation, networking, timing)
+│   ├── docs/           # Documentation on TEE concepts and platforms
+│   ├── internal/       # Platform-specific implementations of low-level primitives
+│   ├── mocks/          # Mocks for testing
+│   ├── modfiles/       # Mod files for go tools (e.g., golangci-lint) used in the project
+│   ├── tee/            # Platform-agnostic abstractions for enclave HTTP clients and servers
+│   └── ...
+└── ...
+```
 
 ## A Note on Costs
 
