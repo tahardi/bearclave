@@ -1,6 +1,7 @@
 package tee
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -11,38 +12,44 @@ import (
 )
 
 func NewReverseProxy(
+	ctx context.Context,
 	platform bearclave.Platform,
+	network string,
+	proxyAddr string,
 	targetAddr string,
 	route string,
-) (*httputil.ReverseProxy, error) {
+) (*Server, error) {
 	dialer, err := bearclave.NewDialContext(platform)
 	if err != nil {
 		return nil, fmt.Errorf("creating dialer: %w", err)
 	}
-	return NewReverseProxyWithDialContext(dialer, targetAddr, route)
+	return NewReverseProxyWithDialContext(
+		ctx,
+		platform,
+		dialer,
+		network,
+		proxyAddr,
+		targetAddr,
+		route,
+	)
 }
 
 func NewReverseProxyWithDialContext(
+	ctx context.Context,
+	platform bearclave.Platform,
 	dialContext bearclave.DialContext,
+	network string,
+	proxyAddr string,
 	targetAddr string,
 	route string,
-) (*httputil.ReverseProxy, error) {
-	transport := &http.Transport{DialContext: dialContext}
-	return NewReverseProxyWithTransport(transport, targetAddr, route)
-}
-
-func NewReverseProxyWithTransport(
-	transport *http.Transport,
-	targetAddr string,
-	route string,
-) (*httputil.ReverseProxy, error) {
+) (*Server, error) {
 	targetURL, err := url.Parse(targetAddr)
 	if err != nil {
 		return nil, fmt.Errorf("parsing target URL: %w", err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
-	proxy.Transport = transport
+	proxy.Transport = &http.Transport{DialContext: dialContext}
 
 	// Customize the Director to strip the path prefix
 	originalDirector := proxy.Director
@@ -50,5 +57,5 @@ func NewReverseProxyWithTransport(
 		originalDirector(req)
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, route)
 	}
-	return proxy, nil
+	return NewServer(ctx, platform, network, proxyAddr, proxy)
 }

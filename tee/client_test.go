@@ -35,18 +35,19 @@ func TestClient_AttestUserData(t *testing.T) {
 		// given
 		ctx := context.Background()
 		data := []byte("hello world")
+		nonce := []byte("nonce")
 		want := &bearclave.AttestResult{Report: []byte("attestation")}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Contains(t, r.URL.Path, tee.AttestUserDataPath)
+			assert.Contains(t, r.URL.Path, tee.AttestPath)
 
-			req := tee.AttestUserDataRequest{}
+			req := tee.AttestRequest{}
 			err := json.NewDecoder(r.Body).Decode(&req)
 			assert.NoError(t, err)
-			assert.Equal(t, data, req.Data)
+			assert.Equal(t, data, req.UserData)
 
-			resp := tee.AttestUserDataResponse{Attestation: want}
+			resp := tee.AttestResponse{Attestation: want}
 			writeResponse(t, w, resp)
 		})
 
@@ -56,17 +57,18 @@ func TestClient_AttestUserData(t *testing.T) {
 		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		got, err := client.AttestUserData(ctx, data)
+		got, err := client.Attest(ctx, nonce, data)
 
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
 
-	t.Run("error - doing attest userdata request", func(t *testing.T) {
+	t.Run("error - doing attest request", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		data := []byte("data")
+		nonce := []byte("nonce")
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			writeError(w, assert.AnError)
@@ -78,11 +80,11 @@ func TestClient_AttestUserData(t *testing.T) {
 		client := tee.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		_, err := client.AttestUserData(ctx, data)
+		_, err := client.Attest(ctx, nonce, data)
 
 		// then
 		require.ErrorIs(t, err, tee.ErrClient)
-		assert.ErrorContains(t, err, "doing attest userdata request")
+		assert.ErrorContains(t, err, "doing attest request")
 	})
 }
 

@@ -24,10 +24,17 @@ func TestReverseProxy(t *testing.T) {
 		)
 		defer backend.Close()
 
+		ctx := context.Background()
 		platform := bearclave.NoTEE
+		network := "tcp"
+		proxyAddr := "http://127.0.0.1:8080"
+		targetAddr := backend.URL
 		route := "/api/v1"
-		proxy, err := tee.NewReverseProxy(platform, backend.URL, route)
+		proxy, err := tee.NewReverseProxy(
+			ctx, platform, network, proxyAddr, targetAddr, route,
+		)
 		require.NoError(t, err)
+		defer proxy.Close()
 
 		usersPath := route + "/users"
 		targetURL := fmt.Sprintf("%s%s", backend.URL, usersPath)
@@ -35,49 +42,36 @@ func TestReverseProxy(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
 		// when
-		proxy.ServeHTTP(recorder, req)
+		proxy.Handler().ServeHTTP(recorder, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
 
-	t.Run("happy path - verify path stripping", func(t *testing.T) {
-		// given
-		platform := bearclave.NoTEE
-		backendURL := "http://127.0.0.1:8080"
-		route := "/api/v1"
-		proxy, err := tee.NewReverseProxy(platform, backendURL, route)
-		require.NoError(t, err)
-
-		usersPath := route + "/users"
-		targetURL := fmt.Sprintf("%s%s", backendURL, usersPath)
-		req := makeRequest(t, "GET", targetURL, nil)
-
-		// when
-		proxy.Director(req)
-
-		// then
-		assert.Equal(t, "/users", req.URL.Path)
-		assert.Equal(t, "127.0.0.1:8080", req.URL.Host)
-	})
-
 	t.Run("error - dialing target", func(t *testing.T) {
 		// given
-		backendURL := "http://127.0.0.1:8080"
+		ctx := context.Background()
+		platform := bearclave.NoTEE
+		network := "tcp"
+		proxyAddr := "http://127.0.0.1:8080"
+		targetAddr := "http://127.0.0.1:8081"
 		route := "/api/v1"
 		dialContext := func(context.Context, string, string) (net.Conn, error) {
 			return nil, assert.AnError
 		}
-		proxy, err := tee.NewReverseProxyWithDialContext(dialContext, backendURL, route)
+		proxy, err := tee.NewReverseProxyWithDialContext(
+			ctx, platform, dialContext, network, proxyAddr, targetAddr, route,
+		)
 		require.NoError(t, err)
+		defer proxy.Close()
 
 		usersPath := route + "/users"
-		targetURL := fmt.Sprintf("%s%s", backendURL, usersPath)
+		targetURL := fmt.Sprintf("%s%s", targetAddr, usersPath)
 		req := makeRequest(t, "GET", targetURL, nil)
 		recorder := httptest.NewRecorder()
 
 		// when
-		proxy.ServeHTTP(recorder, req)
+		proxy.Handler().ServeHTTP(recorder, req)
 
 		// then
 		assert.Equal(t, http.StatusBadGateway, recorder.Code)

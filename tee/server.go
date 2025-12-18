@@ -68,23 +68,23 @@ func NewServer(
 	platform bearclave.Platform,
 	network string,
 	addr string,
-	mux *http.ServeMux,
+	handler http.Handler,
 	opts ...ServerOption,
 ) (*Server, error) {
 	listener, err := bearclave.NewListener(ctx, platform, network, addr)
 	if err != nil {
 		return nil, fmt.Errorf("creating listener: %w", err)
 	}
-	return NewServerWithListener(listener, mux, opts...)
+	return NewServerWithListener(listener, handler, opts...)
 }
 
 func NewServerWithListener(
 	listener net.Listener,
-	mux *http.ServeMux,
+	handler http.Handler,
 	opts ...ServerOption,
 ) (*Server, error) {
 	server := &http.Server{
-		Handler:           mux,
+		Handler:           handler,
 		MaxHeaderBytes:    DefaultMaxHeaderBytes,
 		IdleTimeout:       DefaultIdleTimeout,
 		ReadHeaderTimeout: DefaultReadHeaderTimeout,
@@ -114,6 +114,10 @@ func (s *Server) Close() error {
 		return fmt.Errorf("closing server: %w", err)
 	}
 	return nil
+}
+
+func (s *Server) Handler() http.Handler {
+	return s.server.Handler
 }
 
 func (s *Server) ListenAndServe() error {
