@@ -17,15 +17,6 @@ AMD SEV-SNP, and Intel TDX.
 - **Examples** demonstrating how to write, build, and deploy real-world
 TEE-based applications.
 
-## A Note on Costs
-
-Running cloud-based TEE applications is not free. AWS and GCP TEE
-compute instances typically cost between $0.20 to $0.50 per hour.
-Fortunately, Bearclave provides a _NoTEE_ mode that allows you to develop
-and test applications locally. By limiting your cloud usage with _NoTEE_ you
-should be able to prototype and test TEE applications for just a few dollars
-a month.
-
 ## Project Structure
 
 The Bearclave project is split across two repositories:
@@ -35,13 +26,22 @@ The Bearclave project is split across two repositories:
   implementations of TEE applications.
 
 The SDK follows a layered architecture:
-- **Low-level Primitives**: Exported at the root `bearclave` package, these
-provide standardized interfaces for hardware-specific TEE features including
-attestation, networking (VSockets/Sockets), and secure timing.
-- **High-level Components**: Located in the `bearclave/tee` package, these build
-upon the primitives to provide platform-agnostic abstractions. They allow
-developers to easily deploy enclave-resident HTTP clients, servers, and reverse
-proxies that work across AWS, GCP, or local development (via _NoTEE_ mode).
+- **Low-level Primitives** are in the root `bearclave` package, and provide
+  standardized interfaces for hardware-specific TEE features including
+  attestation, networking (VSockets/Sockets), and secure timing.
+- **High-level Components** are in the `bearclave/tee` package, and build
+  upon the primitives to provide platform-agnostic abstractions. They allow
+  developers to easily deploy enclave-resident HTTP clients, servers, and reverse
+  proxies that work across AWS, GCP, or local development (via _NoTEE_ mode).
+
+## A Note on Costs
+
+Running cloud-based TEE applications is not free. AWS and GCP TEE
+compute instances typically cost between $0.20 to $0.50 per hour.
+Fortunately, Bearclave provides a _NoTEE_ mode that allows you to develop
+and test applications locally. By limiting your cloud usage with _NoTEE_ you
+should be able to prototype and test TEE applications for just a few dollars
+a month.
 
 ## Getting Started
 
