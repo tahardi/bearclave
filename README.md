@@ -21,12 +21,12 @@ TEE-based applications.
 
 ```text
 .
-├── bearclave/          # Low-level primitives for TEE features (attestation, networking, timing)
-│   ├── docs/           # Documentation on TEE concepts and platforms
-│   ├── internal/       # Platform-specific implementations of low-level primitives
-│   ├── mocks/          # Mocks for testing
-│   ├── modfiles/       # Mod files for go tools (e.g., golangci-lint) used in the project
-│   ├── tee/            # Platform-agnostic abstractions for enclave HTTP clients and servers
+├── bearclave/       # Low-level primitives for TEE features (attestation, networking, timing)
+│   ├── docs/        # Documentation on TEE concepts and platforms
+│   ├── internal/    # Platform-specific implementations of low-level primitives
+│   ├── mocks/       # Mocks for testing
+│   ├── modfiles/    # Mod files for go tools (e.g., golangci-lint) used in the project
+│   ├── tee/         # Platform-agnostic abstractions for enclave HTTP clients and servers
 │   └── ...
 └── ...
 ```
