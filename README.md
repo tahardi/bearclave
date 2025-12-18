@@ -20,9 +20,9 @@ TEE-based applications.
 ## Project Structure
 
 The Bearclave project repositories are:
-- [bearclave](https://github.com/tahardi/bearclave): The core SDK and
+- [bearclave](https://github.com/tahardi/bearclave) - the core SDK and
   documentation.
-- [bearclave-examples](https://github.com/tahardi/bearclave-examples): Reference
+- [bearclave-examples](https://github.com/tahardi/bearclave-examples) - reference
   implementations of TEE applications.
 
 The SDK is split into low-level primitives and higher-level components. The
