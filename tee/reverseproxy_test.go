@@ -50,7 +50,6 @@ func TestReverseProxy(t *testing.T) {
 	t.Run("error - dialing target", func(t *testing.T) {
 		// given
 		ctx := context.Background()
-		platform := tee.NoTEE
 		network := "tcp"
 		proxyAddr := "http://127.0.0.1:8080"
 		targetAddr := "http://127.0.0.1:8081"
@@ -59,7 +58,7 @@ func TestReverseProxy(t *testing.T) {
 			return nil, assert.AnError
 		}
 		proxy, err := tee.NewReverseProxyWithDialContext(
-			ctx, platform, dialContext, network, proxyAddr, targetAddr, route,
+			ctx, dialContext, network, proxyAddr, targetAddr, route,
 		)
 		require.NoError(t, err)
 		defer proxy.Close()
