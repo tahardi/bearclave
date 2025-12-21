@@ -3,7 +3,6 @@ package tee
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 
 	"github.com/tahardi/bearclave"
 )
@@ -39,8 +38,7 @@ func NewAttester(platform Platform) (*Attester, error) {
 		}
 		return NewAttesterWithBase(base)
 	default:
-		msg := fmt.Sprintf("%s", platform)
-		return nil, teeErrorUnsupportedPlatform(msg, nil)
+		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
 	}
 }
 
