@@ -34,6 +34,5 @@ type AttestOptions = bearclave.AttestOptions
 
 var (
 	WithAttestNonce     = bearclave.WithAttestNonce
-	WithAttestPublicKey = bearclave.WithAttestPublicKey
 	WithAttestUserData  = bearclave.WithAttestUserData
 )

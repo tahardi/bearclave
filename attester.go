@@ -24,6 +24,5 @@ type AttestOptions = attestation.AttestOptions
 
 var (
 	WithAttestNonce     = attestation.WithAttestNonce
-	WithAttestPublicKey = attestation.WithAttestPublicKey
 	WithAttestUserData  = attestation.WithAttestUserData
 )

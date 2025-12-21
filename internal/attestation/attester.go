@@ -21,12 +21,6 @@ func WithAttestNonce(nonce []byte) AttestOption {
 	}
 }
 
-func WithAttestPublicKey(publicKey []byte) AttestOption {
-	return func(opts *AttestOptions) {
-		opts.publicKey = publicKey
-	}
-}
-
 func WithAttestUserData(userData []byte) AttestOption {
 	return func(opts *AttestOptions) {
 		opts.userData = userData

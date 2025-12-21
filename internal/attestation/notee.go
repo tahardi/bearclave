@@ -32,7 +32,6 @@ type Signature struct {
 type Report struct {
 	Userdata    []byte     `json:"userdata"`
 	Nonce       []byte     `json:"nonce"`
-	PublicKey   []byte     `json:"publickey"`
 	Signature   *Signature `json:"signature"`
 	VerifyKey   *PublicKey `json:"verifykey"`
 	Timestamp   int64      `json:"timestamp"`
@@ -85,7 +84,6 @@ func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 
 	report := Report{
 		Nonce:       opts.nonce,
-		PublicKey:   opts.publicKey,
 		Userdata:    opts.userData,
 		Signature:   signature,
 		VerifyKey:   a.publicKey,
@@ -158,7 +156,6 @@ func (n *NoTEEVerifier) Verify(
 	}
 
 	verifyResult := &VerifyResult{
-		PublicKey: report.PublicKey,
 		UserData:  report.Userdata,
 	}
 	return verifyResult, nil
