@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/go-sev-guest/abi"
 	"github.com/google/go-sev-guest/client"
@@ -22,16 +21,12 @@ func NewSEVAttester() (*SEVAttester, error) {
 }
 
 func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
-	opts := AttestOptions{
-		nonce:     nil,
-		publicKey: nil,
-		userData:  nil,
-	}
+	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > AmdSevMaxUserDataSize {
+	if len(opts.UserData) > AmdSevMaxUserDataSize {
 		msg := fmt.Sprintf(
 			"user data must be %d bytes or less",
 			AmdSevMaxUserDataSize,
@@ -45,8 +40,8 @@ func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	}
 
 	var reportData [64]byte
-	if opts.userData != nil {
-		copy(reportData[:], opts.userData)
+	if opts.UserData != nil {
+		copy(reportData[:], opts.UserData)
 	}
 	quote, err := sevQP.GetRawQuote(reportData)
 	if err != nil {
@@ -65,11 +60,7 @@ func (n *SEVVerifier) Verify(
 	attestResult *AttestResult,
 	options ...VerifyOption,
 ) (*VerifyResult, error) {
-	opts := VerifyOptions{
-		debug:       false,
-		measurement: "",
-		timestamp:   time.Now(),
-	}
+	opts := MakeDefaultVerifyOptions()
 	for _, opt := range options {
 		opt(&opts)
 	}
@@ -80,13 +71,13 @@ func (n *SEVVerifier) Verify(
 	}
 
 	snpOptions := verify.DefaultOptions()
-	snpOptions.Now = opts.timestamp
+	snpOptions.Now = opts.Timestamp
 	err = verify.SnpAttestation(pbReport, snpOptions)
 	if err != nil {
 		return nil, verifierError("verifying sev report", err)
 	}
 
-	err = SEVVerifyMeasurement(opts.measurement, pbReport.GetReport())
+	err = SEVVerifyMeasurement(opts.Measurement, pbReport.GetReport())
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +86,8 @@ func (n *SEVVerifier) Verify(
 	switch {
 	case err != nil:
 		return nil, err
-	case opts.debug != debug:
-		msg := fmt.Sprintf("mode mismatch: expected %t, got %t", opts.debug, debug)
+	case opts.Debug != debug:
+		msg := fmt.Sprintf("mode mismatch: expected %t, got %t", opts.Debug, debug)
 		return nil, verifierErrorDebugMode(msg, nil)
 	}
 

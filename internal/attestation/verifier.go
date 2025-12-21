@@ -15,32 +15,41 @@ type VerifyResult struct {
 
 type VerifyOption func(*VerifyOptions)
 type VerifyOptions struct {
-	debug       bool
-	measurement string
-	nonce       []byte
-	timestamp   time.Time
+	Debug       bool
+	Measurement string
+	Nonce       []byte
+	Timestamp   time.Time
+}
+
+func MakeDefaultVerifyOptions() VerifyOptions {
+	return VerifyOptions{
+		Debug:       false,
+		Measurement: "",
+		Nonce:       nil,
+		Timestamp:   time.Now(),
+	}
 }
 
 func WithVerifyDebug(debug bool) VerifyOption {
 	return func(opts *VerifyOptions) {
-		opts.debug = debug
+		opts.Debug = debug
 	}
 }
 
 func WithVerifyMeasurement(measurement string) VerifyOption {
 	return func(opts *VerifyOptions) {
-		opts.measurement = measurement
+		opts.Measurement = measurement
 	}
 }
 
 func WithVerifyVerifyNonce(nonce []byte) VerifyOption {
 	return func(opts *VerifyOptions) {
-		opts.nonce = nonce
+		opts.Nonce = nonce
 	}
 }
 
 func WithVerifyTimestamp(timestamp time.Time) VerifyOption {
 	return func(opts *VerifyOptions) {
-		opts.timestamp = timestamp
+		opts.Timestamp = timestamp
 	}
 }

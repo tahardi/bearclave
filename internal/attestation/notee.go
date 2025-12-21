@@ -15,8 +15,8 @@ import (
 
 const (
 	NoTeeMaxUserDataSize = 64
-	NoTeeMeasurement    = "Not a TEE platform. Code measurements are not real."
-	NoTeeValidityPeriod = int64(31536000)
+	NoTeeMeasurement     = "Not a TEE platform. Code measurements are not real."
+	NoTeeValidityPeriod  = int64(31536000)
 )
 
 type PublicKey struct {
@@ -59,16 +59,12 @@ func NewNoTEEAttesterWithPrivateKey(
 }
 
 func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
-	opts := AttestOptions{
-		nonce:     nil,
-		publicKey: nil,
-		userData:  nil,
-	}
+	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > NoTeeMaxUserDataSize {
+	if len(opts.UserData) > NoTeeMaxUserDataSize {
 		msg := fmt.Sprintf(
 			"userdata must be less than %d bytes",
 			NoTeeMaxUserDataSize,
@@ -83,8 +79,8 @@ func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	}
 
 	report := Report{
-		Nonce:       opts.nonce,
-		Userdata:    opts.userData,
+		Nonce:       opts.Nonce,
+		Userdata:    opts.UserData,
 		Signature:   signature,
 		VerifyKey:   a.publicKey,
 		Timestamp:   time.Now().Unix(),
@@ -108,10 +104,10 @@ func (n *NoTEEVerifier) Verify(
 	options ...VerifyOption,
 ) (*VerifyResult, error) {
 	opts := VerifyOptions{
-		debug:       false,
-		measurement: "",
-		nonce:       nil,
-		timestamp:   time.Now(),
+		Debug:       false,
+		Measurement: "",
+		Nonce:       nil,
+		Timestamp:   time.Now(),
 	}
 	for _, opt := range options {
 		opt(&opts)
@@ -129,34 +125,34 @@ func (n *NoTEEVerifier) Verify(
 		return nil, err
 	}
 
-	if opts.timestamp.Unix() < report.Timestamp ||
-		opts.timestamp.Unix() > report.Timestamp+NoTeeValidityPeriod {
+	if opts.Timestamp.Unix() < report.Timestamp ||
+		opts.Timestamp.Unix() > report.Timestamp+NoTeeValidityPeriod {
 		return nil, verifierErrorTimestamp(
 			"certificate has expired or is not yet valid",
 			nil,
 		)
 	}
 
-	if opts.measurement != "" && opts.measurement != report.Measurement {
+	if opts.Measurement != "" && opts.Measurement != report.Measurement {
 		msg := fmt.Sprintf(
 			"expected '%s' got '%s'",
-			opts.measurement,
+			opts.Measurement,
 			report.Measurement,
 		)
 		return nil, verifierErrorMeasurement(msg, nil)
 	}
 
-	if opts.nonce != nil && !bytes.Equal(opts.nonce, report.Nonce) {
+	if opts.Nonce != nil && !bytes.Equal(opts.Nonce, report.Nonce) {
 		msg := fmt.Sprintf(
 			"expected '%s' got '%s'",
-			base64.StdEncoding.EncodeToString(opts.nonce),
+			base64.StdEncoding.EncodeToString(opts.Nonce),
 			base64.StdEncoding.EncodeToString(report.Nonce),
 		)
 		return nil, verifierErrorNonce(msg, nil)
 	}
 
 	verifyResult := &VerifyResult{
-		UserData:  report.Userdata,
+		UserData: report.Userdata,
 	}
 	return verifyResult, nil
 }
