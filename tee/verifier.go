@@ -41,8 +41,7 @@ func NewVerifier(platform Platform) (*Verifier, error) {
 		}
 		return NewVerifierWithBase(base)
 	default:
-		msg := fmt.Sprintf("%s", platform)
-		return nil, teeErrorUnsupportedPlatform(msg, nil)
+		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
 	}
 }
 

@@ -1,9 +1,5 @@
 package tee
 
-import "errors"
-
-var ErrUnsupportedPlatform = errors.New("unsupported platform")
-
 type Platform string
 
 const (

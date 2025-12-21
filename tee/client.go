@@ -1,7 +1,6 @@
 package tee
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/tahardi/bearclave"
@@ -21,7 +20,6 @@ func NewProxiedClient(
 	case NoTEE:
 		return bearclave.NewProxiedSocketClient(proxyAddr)
 	default:
-		msg := fmt.Sprintf("%s", platform)
-		return nil, teeErrorUnsupportedPlatform(msg, nil)
+		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
 	}
 }

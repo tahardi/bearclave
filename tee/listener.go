@@ -2,7 +2,6 @@ package tee
 
 import (
 	"context"
-	"fmt"
 	"net"
 
 	"github.com/tahardi/bearclave"
@@ -27,7 +26,7 @@ func NewListener(
 	case NoTEE:
 		return bearclave.NewSocketListener(ctx, network, addr, options...)
 	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
+		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
 	}
 }
 
