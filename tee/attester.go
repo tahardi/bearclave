@@ -1,38 +1,112 @@
 package tee
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
 	"github.com/tahardi/bearclave"
 )
 
-var (
-	ErrAttester = bearclave.ErrAttester
-	ErrAttesterUserDataTooLong = bearclave.ErrAttesterUserDataTooLong
-)
+type Attester struct {
+	base bearclave.Attester
+}
 
-type Attester = bearclave.Attester
-
-func NewAttester(platform Platform) (Attester, error) {
+func NewAttester(platform Platform) (*Attester, error) {
 	switch platform {
 	case Nitro:
-		return bearclave.NewNitroAttester()
+		base, err := bearclave.NewNitroAttester()
+		if err != nil {
+			return nil, teeError("", err)
+		}
+		return NewAttesterWithBase(base)
 	case SEV:
-		return bearclave.NewSEVAttester()
+		base, err := bearclave.NewSEVAttester()
+		if err != nil {
+			return nil, teeError("", err)
+		}
+		return NewAttesterWithBase(base)
 	case TDX:
-		return bearclave.NewTDXAttester()
+		base, err := bearclave.NewTDXAttester()
+		if err != nil {
+			return nil, teeError("", err)
+		}
+		return NewAttesterWithBase(base)
 	case NoTEE:
-		return bearclave.NewNoTEEAttester()
+		base, err := bearclave.NewNoTEEAttester()
+		if err != nil {
+			return nil, teeError("", err)
+		}
+		return NewAttesterWithBase(base)
 	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
+		msg := fmt.Sprintf("%s", platform)
+		return nil, teeErrorUnsupportedPlatform(msg, nil)
 	}
 }
 
-type AttestResult = bearclave.AttestResult
-type AttestOption = bearclave.AttestOption
-type AttestOptions = bearclave.AttestOptions
+func NewAttesterWithBase(base bearclave.Attester) (*Attester, error) {
+	return &Attester{base: base}, nil
+}
 
-var (
-	WithAttestNonce     = bearclave.WithAttestNonce
-	WithAttestUserData  = bearclave.WithAttestUserData
-)
+func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
+	opts := MakeDefaultAttestOptions()
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	if opts.Output != nil {
+		outputMeasurement, err := CalculateOutputMeasurement(opts.Output)
+		if err != nil {
+			return nil, err
+		}
+		opts.Base = append(opts.Base, bearclave.WithAttestUserData(outputMeasurement))
+	}
+
+	baseResult, err := a.base.Attest(opts.Base...)
+	if err != nil {
+		return nil, teeError("", err)
+	}
+
+	attestResult := &AttestResult{Base: baseResult}
+	if opts.Output != nil {
+		attestResult.Output = opts.Output
+	}
+	return attestResult, nil
+}
+
+type AttestResult struct {
+	Base   *bearclave.AttestResult `json:"base,omitempty"`
+	Output json.RawMessage         `json:"output,omitempty"`
+}
+type AttestOption func(*AttestOptions)
+type AttestOptions struct {
+	Base   []bearclave.AttestOption `json:"base,omitempty"`
+	Output json.RawMessage          `json:"output,omitempty"`
+}
+
+func MakeDefaultAttestOptions() AttestOptions {
+	return AttestOptions{
+		Base:   []bearclave.AttestOption{},
+		Output: nil,
+	}
+}
+
+func WithAttestNonce(nonce []byte) AttestOption {
+	return func(opts *AttestOptions) {
+		opts.Base = append(opts.Base, bearclave.WithAttestNonce(nonce))
+	}
+}
+
+func WithAttestOutput(output json.RawMessage) AttestOption {
+	return func(opts *AttestOptions) {
+		opts.Output = output
+	}
+}
+
+func CalculateOutputMeasurement(output json.RawMessage) ([]byte, error) {
+	if output == nil {
+		return nil, nil
+	}
+	hash := sha256.Sum256(output)
+	return hash[:], nil
+}

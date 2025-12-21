@@ -1,7 +1,7 @@
 package attestation
 
 type Attester interface {
-	Attest(options ...AttestOption) (result *AttestResult, err error)
+	Attest(options ...AttestOption) (attestResult *AttestResult, err error)
 }
 
 type AttestResult struct {

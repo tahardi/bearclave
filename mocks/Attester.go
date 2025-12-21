@@ -90,8 +90,8 @@ func (_c *Attester_Attest_Call) Run(run func(options ...attestation.AttestOption
 	return _c
 }
 
-func (_c *Attester_Attest_Call) Return(result *attestation.AttestResult, err error) *Attester_Attest_Call {
-	_c.Call.Return(result, err)
+func (_c *Attester_Attest_Call) Return(attestResult *attestation.AttestResult, err error) *Attester_Attest_Call {
+	_c.Call.Return(attestResult, err)
 	return _c
 }
 

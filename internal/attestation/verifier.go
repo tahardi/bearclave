@@ -5,7 +5,7 @@ import (
 )
 
 type Verifier interface {
-	Verify(report *AttestResult, options ...VerifyOption) (result *VerifyResult, err error)
+	Verify(attestResult *AttestResult, options ...VerifyOption) (verifyResult *VerifyResult, err error)
 }
 
 type VerifyResult struct {
