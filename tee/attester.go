@@ -24,11 +24,11 @@ func NewAttester(platform Platform) (*Attester, error) {
 	case NoTEE:
 		base, err = bearclave.NewNoTEEAttester()
 	default:
-		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
+		return nil, unsupportedPlatformError(string(platform), nil)
 	}
 
 	if err != nil {
-		return nil, teeError("", err)
+		return nil, attesterError("making attester", err)
 	}
 	return NewAttesterWithBase(base)
 }
@@ -47,7 +47,7 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 	if opts.UserData != nil {
 		measurement, err := MeasureOutput(opts.UserData)
 		if err != nil {
-			return nil, err
+			return nil, attesterError("measuring output", err)
 		}
 		attestResult.Output = opts.UserData
 		opts.Base = append(opts.Base, bearclave.WithAttestUserData(measurement))
@@ -55,7 +55,7 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 
 	baseResult, err := a.base.Attest(opts.Base...)
 	if err != nil {
-		return nil, teeError("", err)
+		return nil, attesterError("base attesting", err)
 	}
 
 	attestResult.Base = baseResult

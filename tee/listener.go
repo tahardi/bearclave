@@ -7,8 +7,6 @@ import (
 	"github.com/tahardi/bearclave"
 )
 
-var ErrListener = bearclave.ErrListener
-
 func NewListener(
 	ctx context.Context,
 	platform Platform,
@@ -26,7 +24,7 @@ func NewListener(
 	case NoTEE:
 		return bearclave.NewSocketListener(ctx, network, addr, options...)
 	default:
-		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
+		return nil, unsupportedPlatformError(string(platform), nil)
 	}
 }
 

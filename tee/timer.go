@@ -4,8 +4,6 @@ import (
 	"github.com/tahardi/bearclave"
 )
 
-var ErrTimer = bearclave.ErrTimer
-
 type Timer = bearclave.Timer
 
 func NewTimer(platform Platform) (Timer, error) {
@@ -19,6 +17,6 @@ func NewTimer(platform Platform) (Timer, error) {
 	case NoTEE:
 		return bearclave.NewTSCTimer()
 	default:
-		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
+		return nil, unsupportedPlatformError(string(platform), nil)
 	}
 }

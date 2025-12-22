@@ -20,6 +20,6 @@ func NewProxiedClient(
 	case NoTEE:
 		return bearclave.NewProxiedSocketClient(proxyAddr)
 	default:
-		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
+		return nil, unsupportedPlatformError(string(platform), nil)
 	}
 }

@@ -8,10 +8,20 @@ import (
 )
 
 var (
-	ErrTEE = errors.New("tee")
-	ErrTEEUnsupportedPlatform = fmt.Errorf("%w: unsupported platform", ErrTEE)
-	ErrTEEAttester = teeError("", bearclave.ErrAttester)
-	ErrTEEVerifier = teeError("", bearclave.ErrVerifier)
+	ErrAttester            = bearclave.ErrAttester
+	ErrAttesterUserData    = bearclave.ErrAttesterUserData
+	ErrDialContext         = bearclave.ErrDialContext
+	ErrListener            = bearclave.ErrListener
+	ErrReverseProxy        = errors.New("reverse proxy")
+	ErrServer              = errors.New("server")
+	ErrSocket              = errors.New("socket")
+	ErrTimer               = bearclave.ErrTimer
+	ErrVerifier            = bearclave.ErrVerifier
+	ErrVerifierDebugMode   = bearclave.ErrVerifierDebugMode
+	ErrVerifierMeasurement = bearclave.ErrVerifierMeasurement
+	ErrVerifierNonce       = bearclave.ErrVerifierNonce
+	ErrVerifierTimestamp   = bearclave.ErrVerifierTimestamp
+	ErrUnsupportedPlatform = errors.New("unsupported platform")
 )
 
 func wrapError(baseErr error, msg string, err error) error {
@@ -27,14 +37,26 @@ func wrapError(baseErr error, msg string, err error) error {
 	}
 }
 
-func teeError(msg string, err error) error {
-	return wrapError(ErrTEE, msg, err)
+func attesterError(msg string, err error) error {
+	return wrapError(ErrAttester, msg, err)
 }
 
-func teeErrorUnsupportedPlatform(msg string, err error) error {
-	return wrapError(ErrTEEUnsupportedPlatform, msg, err)
+func reverseProxyError(msg string, err error) error {
+	return wrapError(ErrReverseProxy, msg, err)
 }
 
-func teeErrorVerifier(msg string, err error) error {
-	return wrapError(ErrTEEVerifier, msg, err)
+func serverError(msg string, err error) error {
+	return wrapError(ErrServer, msg, err)
+}
+
+func socketError(msg string, err error) error {
+	return wrapError(ErrSocket, msg, err)
+}
+
+func verifierError(msg string, err error) error {
+	return wrapError(ErrVerifier, msg, err)
+}
+
+func unsupportedPlatformError(msg string, err error) error {
+	return wrapError(ErrUnsupportedPlatform, msg, err)
 }

@@ -27,11 +27,11 @@ func NewVerifier(platform Platform) (*Verifier, error) {
 	case NoTEE:
 		base, err = bearclave.NewNoTEEVerifier()
 	default:
-		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
+		return nil, unsupportedPlatformError(string(platform), nil)
 	}
 
 	if err != nil {
-		return nil, teeError("", err)
+		return nil, verifierError("making verifier", err)
 	}
 	return NewVerifierWithBase(base)
 }
@@ -52,11 +52,11 @@ func (v *Verifier) Verify(
 	baseResult, err := v.base.Verify(attestResult.Base, opts.Base...)
 	switch {
 	case err != nil:
-		return nil, teeError("", err)
+		return nil, verifierError("verifying base attestResult", err)
 	case attestResult.Output == nil && len(baseResult.UserData) != 0:
-		return nil, teeErrorVerifier("missing output", nil)
+		return nil, verifierError("missing output", nil)
 	case attestResult.Output != nil && len(baseResult.UserData) == 0:
-		return nil, teeErrorVerifier("missing user data", nil)
+		return nil, verifierError("missing user data", nil)
 	}
 
 	verifyResult := &VerifyResult{Base: baseResult, Output: attestResult.Output}
@@ -66,7 +66,7 @@ func (v *Verifier) Verify(
 
 	err = VerifyOutput(baseResult.UserData, verifyResult.Output)
 	if err != nil {
-		return nil, teeError("", err)
+		return nil, err
 	}
 	return verifyResult, nil
 }
@@ -113,7 +113,7 @@ func WithVerifyTimestamp(timestamp time.Time) VerifyOption {
 func VerifyOutput(expectedMeasurement []byte, outputBytes []byte) error {
 	gotMeasurement, err := MeasureOutput(outputBytes)
 	if err != nil {
-		return err
+		return verifierError("measuring output", err)
 	}
 
 	// The SEV and TDX TEE platforms always return 64 bytes for user data
@@ -126,7 +126,7 @@ func VerifyOutput(expectedMeasurement []byte, outputBytes []byte) error {
 			base64.StdEncoding.EncodeToString(correctedMeasurement),
 			base64.StdEncoding.EncodeToString(gotMeasurement),
 		)
-		return teeErrorVerifier(msg, nil)
+		return verifierError(msg, nil)
 	}
 	return nil
 }
