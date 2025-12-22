@@ -5,6 +5,7 @@ package integration_test
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -20,6 +21,9 @@ import (
 )
 
 const attestPath = "/attest"
+
+//go:embed testdata/userdata.txt
+var userdata []byte
 
 func doRequest(
 	t *testing.T,
@@ -120,48 +124,50 @@ func runService(service func(), wait time.Duration) {
 	time.Sleep(wait)
 }
 
-func TestIntegration_NoTEE(t *testing.T) {
-	// given
-	ctx := context.Background()
-	platform := tee.NoTEE
-	attester, err := tee.NewAttester(platform)
-	require.NoError(t, err)
+func TestIntegration_TEE(t *testing.T) {
+	t.Run("happy path - NoTEE platform", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		platform := tee.NoTEE
+		attester, err := tee.NewAttester(platform)
+		require.NoError(t, err)
 
-	discardLogger := slog.New(slog.DiscardHandler)
-	serverMux := http.NewServeMux()
-	serverMux.Handle(
-		"POST "+attestPath,
-		makeAttestHandler(t, attester, discardLogger),
-	)
+		discardLogger := slog.New(slog.DiscardHandler)
+		serverMux := http.NewServeMux()
+		serverMux.Handle(
+			"POST "+attestPath,
+			makeAttestHandler(t, attester, discardLogger),
+		)
 
-	serverAddr := "http://127.0.0.1:8081"
-	server, err := tee.NewServer(ctx, platform, "tcp", serverAddr, serverMux)
-	require.NoError(t, err)
-	defer server.Close()
+		network := "tcp"
+		enclaveAddr := "http://127.0.0.1:8081"
+		server, err := tee.NewServer(ctx, platform, network, enclaveAddr, serverMux)
+		require.NoError(t, err)
+		defer server.Close()
 
-	network := "tcp"
-	proxyAddr := "http://127.0.0.1:8080"
-	route := "app/v1"
-	proxy, err := tee.NewReverseProxy(
-		ctx, platform, network, proxyAddr, serverAddr, route,
-	)
-	require.NoError(t, err)
-	defer proxy.Close()
+		proxyAddr := "http://127.0.0.1:8080"
+		route := "app/v1"
+		proxy, err := tee.NewReverseProxy(
+			ctx, platform, network, proxyAddr, enclaveAddr, route,
+		)
+		require.NoError(t, err)
+		defer proxy.Close()
 
-	client := &http.Client{}
-	nonce := []byte("nonce")
-	want := []byte("hello world")
+		client := &http.Client{}
+		nonce := []byte("nonce")
+		want := userdata
 
-	// when
-	runService(func() { _ = server.ListenAndServe() }, 100*time.Millisecond)
-	runService(func() { _ = proxy.ListenAndServe() }, 100*time.Millisecond)
-	attestation := makeAttestRequest(t, ctx, client, proxyAddr, nonce, want)
+		// when
+		runService(func() { _ = server.ListenAndServe() }, 100*time.Millisecond)
+		runService(func() { _ = proxy.ListenAndServe() }, 100*time.Millisecond)
+		attestation := makeAttestRequest(t, ctx, client, proxyAddr, nonce, want)
 
-	// then
-	verifier, err := tee.NewVerifier(platform)
-	require.NoError(t, err)
+		// then
+		verifier, err := tee.NewVerifier(platform)
+		require.NoError(t, err)
 
-	got, err := verifier.Verify(attestation, tee.WithVerifyNonce(nonce))
-	require.NoError(t, err)
-	require.Equal(t, want, got.Output)
+		got, err := verifier.Verify(attestation, tee.WithVerifyNonce(nonce))
+		require.NoError(t, err)
+		require.Equal(t, want, got.UserData)
+	})
 }
