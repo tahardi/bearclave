@@ -2,7 +2,6 @@ package tee
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -71,7 +70,7 @@ func NewServer(
 ) (*Server, error) {
 	listener, err := NewListener(ctx, platform, network, addr)
 	if err != nil {
-		return nil, fmt.Errorf("creating listener: %w", err)
+		return nil, serverError("creating listener", err)
 	}
 	return NewServerWithListener(listener, handler, opts...)
 }
@@ -105,11 +104,11 @@ func (s *Server) Addr() string {
 
 func (s *Server) Close() error {
 	if err := s.listener.Close(); err != nil {
-		return fmt.Errorf("closing listener: %w", err)
+		return serverError("closing listener", err)
 	}
 
 	if err := s.server.Close(); err != nil {
-		return fmt.Errorf("closing server: %w", err)
+		return serverError("closing server", err)
 	}
 	return nil
 }

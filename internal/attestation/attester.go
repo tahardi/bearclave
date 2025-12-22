@@ -1,7 +1,7 @@
 package attestation
 
 type Attester interface {
-	Attest(options ...AttestOption) (result *AttestResult, err error)
+	Attest(options ...AttestOption) (attestResult *AttestResult, err error)
 }
 
 type AttestResult struct {
@@ -10,25 +10,25 @@ type AttestResult struct {
 
 type AttestOption func(*AttestOptions)
 type AttestOptions struct {
-	nonce     []byte
-	publicKey []byte
-	userData  []byte
+	Nonce     []byte
+	UserData  []byte
+}
+
+func MakeDefaultAttestOptions() AttestOptions {
+	return AttestOptions{
+		Nonce:     nil,
+		UserData:  nil,
+	}
 }
 
 func WithAttestNonce(nonce []byte) AttestOption {
 	return func(opts *AttestOptions) {
-		opts.nonce = nonce
-	}
-}
-
-func WithAttestPublicKey(publicKey []byte) AttestOption {
-	return func(opts *AttestOptions) {
-		opts.publicKey = publicKey
+		opts.Nonce = nonce
 	}
 }
 
 func WithAttestUserData(userData []byte) AttestOption {
 	return func(opts *AttestOptions) {
-		opts.userData = userData
+		opts.UserData = userData
 	}
 }

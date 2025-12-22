@@ -76,7 +76,7 @@ func TestNitro_Interfaces(t *testing.T) {
 func TestNitroAttester_Attest(t *testing.T) {
 	t.Run("error - user data too long", func(t *testing.T) {
 		// given
-		userData := make([]byte, attestation.AwsNitroMaxUserDataSize + 1)
+		userData := make([]byte, attestation.AwsNitroMaxUserDataSize+1)
 		attester, err := attestation.NewNitroAttester()
 		require.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestNitroAttester_Attest(t *testing.T) {
 		_, err = attester.Attest(attestation.WithAttestUserData(userData))
 
 		// then
-		require.ErrorIs(t, err, attestation.ErrAttesterUserDataTooLong)
+		require.ErrorIs(t, err, attestation.ErrAttesterUserData)
 	})
 }
 

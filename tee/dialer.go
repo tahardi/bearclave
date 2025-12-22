@@ -1,12 +1,8 @@
 package tee
 
 import (
-	"fmt"
-
 	"github.com/tahardi/bearclave"
 )
-
-var ErrDialContext = bearclave.ErrDialContext
 
 type DialContext = bearclave.DialContext
 
@@ -24,7 +20,7 @@ func NewDialContext(
 	case NoTEE:
 		return bearclave.NewSocketDialContext(options...)
 	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedPlatform, platform)
+		return nil, unsupportedPlatformError(string(platform), nil)
 	}
 }
 

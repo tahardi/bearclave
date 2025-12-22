@@ -111,6 +111,7 @@ func WriteError(w http.ResponseWriter, err error) {
 func WriteResponse(w http.ResponseWriter, out any) {
 	data, err := json.Marshal(out)
 	if err != nil {
+		fmt.Printf("marshaling response: %s", err.Error())
 		WriteError(w, fmt.Errorf("marshaling response: %w", err))
 		return
 	}

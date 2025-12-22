@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/hf/nitrite"
 	"github.com/hf/nsm"
@@ -21,21 +20,17 @@ func NewNitroAttester() (*NitroAttester, error) {
 }
 
 func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
-	opts := AttestOptions{
-		nonce: nil,
-		publicKey: nil,
-		userData: nil,
-	}
+	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > AwsNitroMaxUserDataSize {
+	if len(opts.UserData) > AwsNitroMaxUserDataSize {
 		msg := fmt.Sprintf(
 			"user data must be %d bytes or less",
 			AwsNitroMaxUserDataSize,
 		)
-		return nil, attesterErrorUserDataTooLong(msg, nil)
+		return nil, attesterErrorUserData(msg, nil)
 	}
 
 	session, err := nsm.OpenDefaultSession()
@@ -45,9 +40,9 @@ func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	defer session.Close()
 
 	resp, err := session.Send(&request.Attestation{
-		Nonce:     opts.nonce,
-		PublicKey: opts.publicKey,
-		UserData:  opts.userData,
+		Nonce:     opts.Nonce,
+		PublicKey: nil,
+		UserData:  opts.UserData,
 	})
 	switch {
 	case err != nil:
@@ -73,12 +68,7 @@ func (n *NitroVerifier) Verify(
 	attestResult *AttestResult,
 	options ...VerifyOption,
 ) (*VerifyResult, error) {
-	opts := VerifyOptions{
-		debug:       false,
-		measurement: "",
-		timestamp:   time.Now(),
-		nonce:       nil,
-	}
+	opts := MakeDefaultVerifyOptions()
 	for _, opt := range options {
 		opt(&opts)
 	}
@@ -86,19 +76,19 @@ func (n *NitroVerifier) Verify(
 	result, err := nitrite.Verify(
 		attestResult.Report,
 		nitrite.VerifyOptions{
-			CurrentTime: opts.timestamp,
+			CurrentTime: opts.Timestamp,
 		},
 	)
 	if err != nil {
-		return nil, verifierError( "verifying report", err)
+		return nil, verifierError("verifying report", err)
 	}
 
-	err = NitroVerifyMeasurement(opts.measurement, result.Document)
+	err = NitroVerifyMeasurement(opts.Measurement, result.Document)
 	if err != nil {
 		return nil, err
 	}
 
-	err = NitroVerifyNonce(opts.nonce, result.Document)
+	err = NitroVerifyNonce(opts.Nonce, result.Document)
 	if err != nil {
 		return nil, err
 	}
@@ -107,8 +97,8 @@ func (n *NitroVerifier) Verify(
 	switch {
 	case err != nil:
 		return nil, err
-	case opts.debug != debug:
-		msg := fmt.Sprintf("mode mismatch: expected %t got %t", opts.debug, debug)
+	case opts.Debug != debug:
+		msg := fmt.Sprintf("mode mismatch: expected %t got %t", opts.Debug, debug)
 		return nil, verifierErrorDebugMode(msg, nil)
 	}
 

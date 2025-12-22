@@ -83,7 +83,7 @@ func TestTDXAttester_Attest(t *testing.T) {
 		_, err = attester.Attest(attestation.WithAttestUserData(userData))
 
 		// then
-		require.ErrorIs(t, err, attestation.ErrAttesterUserDataTooLong)
+		require.ErrorIs(t, err, attestation.ErrAttesterUserData)
 	})
 }
 

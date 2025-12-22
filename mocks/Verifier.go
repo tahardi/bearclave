@@ -37,12 +37,12 @@ func (_m *Verifier) EXPECT() *Verifier_Expecter {
 }
 
 // Verify provides a mock function for the type Verifier
-func (_mock *Verifier) Verify(report *attestation.AttestResult, options ...attestation.VerifyOption) (*attestation.VerifyResult, error) {
+func (_mock *Verifier) Verify(attestResult *attestation.AttestResult, options ...attestation.VerifyOption) (*attestation.VerifyResult, error) {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
-		tmpRet = _mock.Called(report, options)
+		tmpRet = _mock.Called(attestResult, options)
 	} else {
-		tmpRet = _mock.Called(report)
+		tmpRet = _mock.Called(attestResult)
 	}
 	ret := tmpRet
 
@@ -53,17 +53,17 @@ func (_mock *Verifier) Verify(report *attestation.AttestResult, options ...attes
 	var r0 *attestation.VerifyResult
 	var r1 error
 	if returnFunc, ok := ret.Get(0).(func(*attestation.AttestResult, ...attestation.VerifyOption) (*attestation.VerifyResult, error)); ok {
-		return returnFunc(report, options...)
+		return returnFunc(attestResult, options...)
 	}
 	if returnFunc, ok := ret.Get(0).(func(*attestation.AttestResult, ...attestation.VerifyOption) *attestation.VerifyResult); ok {
-		r0 = returnFunc(report, options...)
+		r0 = returnFunc(attestResult, options...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*attestation.VerifyResult)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(*attestation.AttestResult, ...attestation.VerifyOption) error); ok {
-		r1 = returnFunc(report, options...)
+		r1 = returnFunc(attestResult, options...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -76,14 +76,14 @@ type Verifier_Verify_Call struct {
 }
 
 // Verify is a helper method to define mock.On call
-//   - report
+//   - attestResult
 //   - options
-func (_e *Verifier_Expecter) Verify(report interface{}, options ...interface{}) *Verifier_Verify_Call {
+func (_e *Verifier_Expecter) Verify(attestResult interface{}, options ...interface{}) *Verifier_Verify_Call {
 	return &Verifier_Verify_Call{Call: _e.mock.On("Verify",
-		append([]interface{}{report}, options...)...)}
+		append([]interface{}{attestResult}, options...)...)}
 }
 
-func (_c *Verifier_Verify_Call) Run(run func(report *attestation.AttestResult, options ...attestation.VerifyOption)) *Verifier_Verify_Call {
+func (_c *Verifier_Verify_Call) Run(run func(attestResult *attestation.AttestResult, options ...attestation.VerifyOption)) *Verifier_Verify_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := args[1].([]attestation.VerifyOption)
 		run(args[0].(*attestation.AttestResult), variadicArgs...)
@@ -91,12 +91,12 @@ func (_c *Verifier_Verify_Call) Run(run func(report *attestation.AttestResult, o
 	return _c
 }
 
-func (_c *Verifier_Verify_Call) Return(result *attestation.VerifyResult, err error) *Verifier_Verify_Call {
-	_c.Call.Return(result, err)
+func (_c *Verifier_Verify_Call) Return(verifyResult *attestation.VerifyResult, err error) *Verifier_Verify_Call {
+	_c.Call.Return(verifyResult, err)
 	return _c
 }
 
-func (_c *Verifier_Verify_Call) RunAndReturn(run func(report *attestation.AttestResult, options ...attestation.VerifyOption) (*attestation.VerifyResult, error)) *Verifier_Verify_Call {
+func (_c *Verifier_Verify_Call) RunAndReturn(run func(attestResult *attestation.AttestResult, options ...attestation.VerifyOption) (*attestation.VerifyResult, error)) *Verifier_Verify_Call {
 	_c.Call.Return(run)
 	return _c
 }

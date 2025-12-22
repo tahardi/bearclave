@@ -4,8 +4,6 @@ import (
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
-var ErrListener = networking.ErrListener
-
 var (
 	NewSocketListener  = networking.NewSocketListener
 	NewVSocketListener = networking.NewVSocketListener

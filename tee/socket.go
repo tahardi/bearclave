@@ -26,7 +26,7 @@ func NewSocket(
 ) (*Socket, error) {
 	listener, err := NewListener(ctx, platform, network, addr)
 	if err != nil {
-		return nil, err
+		return nil, socketError("creating listener", err)
 	}
 	return &Socket{
 		platform: platform,
@@ -58,7 +58,7 @@ func (s *Socket) Send(
 ) error {
 	dialer, err := NewDialContext(s.platform)
 	if err != nil {
-		return fmt.Errorf("creating dialer: %w", err)
+		return socketError("creating dialer", err)
 	}
 	return s.SendWithDialContext(ctx, DefaultConnTimeout, dialer, addr, data)
 }
@@ -80,7 +80,8 @@ func (s *Socket) SendWithDialContext(
 
 		conn, err := dialContext(connCtx, s.network, addr)
 		if err != nil {
-			errChan <- fmt.Errorf("dialing '%s': %w", addr, err)
+			msg := fmt.Sprintf("dialing '%s'", addr)
+			errChan <- socketError(msg, err)
 			return
 		}
 		defer conn.Close()
@@ -90,9 +91,9 @@ func (s *Socket) SendWithDialContext(
 		n, writeErr := conn.Write([]byte(base64Data))
 		switch {
 		case writeErr != nil:
-			errChan <- fmt.Errorf("writing data: %w", writeErr)
+			errChan <- socketError("writing data", writeErr)
 		case n != len(base64Data):
-			errChan <- fmt.Errorf("failed to write all data: %w", writeErr)
+			errChan <- socketError("failed to write all data", writeErr)
 		default:
 			errChan <- nil
 		}
@@ -100,7 +101,7 @@ func (s *Socket) SendWithDialContext(
 
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("deadline exceeded or context cancelled: %w", ctx.Err())
+		return socketError("deadline exceeded or context cancelled", ctx.Err())
 	case err := <-errChan:
 		return err
 	}
@@ -112,7 +113,7 @@ func (s *Socket) Receive(ctx context.Context) ([]byte, error) {
 	go func() {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			errChan <- fmt.Errorf("accepting connection: %w", err)
+			errChan <- socketError("accepting connection", err)
 			return
 		}
 		defer conn.Close()
@@ -120,13 +121,13 @@ func (s *Socket) Receive(ctx context.Context) ([]byte, error) {
 		var buf bytes.Buffer
 		_, err = io.Copy(&buf, conn)
 		if err != nil {
-			errChan <- fmt.Errorf("reading data: %w", err)
+			errChan <- socketError("reading data", err)
 			return
 		}
 
 		data, err := base64.StdEncoding.DecodeString(buf.String())
 		if err != nil {
-			errChan <- fmt.Errorf("decoding data: %w", err)
+			errChan <- socketError("decoding data", err)
 			return
 		}
 		dataChan <- data
@@ -134,9 +135,9 @@ func (s *Socket) Receive(ctx context.Context) ([]byte, error) {
 
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("deadline exceeded or context cancelled: %w", ctx.Err())
+		return nil, socketError("deadline exceeded or context cancelled", ctx.Err())
 	case err := <-errChan:
-		return nil, err
+		return nil, socketError("receiving data", err)
 	case data := <-dataChan:
 		return data, nil
 	}

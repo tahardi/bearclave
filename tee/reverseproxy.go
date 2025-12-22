@@ -2,7 +2,6 @@ package tee
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -20,7 +19,7 @@ func NewReverseProxy(
 ) (*Server, error) {
 	dialer, err := NewDialContext(platform)
 	if err != nil {
-		return nil, fmt.Errorf("creating dialer: %w", err)
+		return nil, reverseProxyError("creating dialer", err)
 	}
 	return NewReverseProxyWithDialContext(
 		ctx,
@@ -44,7 +43,7 @@ func NewReverseProxyWithDialContext(
 ) (*Server, error) {
 	targetURL, err := url.Parse(targetAddr)
 	if err != nil {
-		return nil, fmt.Errorf("parsing target URL: %w", err)
+		return nil, reverseProxyError("parsing target URL", err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
@@ -66,7 +65,7 @@ func NewReverseProxyWithDialContext(
 	// both use normal sockets, so using a socket listener here is fine.
 	listener, err := NewListener(ctx, NoTEE, network, proxyAddr)
 	if err != nil {
-		return nil, fmt.Errorf("creating listener: %w", err)
+		return nil, reverseProxyError("creating listener", err)
 	}
 	return NewServerWithListener(listener, proxy, options...)
 }

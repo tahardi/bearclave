@@ -4,14 +4,6 @@ import (
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
-var (
-	ErrVerifier            = attestation.ErrVerifier
-	ErrVerifierDebugMode   = attestation.ErrVerifierDebugMode
-	ErrVerifierMeasurement = attestation.ErrVerifierMeasurement
-	ErrVerifierNonce       = attestation.ErrVerifierNonce
-	ErrVerifierTimestamp   = attestation.ErrVerifierTimestamp
-)
-
 type Verifier = attestation.Verifier
 
 var (

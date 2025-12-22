@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/go-tdx-guest/abi"
 	"github.com/google/go-tdx-guest/client"
@@ -25,21 +24,17 @@ func NewTDXAttester() (*TDXAttester, error) {
 }
 
 func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
-	opts := AttestOptions{
-		nonce:     nil,
-		publicKey: nil,
-		userData:  nil,
-	}
+	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {
 		opt(&opts)
 	}
 
-	if len(opts.userData) > IntelTdxMaxUserDataSize {
+	if len(opts.UserData) > IntelTdxMaxUserDataSize {
 		msg := fmt.Sprintf(
 			"user data must be %d bytes or less",
 			IntelTdxMaxUserDataSize,
 		)
-		return nil, attesterErrorUserDataTooLong(msg, nil)
+		return nil, attesterErrorUserData(msg, nil)
 	}
 
 	tdxQP, err := client.GetQuoteProvider()
@@ -48,8 +43,8 @@ func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	}
 
 	var reportData [64]byte
-	if opts.userData != nil {
-		copy(reportData[:], opts.userData)
+	if opts.UserData != nil {
+		copy(reportData[:], opts.UserData)
 	}
 	quote, err := tdxQP.GetRawQuote(reportData)
 	if err != nil {
@@ -68,11 +63,7 @@ func (n *TDXVerifier) Verify(
 	attestResult *AttestResult,
 	options ...VerifyOption,
 ) (*VerifyResult, error) {
-	opts := VerifyOptions{
-		debug:       false,
-		measurement: "",
-		timestamp:   time.Now(),
-	}
+	opts := MakeDefaultVerifyOptions()
 	for _, opt := range options {
 		opt(&opts)
 	}
@@ -83,7 +74,7 @@ func (n *TDXVerifier) Verify(
 	}
 
 	tdxOptions := verify.DefaultOptions()
-	tdxOptions.Now = opts.timestamp
+	tdxOptions.Now = opts.Timestamp
 	err = verify.TdxQuote(pbQuote, tdxOptions)
 	if err != nil {
 		return nil, verifierError("verifying tdx report", err)
@@ -94,7 +85,7 @@ func (n *TDXVerifier) Verify(
 		return nil, verifierError("unexpected quote type", nil)
 	}
 
-	err = TDXVerifyMeasurement(opts.measurement, quoteV4.GetTdQuoteBody())
+	err = TDXVerifyMeasurement(opts.Measurement, quoteV4.GetTdQuoteBody())
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +94,9 @@ func (n *TDXVerifier) Verify(
 	switch {
 	case err != nil:
 		return nil, err
-	case opts.debug != debug:
+	case opts.Debug != debug:
 		msg := fmt.Sprintf("mode mismatch: expected %t, got %t",
-			opts.debug,
+			opts.Debug,
 			debug,
 		)
 		return nil, verifierErrorDebugMode(msg, nil)
