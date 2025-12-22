@@ -69,7 +69,7 @@ func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 			"userdata must be less than %d bytes",
 			NoTeeMaxUserDataSize,
 		)
-		return nil, attesterErrorUserDataTooLong(msg, nil)
+		return nil, attesterErrorUserData(msg, nil)
 	}
 
 	signDataHash := sha256.Sum256([]byte(NoTeeMeasurement))

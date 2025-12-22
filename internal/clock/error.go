@@ -6,13 +6,12 @@ import (
 )
 
 var (
-	ErrCPU = errors.New("cpu")
-	ErrCPUTSC = fmt.Errorf("%w: tsc", ErrCPU)
+	ErrCPU                = errors.New("cpu")
+	ErrCPUTSC             = fmt.Errorf("%w: tsc", ErrCPU)
 	ErrCPUTSCNotInvariant = fmt.Errorf("%w: not invariant", ErrCPUTSC)
-	ErrCPUTSCFrequency = fmt.Errorf("%w: could not determine frequency", ErrCPUTSC)
-	ErrCPUVendor = fmt.Errorf("%w: vendor not supported", ErrCPU)
-	ErrTimer = errors.New("timer")
-
+	ErrCPUTSCFrequency    = fmt.Errorf("%w: could not determine frequency", ErrCPUTSC)
+	ErrCPUVendor          = fmt.Errorf("%w: vendor not supported", ErrCPU)
+	ErrTimer              = errors.New("timer")
 )
 
 func wrapError(baseErr error, msg string, err error) error {

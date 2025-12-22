@@ -30,7 +30,7 @@ func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 			"user data must be %d bytes or less",
 			AwsNitroMaxUserDataSize,
 		)
-		return nil, attesterErrorUserDataTooLong(msg, nil)
+		return nil, attesterErrorUserData(msg, nil)
 	}
 
 	session, err := nsm.OpenDefaultSession()
@@ -80,7 +80,7 @@ func (n *NitroVerifier) Verify(
 		},
 	)
 	if err != nil {
-		return nil, verifierError( "verifying report", err)
+		return nil, verifierError("verifying report", err)
 	}
 
 	err = NitroVerifyMeasurement(opts.Measurement, result.Document)

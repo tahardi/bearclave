@@ -84,7 +84,7 @@ func TestNoTEEAttester_Attest(t *testing.T) {
 		_, err = attester.Attest(attestation.WithAttestUserData(userdata))
 
 		// then
-		require.ErrorIs(t, err, attestation.ErrAttesterUserDataTooLong)
+		require.ErrorIs(t, err, attestation.ErrAttesterUserData)
 	})
 }
 

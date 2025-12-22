@@ -31,7 +31,7 @@ func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 			"user data must be %d bytes or less",
 			AmdSevMaxUserDataSize,
 		)
-		return nil, attesterErrorUserDataTooLong(msg, nil)
+		return nil, attesterErrorUserData(msg, nil)
 	}
 
 	sevQP, err := client.GetQuoteProvider()

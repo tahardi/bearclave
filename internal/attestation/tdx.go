@@ -34,7 +34,7 @@ func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 			"user data must be %d bytes or less",
 			IntelTdxMaxUserDataSize,
 		)
-		return nil, attesterErrorUserDataTooLong(msg, nil)
+		return nil, attesterErrorUserData(msg, nil)
 	}
 
 	tdxQP, err := client.GetQuoteProvider()

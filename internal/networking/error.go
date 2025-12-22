@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	ErrDialContext     = errors.New("dial context")
-	ErrListener        = errors.New("listener")
-	ErrSocketParseAddr = errors.New("socket parse addr")
+	ErrDialContext      = errors.New("dial context")
+	ErrListener         = errors.New("listener")
+	ErrSocketParseAddr  = errors.New("socket parse addr")
 	ErrVSocketParseAddr = errors.New("vsocket parse addr")
 )
 
