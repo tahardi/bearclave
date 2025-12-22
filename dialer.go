@@ -4,8 +4,6 @@ import (
 	"github.com/tahardi/bearclave/internal/networking"
 )
 
-var ErrDialContext = networking.ErrDialContext
-
 type DialContext = networking.DialContext
 
 var (

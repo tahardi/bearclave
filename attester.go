@@ -4,11 +4,6 @@ import (
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
-var (
-	ErrAttester                = attestation.ErrAttester
-	ErrAttesterUserDataTooLong = attestation.ErrAttesterUserDataTooLong
-)
-
 type Attester = attestation.Attester
 
 var (
