@@ -14,34 +14,26 @@ type Verifier struct {
 }
 
 func NewVerifier(platform Platform) (*Verifier, error) {
+	var base bearclave.Verifier
+	var err error
+
 	switch platform {
 	case Nitro:
-		base, err := bearclave.NewNitroVerifier()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewVerifierWithBase(base)
+		base, err = bearclave.NewNitroVerifier()
 	case SEV:
-		base, err := bearclave.NewSEVVerifier()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewVerifierWithBase(base)
+		base, err = bearclave.NewSEVVerifier()
 	case TDX:
-		base, err := bearclave.NewTDXVerifier()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewVerifierWithBase(base)
+		base, err = bearclave.NewTDXVerifier()
 	case NoTEE:
-		base, err := bearclave.NewNoTEEVerifier()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewVerifierWithBase(base)
+		base, err = bearclave.NewNoTEEVerifier()
 	default:
 		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
 	}
+
+	if err != nil {
+		return nil, teeError("", err)
+	}
+	return NewVerifierWithBase(base)
 }
 
 func NewVerifierWithBase(base bearclave.Verifier) (*Verifier, error) {

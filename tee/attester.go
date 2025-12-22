@@ -11,34 +11,26 @@ type Attester struct {
 }
 
 func NewAttester(platform Platform) (*Attester, error) {
+	var base bearclave.Attester
+	var err error
+
 	switch platform {
 	case Nitro:
-		base, err := bearclave.NewNitroAttester()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewAttesterWithBase(base)
+		base, err = bearclave.NewNitroAttester()
 	case SEV:
-		base, err := bearclave.NewSEVAttester()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewAttesterWithBase(base)
+		base, err = bearclave.NewSEVAttester()
 	case TDX:
-		base, err := bearclave.NewTDXAttester()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewAttesterWithBase(base)
+		base, err = bearclave.NewTDXAttester()
 	case NoTEE:
-		base, err := bearclave.NewNoTEEAttester()
-		if err != nil {
-			return nil, teeError("", err)
-		}
-		return NewAttesterWithBase(base)
+		base, err = bearclave.NewNoTEEAttester()
 	default:
 		return nil, teeErrorUnsupportedPlatform(string(platform), nil)
 	}
+
+	if err != nil {
+		return nil, teeError("", err)
+	}
+	return NewAttesterWithBase(base)
 }
 
 func NewAttesterWithBase(base bearclave.Attester) (*Attester, error) {
