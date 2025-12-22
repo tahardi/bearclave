@@ -86,7 +86,7 @@ type attestResponse struct {
 
 func makeAttestHandler(
 	t *testing.T,
-	attester tee.Attester,
+	attester *tee.Attester,
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	t.Helper()
@@ -163,5 +163,5 @@ func TestIntegration_NoTEE(t *testing.T) {
 
 	got, err := verifier.Verify(attestation, tee.WithVerifyNonce(nonce))
 	require.NoError(t, err)
-	require.Equal(t, want, got.UserData)
+	require.Equal(t, want, got.Output)
 }

@@ -2,7 +2,6 @@ package tee
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 
 	"github.com/tahardi/bearclave"
 )
@@ -52,12 +51,14 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 		opt(&opts)
 	}
 
-	if opts.Output != nil {
-		outputMeasurement, err := CalculateOutputMeasurement(opts.Output)
+	attestResult := &AttestResult{}
+	if opts.UserData != nil {
+		measurement, err := MeasureOutput(opts.UserData)
 		if err != nil {
 			return nil, err
 		}
-		opts.Base = append(opts.Base, bearclave.WithAttestUserData(outputMeasurement))
+		attestResult.Output = opts.UserData
+		opts.Base = append(opts.Base, bearclave.WithAttestUserData(measurement))
 	}
 
 	baseResult, err := a.base.Attest(opts.Base...)
@@ -65,27 +66,24 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 		return nil, teeError("", err)
 	}
 
-	attestResult := &AttestResult{Base: baseResult}
-	if opts.Output != nil {
-		attestResult.Output = opts.Output
-	}
+	attestResult.Base = baseResult
 	return attestResult, nil
 }
 
 type AttestResult struct {
 	Base   *bearclave.AttestResult `json:"base,omitempty"`
-	Output json.RawMessage         `json:"output,omitempty"`
+	Output []byte                  `json:"output,omitempty"`
 }
 type AttestOption func(*AttestOptions)
 type AttestOptions struct {
-	Base   []bearclave.AttestOption `json:"base,omitempty"`
-	Output json.RawMessage          `json:"output,omitempty"`
+	Base     []bearclave.AttestOption `json:"base,omitempty"`
+	UserData []byte                   `json:"output,omitempty"`
 }
 
 func MakeDefaultAttestOptions() AttestOptions {
 	return AttestOptions{
-		Base:   []bearclave.AttestOption{},
-		Output: nil,
+		Base:     []bearclave.AttestOption{},
+		UserData: nil,
 	}
 }
 
@@ -95,13 +93,13 @@ func WithAttestNonce(nonce []byte) AttestOption {
 	}
 }
 
-func WithAttestOutput(output json.RawMessage) AttestOption {
+func WithAttestUserData(userData []byte) AttestOption {
 	return func(opts *AttestOptions) {
-		opts.Output = output
+		opts.UserData = userData
 	}
 }
 
-func CalculateOutputMeasurement(output json.RawMessage) ([]byte, error) {
+func MeasureOutput(output []byte) ([]byte, error) {
 	if output == nil {
 		return nil, nil
 	}

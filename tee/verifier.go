@@ -3,7 +3,6 @@ package tee
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -82,18 +81,16 @@ func (v *Verifier) Verify(
 
 type VerifyResult struct {
 	Base   *bearclave.VerifyResult `json:"base"`
-	Output json.RawMessage         `json:"output,omitempty"`
+	Output []byte                  `json:"output,omitempty"`
 }
 type VerifyOption func(*VerifyOptions)
 type VerifyOptions struct {
-	Base   []bearclave.VerifyOption `json:"base,omitempty"`
-	Output json.RawMessage          `json:"output,omitempty"`
+	Base []bearclave.VerifyOption `json:"base,omitempty"`
 }
 
 func MakeDefaultVerifyOptions() VerifyOptions {
 	return VerifyOptions{
-		Base:   []bearclave.VerifyOption{},
-		Output: nil,
+		Base: []bearclave.VerifyOption{},
 	}
 }
 
@@ -115,20 +112,14 @@ func WithVerifyNonce(nonce []byte) VerifyOption {
 	}
 }
 
-func WithVerifyOutput(output json.RawMessage) VerifyOption {
-	return func(opts *VerifyOptions) {
-		opts.Output = output
-	}
-}
-
 func WithVerifyTimestamp(timestamp time.Time) VerifyOption {
 	return func(opts *VerifyOptions) {
 		opts.Base = append(opts.Base, bearclave.WithVerifyTimestamp(timestamp))
 	}
 }
 
-func VerifyOutput(expectedMeasurement []byte, output json.RawMessage) error {
-	outputMeasurement, err := CalculateOutputMeasurement(output)
+func VerifyOutput(expectedMeasurement []byte, outputBytes []byte) error {
+	gotMeasurement, err := MeasureOutput(outputBytes)
 	if err != nil {
 		return err
 	}
@@ -136,12 +127,12 @@ func VerifyOutput(expectedMeasurement []byte, output json.RawMessage) error {
 	// The SEV and TDX TEE platforms always return 64 bytes for user data
 	// even if the provided user data was shorter. Ensure that we use the
 	// correct length when comparing so we don't falsely mismatch
-	correctedMeasurement := expectedMeasurement[:len(outputMeasurement)]
-	if !bytes.Equal(correctedMeasurement, outputMeasurement) {
+	correctedMeasurement := expectedMeasurement[:len(gotMeasurement)]
+	if !bytes.Equal(correctedMeasurement, gotMeasurement) {
 		msg := fmt.Sprintf(
 			"output measurement mismatch: expected %s, got %s",
 			base64.StdEncoding.EncodeToString(correctedMeasurement),
-			base64.StdEncoding.EncodeToString(outputMeasurement),
+			base64.StdEncoding.EncodeToString(gotMeasurement),
 		)
 		return teeErrorVerifier(msg, nil)
 	}

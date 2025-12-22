@@ -10,6 +10,7 @@ import (
 var (
 	ErrTEE = errors.New("tee")
 	ErrTEEUnsupportedPlatform = fmt.Errorf("%w: unsupported platform", ErrTEE)
+	ErrTEEAttester = teeError("", bearclave.ErrAttester)
 	ErrTEEVerifier = teeError("", bearclave.ErrVerifier)
 )
 
