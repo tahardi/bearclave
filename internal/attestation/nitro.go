@@ -104,7 +104,6 @@ func (n *NitroVerifier) Verify(
 
 	verifyResult := &VerifyResult{
 		UserData:  result.Document.UserData,
-		PublicKey: result.Document.PublicKey,
 	}
 	return verifyResult, nil
 }
