@@ -59,12 +59,12 @@ func (v *Verifier) Verify(
 		return nil, verifierError("missing user data", nil)
 	}
 
-	verifyResult := &VerifyResult{Base: baseResult, Output: attestResult.Output}
+	verifyResult := &VerifyResult{Base: baseResult, UserData: attestResult.Output}
 	if len(baseResult.UserData) == 0 {
 		return verifyResult, nil
 	}
 
-	err = VerifyOutput(baseResult.UserData, verifyResult.Output)
+	err = VerifyUserData(baseResult.UserData, verifyResult.UserData)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +72,8 @@ func (v *Verifier) Verify(
 }
 
 type VerifyResult struct {
-	Base   *bearclave.VerifyResult `json:"base"`
-	Output []byte                  `json:"output,omitempty"`
+	Base     *bearclave.VerifyResult `json:"base"`
+	UserData []byte                  `json:"userdata,omitempty"`
 }
 type VerifyOption func(*VerifyOptions)
 type VerifyOptions struct {
@@ -110,10 +110,10 @@ func WithVerifyTimestamp(timestamp time.Time) VerifyOption {
 	}
 }
 
-func VerifyOutput(expectedMeasurement []byte, outputBytes []byte) error {
-	gotMeasurement, err := MeasureOutput(outputBytes)
+func VerifyUserData(expectedMeasurement []byte, userData []byte) error {
+	gotMeasurement, err := MeasureUserData(userData)
 	if err != nil {
-		return verifierError("measuring output", err)
+		return verifierError("measuring user data", err)
 	}
 
 	// The SEV and TDX TEE platforms always return 64 bytes for user data
@@ -122,7 +122,7 @@ func VerifyOutput(expectedMeasurement []byte, outputBytes []byte) error {
 	correctedMeasurement := expectedMeasurement[:len(gotMeasurement)]
 	if !bytes.Equal(correctedMeasurement, gotMeasurement) {
 		msg := fmt.Sprintf(
-			"output measurement mismatch: expected %s, got %s",
+			"user data measurement mismatch: expected %s, got %s",
 			base64.StdEncoding.EncodeToString(correctedMeasurement),
 			base64.StdEncoding.EncodeToString(gotMeasurement),
 		)

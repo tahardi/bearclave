@@ -45,7 +45,7 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 
 	attestResult := &AttestResult{}
 	if opts.UserData != nil {
-		measurement, err := MeasureOutput(opts.UserData)
+		measurement, err := MeasureUserData(opts.UserData)
 		if err != nil {
 			return nil, attesterError("measuring output", err)
 		}
@@ -91,7 +91,7 @@ func WithAttestUserData(userData []byte) AttestOption {
 	}
 }
 
-func MeasureOutput(output []byte) ([]byte, error) {
+func MeasureUserData(output []byte) ([]byte, error) {
 	if output == nil {
 		return nil, nil
 	}
