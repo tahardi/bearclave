@@ -53,13 +53,13 @@ func (v *Verifier) Verify(
 	switch {
 	case err != nil:
 		return nil, verifierError("verifying base attestResult", err)
-	case attestResult.Output == nil && len(baseResult.UserData) != 0:
+	case attestResult.UserData == nil && len(baseResult.UserData) != 0:
 		return nil, verifierError("missing output", nil)
-	case attestResult.Output != nil && len(baseResult.UserData) == 0:
+	case attestResult.UserData != nil && len(baseResult.UserData) == 0:
 		return nil, verifierError("missing user data", nil)
 	}
 
-	verifyResult := &VerifyResult{Base: baseResult, UserData: attestResult.Output}
+	verifyResult := &VerifyResult{Base: baseResult, UserData: attestResult.UserData}
 	if len(baseResult.UserData) == 0 {
 		return verifyResult, nil
 	}

@@ -49,7 +49,7 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 		if err != nil {
 			return nil, attesterError("measuring output", err)
 		}
-		attestResult.Output = opts.UserData
+		attestResult.UserData = opts.UserData
 		opts.Base = append(opts.Base, bearclave.WithAttestUserData(measurement))
 	}
 
@@ -63,8 +63,8 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 }
 
 type AttestResult struct {
-	Base   *bearclave.AttestResult `json:"base,omitempty"`
-	Output []byte                  `json:"output,omitempty"`
+	Base     *bearclave.AttestResult `json:"base,omitempty"`
+	UserData []byte                  `json:"userdata,omitempty"`
 }
 type AttestOption func(*AttestOptions)
 type AttestOptions struct {
