@@ -1,4 +1,4 @@
-module github.com/tahardi/bearchain/mockery
+module github.com/tahardi/bearclave/mockery
 
 go 1.24.3
 
