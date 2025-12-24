@@ -23,10 +23,18 @@ lint:
 lint-fix:
 	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml --fix
 
+.PHONY: lint-version
+lint-version:
+	@go tool -modfile=$(lint_modfile) golangci-lint --version
+
 mockery_modfile=modfiles/mockery/go.mod
 .PHONY: mock
 mock: tidy
 	@go tool -modfile=$(mockery_modfile) mockery --config=.mockery.yaml
+
+.PHONY: mock-version
+mock-version:
+	@go tool -modfile=$(mockery_modfile) mockery version
 
 .PHONY: tidy
 tidy:
