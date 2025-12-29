@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -11,10 +12,10 @@ const (
 	Million = 1_000_000
 	Billion = 1_000_000_000
 
-	AMD   = "AuthenticAMD"
-	Intel = "GenuineIntel"
+	AMD               = "AuthenticAMD"
+	Intel             = "GenuineIntel"
 	SystemClockSource = "/sys/devices/system/clocksource/clocksource0/current_clocksource"
-	TSC = "tsc"
+	TSC               = "tsc"
 
 	CalibrationTime = 100 * time.Millisecond
 
@@ -117,7 +118,7 @@ func CalcTSCFrequencyFromTimer() (int64, error) {
 	switch {
 	case err != nil:
 		return 0, cpuErrorTSCFrequency("reading system clock source", err)
-	case string(source) != TSC:
+	case !strings.Contains(TSC, string(source)):
 		msg := fmt.Sprintf("expected clock source '%q' got '%q'", TSC, source)
 		return 0, cpuErrorTSCFrequency(msg, nil)
 	}
