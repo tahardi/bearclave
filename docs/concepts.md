@@ -52,15 +52,18 @@ guarantee access to system resources managed by the untrusted OS and hypervisor.
 
 ## AWS Nitro Enclaves
 
-Amazon Web Services (AWS) provides a TEE implementation called
-[Nitro Enclaves](https://aws.amazon.com/ec2/nitro/nitro-enclaves/). There are
+Amazon Web Services (AWS) provides a TEE platform called
+[Nitro Enclaves](https://aws.amazon.com/ec2/nitro/nitro-enclaves/), which allows
+you to create isolated, hardened, and constrained VMs on EC2 compute instances.
+The Nitro Hypervisor ensures that the VM is protected from the Host OS and
+applications, as well as from users with root and admin privileges. There are
 several key differences between Nitro Enclaves and the other major TEE platforms.
 
 The first difference is in the trust model. Users of Nitro Enclaves must place
 complete trust in the cloud provider (i.e., Amazon). The hardware and software
-that makes up Nitro Enclaves is designed, built, and maintained by Amazon.
+that makes up Nitro Enclaves is designed, built, and maintained solely by Amazon.
 While the high-level design and architecture of the system has been made
-available, no outside third parties have ever been granted access to
+publicly available, no outside third parties have ever been granted access to
 independently verify the security claims made by Amazon regarding Nitro
 Enclaves.
 
@@ -101,6 +104,14 @@ the application is running within a VM on SEV-SNP or TDX, but you cannot
 discern _what_ that application is. To include application measurements in
 attestations, you need to configure the VM to run a virtual Trusted Platform
 Module (vTPM).
+
+In summary, Nitro Enclaves are fully isolated and hardened virtual machines.
+They have no persistent storage, no interactive access, and no external networking.
+Assuming you trust Amazon, you are assured that the Nitro Hypervisor protects
+the CPU and memory of your enclave from users, applications, and privileged
+software on the parent EC2 instance. The integrity and authenticity of your
+applications can be verified by you, or by any third party, via Nitro
+attestation reports.
 
 ## AMD Secure Encrypted Virtualization (SEV)
 
