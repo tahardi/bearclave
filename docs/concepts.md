@@ -73,8 +73,8 @@ to the "outside world" is through a _virtual_ socket interface managed by the
 Nitro hypervisor. This means that traditional networking applications (e.g.,
 HTTP servers) must be modified to send and receive data via virtual sockets.
 Additionally, you need to run a Proxy on the (untrusted) EC2 Host instance to
-forward communications between remote clients and the Nitro Enclave. This is
-the reason that Bearclave requires at least two applications: a Proxy for
+forward communications between remote clients and the Nitro Enclave. **This is
+the reason that Bearclave requires at least two applications:** a Proxy for
 handling network traffic and the Enclave for running the actual application
 logic.
 
@@ -115,7 +115,61 @@ attestation reports.
 
 ## AMD Secure Encrypted Virtualization (SEV)
 
-TODO: [concepts - sev](https://taylor-a-hardin.atlassian.net/browse/BCL-50)
+Beginning with the EPYC 7001 line of server CPUs, AMD has included support for
+[Secure Encrypted Virtualization (SEV)](https://www.amd.com/en/developer/sev.html).
+There have been several iterations of the SEV platform, including:
+- Encrypted State (ES)
+- Secure Nested Paging (SNP)
+- Trusted I/O (TIO)
+- Transparent Secure Memory Encryption (TSME)
+
+This document will focus on SEV-SNP, as that is the particular flavor currently
+supported by Bearclave.
+
+Like the other major TEE platforms (i.e., AWS Nitro, Intel TDX), AMD SEV-SNP
+lets you secure a VM from the host OS and hypervisor. It encrypts the VM's CPU
+register and RAM contents using keys that are unique to each VM instance. These
+keys are generated and managed by the AMD Secure Processor (ASP). The ASP is a
+dedicated ARM-based microcontroller integrated into the AMD x86 CPUs. It
+operates separately from the host OS and hypervisor, and is responsible for
+the secure boot, attestation reports, and key management.
+
+The ASP can derive keys tied to a specific CPU or VM instance. Depending on
+the application's needs, these keys can be ephemeral---meaning they are
+available during the VM's lifetime but do not persist between VM restarts---or
+they can be persistent, allowing VMs to encrypt and store data to disk.
+
+Unlike Nitro Enclaves, AMD SEV-SNP provides VMs with access to network sockets
+so that standard Linux socket APIs and network stacks work without modification.
+Since the hypervisor cannot read the VM's encrypted memory pages, the VM must
+copy over the network buffer to a shared unprotected memory region. The
+performance impact on modern applications such as NGINX is
+[around 7%](https://www.amd.com/content/dam/amd/en/documents/epyc-business-docs/performance-briefs/confidential-computing-performance-sev-snp-google-n2d-instances.pdf)
+compared to non-confidential VMs.
+
+While you must trust AMD to properly design and build the SEV-SNP hardware and
+firmware, you do not necessarily have to trust a cloud provider as well. Since
+SEV-SNP-enabled CPUs are commercially available, you can buy and manage your
+own SEV-SNP TEE machine if you so desire. That said, they are also available on
+major cloud providers such as AWS and GCP. It is important to note that none of
+the TEE implementations discussed in this document protect from actors with
+physical access. So, you must trust the owner and operator of the TEE hardware,
+whether that be you or some third party.
+
+The ASP provides attestation reports that cover the VM's boot state and
+configuration (e.g., kernel code, cmdline arguments, init program), but not
+the userspace applications (i.e., your application code). If you want to include
+application measurements in your AMD SEV-SNP attestation reports, then you need
+to configure the VM to run a vTPM. This program is generally run at the highest
+privilege level within the VM and "extends" Platform Configuration Registers
+(PCRs) to create immutable records of your application's code.
+
+In summary, AMD SEV-SNP allows you to isolate VMs from the host OS and
+hypervisor. The AMD Secure Processor provides CPU and VM-specific keys
+that can be used to persist data across VM restarts. The AMD SEV-SNP system
+can be purchased and managed privately, or through cloud providers like AWS
+and GCP. Application-level attestations are not provided by default but can
+be achieved through the use of a virtual Trusted Platform Module.
 
 ## Intel Trusted Domain Extensions (TDX)
 
