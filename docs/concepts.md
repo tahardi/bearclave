@@ -74,9 +74,7 @@ Nitro hypervisor. This means that traditional networking applications (e.g.,
 HTTP servers) must be modified to send and receive data via virtual sockets.
 Additionally, you need to run a Proxy on the (untrusted) EC2 Host instance to
 forward communications between remote clients and the Nitro Enclave. **This is
-the reason that Bearclave requires at least two applications:** a Proxy for
-handling network traffic and the Enclave for running the actual application
-logic.
+the reason that Bearclave requires separate Proxy and Enclave applications.**
 
 The third difference relates to key management and persistent storage.
 Applications running within Nitro Enclaves only have direct access to RAM,
@@ -173,4 +171,54 @@ be achieved through the use of a virtual Trusted Platform Module.
 
 ## Intel Trusted Domain Extensions (TDX)
 
-TODO: [concepts - tdx](https://taylor-a-hardin.atlassian.net/browse/BCL-51)
+Beginning with their 4th generation Xeon processors, Intel has included support
+for 
+[Trust Domain Extensions (TDX)](https://www.intel.com/content/www/us/en/developer/tools/trust-domain-extensions/overview.html).
+A successor to Software Guard Extensions (SGX), TDX allows you to isolate a
+VM from the OS, hypervisor, and other VMs running on the system. It encrypts
+the VM's CPU register and RAM contents using keys that are unique to each VM
+instance. This is done with the help of the TDX Module, which is a
+"micro-hypervisor" that lives in a reserved memory region in RAM and executes
+in a special, highly-priviliged CPU mode called Secure Arbitration Mode (SEAM).
+
+The TDX Module orchestrates the generation of ephemeral keys that are unique to
+each Trust Domain (TD). The Multi-Key Total Memory Encryption (MKTME) engine
+then uses this key to encrypt and decrypt VM data as it travels between the
+CPU and RAM. Unlike AMD's ASP, the TDX Module cannot create persistent keys.
+If persistent "sealing" keys are needed for storing and reading in data
+across restarts, then you need to use an external Key Management System (KMS).
+
+Unlike Nitro Enclaves, Intel TDX provides VMs with access to network sockets
+so that standard Linux socket APIs and network stacks work without modification.
+Since the hypervisor cannot read the VM's encrypted memory pages, the VM must
+copy over the network buffer to a shared unprotected memory region. The
+performance impact on CPU-intensive workloads is around 3%, whereas the impact
+for I/O-intensive workloads is
+[up to 9.3%](https://www.intel.com/content/www/us/en/developer/articles/technical/trust-domain-extensions-on-4th-gen-xeon-processors.html).
+
+While you must trust Intel to properly design and build the TDX hardware and
+firmware, you do not necessarily have to trust a cloud provider as well. Since
+TDX-enabled CPUs are commercially available, you can buy and manage your
+own TDX TEE machine if you so desire. That said, they are also available on
+major cloud providers such as Azure and GCP. It is important to note that none
+of the TEE implementations discussed in this document protect from actors with
+physical access. So, you must trust the owner and operator of the TEE hardware,
+whether that be you or some third party.
+
+The TDX module generates _locally_ verifiable attestation reports. These
+contain information such as the VM's boot state and configuration. If you
+need a _remotely_ verifiable report, then the TDX module must send the report
+to an SGX Quoting Enclave (QE) running on the host system. The quoting enclave
+verifies the TDX Module's HMAC signature on the report, and then re-signs it
+with an asymmetric key rooted in Intel's global trust chain. Similar to AMD
+SEV-SNP, if you want to include application measurements in the attestation
+report, then you need to run a vTPM in the VM to extend the Runtime Measurement
+Registers (RTMRs).
+
+In summary, Intel TDX allows you to isolate VMs from the host OS and
+hypervisor. The TDX Module provides ephemeral CPU and VM-specific keys
+that protect VM data as it leaves the CPU package, but you need to use an
+external KMS if persistent keys are desired. The Intel TDX system can be
+purchased and managed privately, or through cloud providers like Azure and GCP.
+Application-level attestations are not provided by default but can be achieved
+through the use of a virtual Trusted Platform Module.
