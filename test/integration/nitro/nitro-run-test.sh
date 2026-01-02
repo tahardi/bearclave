@@ -2,7 +2,7 @@
 
 OUTPUT_FILE=$(mktemp)
 EXIT_FILE=$(mktemp)
-trap "rm -f $OUTPUT_FILE $EXIT_FILE" EXIT
+trap 'rm -f $OUTPUT_FILE $EXIT_FILE' EXIT
 
 # Run the test executable and capture output and exit code
 /app/nitro-test -test.v > "$OUTPUT_FILE" 2>&1
@@ -21,6 +21,6 @@ while true; do
   echo ""
   echo "=== Exit Status: $TEST_EXIT ==="
   echo ""
-  echo "Test completed. Press Ctrl+C to exit the enclave."
+  echo "Test completed. Press Ctrl+C to exit the enclave console."
   sleep 3600
 done
