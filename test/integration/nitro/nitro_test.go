@@ -46,8 +46,8 @@ func TestNitro_Drivers(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, value)
 		assert.True(t, lock)
-		for _, v := range value {
-			assert.Equal(t, byte(0), v)
+		for i, v := range value {
+			assert.Equal(t, byte(0), v, "val %d should be 0", i)
 		}
 	})
 
@@ -109,7 +109,7 @@ func TestNitro_Drivers(t *testing.T) {
 		for i := uint16(0); i <= end; i++ {
 			_, lock, err := client.DescribePCR(i)
 			require.NoError(t, err)
-			require.True(t, lock)
+			require.True(t, lock, "PCR %d should be locked", i)
 		}
 	})
 
