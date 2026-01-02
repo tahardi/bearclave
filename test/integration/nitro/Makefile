@@ -2,15 +2,9 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
-.DEFAULT_GOAL := build-eif
+.DEFAULT_GOAL := run-eif-debug
 .DELETE_ON_ERROR:
 .SUFFIXES:
-
-bin=./bin
-prog=nitro-test
-eif=$(prog).eif
-dockerfile=./nitro.Dockerfile
-image_tag=$(prog)
 
 .PHONY: nitro-test
 nitro-test: $(shell find . -type f -name '*.go')
