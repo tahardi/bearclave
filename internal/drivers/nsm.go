@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	NSMDeviceError    = "Error"
 	NSMDescribePCR    = "DescribePCR"
 	NSMExtendPCR      = "ExtendPCR"
 	NSMLockPCR        = "LockPCR"
@@ -21,6 +22,7 @@ const (
 
 var (
 	ErrNSMClient = errors.New("nsm client")
+	ErrNSMDevice = fmt.Errorf("%w: nsm device", ErrNSMClient)
 )
 
 type NSM interface {
@@ -87,7 +89,7 @@ func (n *NSMClient) DescribePCR(index uint16) ([]byte, bool, error) {
 	}
 
 	resp := &DescribePCRResponse{}
-	err = UnmarshalSerdeCBOR(NSMDescribePCR, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMDescribePCR, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, false, fmt.Errorf(
@@ -136,7 +138,7 @@ func (n *NSMClient) ExtendPCR(index uint16, data []byte) ([]byte, error) {
 	}
 
 	resp := &ExtendPCRResponse{}
-	err = UnmarshalSerdeCBOR(NSMExtendPCR, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMExtendPCR, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
@@ -179,9 +181,8 @@ func (n *NSMClient) LockPCR(index uint16) error {
 		)
 	}
 
-	// TODO: Handle NSM Errors
 	resp := ""
-	err = cbor.Unmarshal(respBytes, &resp)
+	err = UnmarshalResponse(respBytes, &resp)
 	switch {
 	case err != nil:
 		return fmt.Errorf(
@@ -226,7 +227,7 @@ func (n *NSMClient) LockPCRs(end uint16) error {
 	}
 
 	resp := ""
-	err = cbor.Unmarshal(respBytes, &resp)
+	err = UnmarshalResponse(respBytes, &resp)
 	switch {
 	case err != nil:
 		return fmt.Errorf(
@@ -280,7 +281,7 @@ func (n *NSMClient) GetAttestation(
 	}
 
 	resp := &GetAttestationResponse{}
-	err = UnmarshalSerdeCBOR(NSMGetAttestation, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMGetAttestation, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
@@ -329,7 +330,7 @@ func (n *NSMClient) GetDescription() (*NSMDescription, error) {
 	}
 
 	resp := &NSMDescription{}
-	err = UnmarshalSerdeCBOR(NSMGetDescription, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMGetDescription, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
@@ -389,7 +390,7 @@ func (n *NSMClient) getRandom() ([]byte, error) {
 	}
 
 	resp := &GetRandomResponse{}
-	err = UnmarshalSerdeCBOR(NSMGetRandom, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMGetRandom, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
@@ -406,6 +407,45 @@ func (n *NSMClient) getRandom() ([]byte, error) {
 		)
 	}
 	return resp.Random, nil
+}
+
+type NSMDeviceErrorResponse struct {
+	Error string `cbor:"error"`
+}
+
+// UnmarshalNSMDeviceError assumes that UnmarshalSerdeCBOR returns an error
+// because the data did *NOT* contain an NSMDeviceErrorResponse. This is why
+// we return nil when UnmarshalSerdeCBOR fails. Otherwise, we successfully
+// unmarshalled an NSMDeviceErrorResponse and should return an actual error.
+func UnmarshalNSMDeviceError(data []byte) error {
+	nsmError := &NSMDeviceErrorResponse{}
+	err := UnmarshalSerdeCBOR(NSMDeviceError, data, nsmError)
+	if err != nil {
+		return nil
+	}
+	return fmt.Errorf("%w: %s", ErrNSMDevice, nsmError.Error)
+}
+
+// UnmarshalSerdeResponse our NSMClient.X functions assume that they will
+// get the proper response type for a given request (e.g., GetRandomRequest
+// returns GetRandomResponse). The NSM device will return an error, however,
+// if the operation failed. We use these convenience functions to first
+// check if we got an NSMDeviceError. If not, we try to unmarshal to the
+// expected response type.
+func UnmarshalSerdeResponse[T any](key string, data []byte, value *T) error {
+	err := UnmarshalNSMDeviceError(data)
+	if err != nil {
+		return err
+	}
+	return UnmarshalSerdeCBOR(key, data, value)
+}
+
+func UnmarshalResponse[T any](data []byte, value *T) error {
+	err := UnmarshalNSMDeviceError(data)
+	if err != nil {
+		return err
+	}
+	return cbor.Unmarshal(data, value)
 }
 
 func MarshalSerdeCBOR[T any](key string, value T) ([]byte, error) {
