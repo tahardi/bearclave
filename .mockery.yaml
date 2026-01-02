@@ -10,6 +10,14 @@ packages:
     interfaces:
       Attester:
       Verifier:
+  github.com/tahardi/bearclave/internal/drivers:
+    config:
+    interfaces:
+      NSM:
+  github.com/tahardi/bearclave/internal/drivers/controllers:
+    config:
+    interfaces:
+      IOController:
   io:
     config:
     interfaces:

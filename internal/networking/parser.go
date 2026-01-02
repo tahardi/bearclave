@@ -24,7 +24,7 @@ func ParseVSocketAddr(addr string) (uint32, uint32, error) {
 		addr = addr[idx+3:]
 	}
 
-	var cid, port int
+	var cid, port uint32
 	n, err := fmt.Sscanf(addr, "%d:%d", &cid, &port)
 	switch {
 	case err != nil:
@@ -34,5 +34,5 @@ func ParseVSocketAddr(addr string) (uint32, uint32, error) {
 		msg := fmt.Sprintf("expected 2 fields got %d", n)
 		return 0, 0, fmt.Errorf("%w: %s", ErrVSocketParseAddr, msg)
 	}
-	return uint32(cid), uint32(port), nil
+	return cid, port, nil
 }

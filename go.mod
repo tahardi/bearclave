@@ -3,6 +3,7 @@ module github.com/tahardi/bearclave
 go 1.24.3
 
 require (
+	github.com/fxamacker/cbor/v2 v2.2.0
 	github.com/google/go-sev-guest v0.14.1
 	github.com/google/go-tdx-guest v0.3.1
 	github.com/hf/nitrite v0.0.0-20241225144000-c2d5d3c4f303
@@ -13,7 +14,6 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/fxamacker/cbor/v2 v2.2.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-configfs-tsm v0.2.2 // indirect
 	github.com/google/logger v1.1.1 // indirect
