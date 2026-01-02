@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tahardi/bearclave/internal/attestation"
 	"github.com/tahardi/bearclave/internal/drivers"
+	"github.com/tahardi/bearclave/internal/drivers/controllers"
 )
 
 const (
@@ -202,13 +203,13 @@ func TestNitro_Drivers(t *testing.T) {
 		defer client.Close()
 
 		index := uint16(16)
-		data := make([]byte, drivers.NSMRequestMaxSize+1)
+		data := make([]byte, controllers.NSMMaxRequestSize+1)
 
 		// when
 		_, err = client.ExtendPCR(index, data)
 
 		// then
-		require.ErrorIs(t, err, drivers.ErrNSMDeviceInputTooLarge)
+		require.ErrorIs(t, err, controllers.ErrNSMController)
 	})
 }
 
