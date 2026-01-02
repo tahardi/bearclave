@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 OUTPUT_FILE=$(mktemp)
 EXIT_FILE=$(mktemp)
