@@ -21,7 +21,7 @@ var (
 )
 
 // NSMMessage structure taken from the aws-nitro-enclaves-nsm-api rust library:
-// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/src/driver/mod.rs#L34
+// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/8ec7eac72bbb2097f1058ee32c13e1ff232f13e8/src/driver/mod.rs#L34
 type NSMMessage struct {
 	Request  syscall.Iovec
 	Response syscall.Iovec
@@ -70,7 +70,7 @@ func (n *NSMController) Send(request []byte) ([]byte, error) {
 
 	// The direction, magic, and number are taken from the
 	// aws-nitro-enclaves-nsm-api rust library:
-	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/src/driver/mod.rs#L66
+	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/8ec7eac72bbb2097f1058ee32c13e1ff232f13e8/src/driver/mod.rs#L66
 	command := MakeIOControlCommand(
 		IOControlRead|IOControlWrite,
 		NSMIOControlMagic,

@@ -5,7 +5,7 @@ import (
 )
 
 // Definitions for IOControl constants and function taken from linux kernel:
-// https://github.com/torvalds/linux/blob/master/include/uapi/asm-generic/ioctl.h
+// https://github.com/torvalds/linux/blob/bbbc721033c076bad736c48a2b9f75bee4003607/include/uapi/asm-generic/ioctl.h
 //
 // Note that I changed the name "type" to "magic" because type is a reserved
 // word in Go. The "type" field is described as a "magic" number specific to

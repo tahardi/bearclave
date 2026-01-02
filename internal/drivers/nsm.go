@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/8ec7eac72bbb2097f1058ee32c13e1ff232f13e8/src/driver/mod.rs#L29
+	NSMRequestMaxSize = 0x1000
+
+	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/src/api/mod.rs#L82
 	NSMDescribePCR    = "DescribePCR"
 	NSMExtendPCR      = "ExtendPCR"
 	NSMLockPCR        = "LockPCR"
@@ -18,8 +22,7 @@ const (
 	NSMGetDescription = "DescribeNSM"
 	NSMGetRandom      = "GetRandom"
 
-	// List of possible errors returned by the NSM device taken from:
-	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/src/api/mod.rs#L49
+	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/8ec7eac72bbb2097f1058ee32c13e1ff232f13e8/src/api/mod.rs#L49
 	NSMDeviceErrorSuccess          = "Success"
 	NSMDeviceErrorInvalidArgument  = "InvalidArgument"
 	NSMDeviceErrorInvalidIndex     = "InvalidIndex"
@@ -34,7 +37,6 @@ const (
 var (
 	ErrNSMClient                 = errors.New("nsm client")
 	ErrNSMDevice                 = errors.New("nsm device")
-	ErrNSMDeviceSuccess          = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorSuccess)
 	ErrNSMDeviceInvalidArgument  = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidArgument)
 	ErrNSMDeviceInvalidIndex     = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidIndex)
 	ErrNSMDeviceInvalidResponse  = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidResponse)
