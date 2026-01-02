@@ -1,6 +1,8 @@
 FROM alpine:latest
 WORKDIR /app
 
+RUN apk add --no-cache bash
+
 COPY ./bin/nitro-test .
 COPY ./nitro-run-test.sh .
 RUN chmod +x ./nitro-run-test.sh
