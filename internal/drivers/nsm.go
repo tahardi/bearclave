@@ -91,8 +91,9 @@ func (n *NSMClient) DescribePCR(index uint16) ([]byte, bool, error) {
 	switch {
 	case err != nil:
 		return nil, false, fmt.Errorf(
-			"%w: unmarshaling describe pcr response: %w",
+			"%w: unmarshaling describe pcr response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Data) == 0:
@@ -139,13 +140,14 @@ func (n *NSMClient) ExtendPCR(index uint16, data []byte) ([]byte, error) {
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling extend pcr response: %w",
+			"%w: unmarshaling extend pcr response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Data) == 0:
 		return nil, fmt.Errorf(
-			"%w: missing value for pcr: %s",
+			"%w: missing value for pcr: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -177,18 +179,20 @@ func (n *NSMClient) LockPCR(index uint16) error {
 		)
 	}
 
+	// TODO: Handle NSM Errors
 	resp := ""
 	err = cbor.Unmarshal(respBytes, &resp)
 	switch {
 	case err != nil:
 		return fmt.Errorf(
-			"%w: unmarshaling lock pcr response: %w",
+			"%w: unmarshaling lock pcr response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case resp != NSMLockPCR:
 		return fmt.Errorf(
-			"%w: invalid lock pcr response: %s",
+			"%w: invalid lock pcr response: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -225,13 +229,14 @@ func (n *NSMClient) LockPCRs(end uint16) error {
 	switch {
 	case err != nil:
 		return fmt.Errorf(
-			"%w: unmarshaling lock pcrs response: %w",
+			"%w: unmarshaling lock pcrs response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case resp != NSMLockPCRs:
 		return fmt.Errorf(
-			"%w: invalid lock pcrs response: %s",
+			"%w: invalid lock pcrs response: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -278,13 +283,14 @@ func (n *NSMClient) GetAttestation(
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling get attestation response: %w",
+			"%w: unmarshaling get attestation response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Document) == 0:
 		return nil, fmt.Errorf(
-			"%w: missing attestation: %s",
+			"%w: missing attestation: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -326,13 +332,14 @@ func (n *NSMClient) GetDescription() (*NSMDescription, error) {
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling get description response: %w",
+			"%w: unmarshaling get description response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case resp.Digest == "" || resp.ModuleID == "":
 		return nil, fmt.Errorf(
-			"%w: missing description: %s",
+			"%w: missing description: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -385,13 +392,14 @@ func (n *NSMClient) getRandom() ([]byte, error) {
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling get random response: %w",
+			"%w: unmarshaling get random response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Random) == 0:
 		return nil, fmt.Errorf(
-			"%w: missing random bytes: %s",
+			"%w: missing random bytes: %x",
 			ErrNSMClient,
 			respBytes,
 		)
