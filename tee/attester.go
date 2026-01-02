@@ -37,6 +37,10 @@ func NewAttesterWithBase(base bearclave.Attester) (*Attester, error) {
 	return &Attester{base: base}, nil
 }
 
+func (a *Attester) Close() error {
+	return a.base.Close()
+}
+
 func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {

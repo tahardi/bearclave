@@ -23,6 +23,10 @@ func NewTDXAttester() (*TDXAttester, error) {
 	return &TDXAttester{}, nil
 }
 
+func (n *TDXAttester) Close() error {
+	return nil
+}
+
 func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {

@@ -50,6 +50,10 @@ func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	return &AttestResult{Report: quote}, nil
 }
 
+func (n *SEVAttester) Close() error {
+	return nil
+}
+
 type SEVVerifier struct{}
 
 func NewSEVVerifier() (*SEVVerifier, error) {

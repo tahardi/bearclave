@@ -1,6 +1,10 @@
 package attestation
 
+import "io"
+
 type Attester interface {
+	io.Closer
+
 	Attest(options ...AttestOption) (attestResult *AttestResult, err error)
 }
 
