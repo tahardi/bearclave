@@ -1,7 +1,6 @@
 package nitro_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,7 +9,8 @@ import (
 	"github.com/tahardi/bearclave/internal/drivers"
 )
 
-const nitroReportDebugMeasurementJSON = `{
+const (
+	nitroReportDebugMeasurementJSON = `{
   "pcrs": {
     "0": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     "1": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -19,6 +19,7 @@ const nitroReportDebugMeasurementJSON = `{
     "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   },
 }`
+)
 
 func TestNitro_Drivers(t *testing.T) {
 	t.Run("happy path - new nsm client", func(t *testing.T) {
@@ -28,92 +29,89 @@ func TestNitro_Drivers(t *testing.T) {
 		client.Close()
 	})
 
-	t.Run("happy path - describe pcrs", func(t *testing.T) {
+	// NOTE: PCRs 0-15 are always locked regardless of whether you are running
+	// in debug mode or not. In debug mode, every PCR is 0 except for PCR 4
+	t.Run("happy path - describe pcr 0 (debug)", func(t *testing.T) {
 		// given
 		client, err := drivers.NewNSMClient()
 		require.NoError(t, err)
 		defer client.Close()
 
-		index := uint16(15)
+		index := uint16(0)
 
 		// when
-		for i := uint16(0); i <= index; i++ {
-			value, lock, err := client.DescribePCR(index)
-			require.NoError(t, err)
-			fmt.Printf("pcr[%d]: %x, locked: %t\n", i, value, lock)
-			//assert.NotEmpty(t, value)
-			//assert.True(t, lock)
-		}
+		value, lock, err := client.DescribePCR(index)
 
 		// then
-		//require.NoError(t, err)
-		//assert.NotEmpty(t, value)
-		//assert.True(t, lock)
+		require.NoError(t, err)
+		require.NotEmpty(t, value)
+		assert.True(t, lock)
+		for _, v := range value {
+			assert.Equal(t, byte(0), v)
+		}
 	})
 
-	//t.Run("happy path - extend pcr", func(t *testing.T) {
-	//	// given
-	//	client, err := drivers.NewNSMClient()
-	//	require.NoError(t, err)
-	//	defer client.Close()
-	//
-	//	index := uint16(9)
-	//	data := []byte("Hello, World!")
-	//	oldVal, lock, err := client.DescribePCR(index)
-	//	require.NoError(t, err)
-	//	require.NotEmpty(t, oldVal)
-	//	require.False(t, lock)
-	//
-	//	// when
-	//	newVal, err := client.ExtendPCR(index, data)
-	//
-	//	// then
-	//	require.NoError(t, err)
-	//	assert.NotEqual(t, oldVal, newVal)
-	//})
+	t.Run("happy path - extend pcr", func(t *testing.T) {
+		// given
+		client, err := drivers.NewNSMClient()
+		require.NoError(t, err)
+		defer client.Close()
 
-	//t.Run("happy path - lock pcr", func(t *testing.T) {
-	//	// given
-	//	client, err := drivers.NewNSMClient()
-	//	require.NoError(t, err)
-	//	defer client.Close()
-	//
-	//	index := uint16(9)
-	//	_, lock, err := client.DescribePCR(index)
-	//	require.NoError(t, err)
-	//	require.False(t, lock)
-	//
-	//	// when
-	//	err = client.LockPCR(index)
-	//
-	//	// then
-	//	require.NoError(t, err)
-	//
-	//	_, lock, err = client.DescribePCR(index)
-	//	require.NoError(t, err)
-	//	require.True(t, lock)
-	//})
+		index := uint16(16)
+		data := []byte("Hello, World!")
+		oldVal, lock, err := client.DescribePCR(index)
+		require.NoError(t, err)
+		require.NotEmpty(t, oldVal)
+		require.False(t, lock)
 
-	// TODO: Need to figure out which are locked and which arent
-	// TODO: Do I need to handle NSM errors better?
-	//t.Run("happy path - lock pcrs", func(t *testing.T) {
-	//	// given
-	//	end := uint16(15)
-	//	client, err := drivers.NewNSMClient()
-	//	require.NoError(t, err)
-	//	defer client.Close()
-	//
-	//	// when
-	//	err = client.LockPCRs(end)
-	//
-	//	// then
-	//	require.NoError(t, err)
-	//	for i := uint16(0); i <= end; i++ {
-	//		_, lock, err := client.DescribePCR(i)
-	//		require.NoError(t, err)
-	//		require.True(t, lock)
-	//	}
-	//})
+		// when
+		newVal, err := client.ExtendPCR(index, data)
+
+		// then
+		require.NoError(t, err)
+		assert.NotEqual(t, oldVal, newVal)
+	})
+
+	t.Run("happy path - lock pcr", func(t *testing.T) {
+		// given
+		client, err := drivers.NewNSMClient()
+		require.NoError(t, err)
+		defer client.Close()
+
+		index := uint16(16)
+		_, lock, err := client.DescribePCR(index)
+		require.NoError(t, err)
+		require.False(t, lock)
+
+		// when
+		err = client.LockPCR(index)
+
+		// then
+		require.NoError(t, err)
+
+		_, lock, err = client.DescribePCR(index)
+		require.NoError(t, err)
+		require.True(t, lock)
+	})
+
+	t.Run("happy path - lock pcrs", func(t *testing.T) {
+		// given
+		end := uint16(31)
+		client, err := drivers.NewNSMClient()
+		require.NoError(t, err)
+		defer client.Close()
+
+		// when
+		err = client.LockPCRs(end)
+
+		// then
+		require.NoError(t, err)
+		for i := uint16(0); i <= end; i++ {
+			_, lock, err := client.DescribePCR(i)
+			require.NoError(t, err)
+			require.True(t, lock)
+		}
+	})
 
 	t.Run("happy path - get attestation", func(t *testing.T) {
 		// given
