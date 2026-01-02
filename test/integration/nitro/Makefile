@@ -39,5 +39,5 @@ terminate-eif:
 
 .PHONY: clean
 clean:
-	rm -rf ./bin
-	docker rmi nitro-test || true
+	@rm -rf ./bin
+	@docker rmi nitro-test 2>/dev/null || true
