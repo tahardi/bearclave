@@ -11,7 +11,10 @@ import (
 	"github.com/hf/nsm/request"
 )
 
-const AwsNitroMaxUserDataSize = 1024
+const (
+	AwsNitroMaxUserDataSize = 1024
+	AWSNitroDebugPCRRange   = uint(3)
+)
 
 type NitroAttester struct{}
 
@@ -112,8 +115,8 @@ func NitroIsDebugEnabled(document *nitrite.Document) (bool, error) {
 	if len(document.PCRs) < 1 {
 		return false, verifierErrorDebugMode("no pcrs provided", nil)
 	}
-	for i := range 3 {
-		pcr, ok := document.PCRs[uint(i)]
+	for i := range AWSNitroDebugPCRRange {
+		pcr, ok := document.PCRs[i]
 		if !ok {
 			msg := fmt.Sprintf("missing pcr '%d'", i)
 			return false, verifierErrorDebugMode(msg, nil)

@@ -228,8 +228,8 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		// given
 		document := &nitrite.Document{}
 		document.PCRs = make(map[uint][]byte, 3)
-		for i := range 3 {
-			document.PCRs[uint(i)] = make([]byte, 32)
+		for i := range uint(3) {
+			document.PCRs[i] = make([]byte, 32)
 		}
 
 		// when
@@ -244,9 +244,9 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		// given
 		document := &nitrite.Document{}
 		document.PCRs = make(map[uint][]byte, 3)
-		for i := range 3 {
-			document.PCRs[uint(i)] = make([]byte, 32)
-			document.PCRs[uint(i)][0] = 1
+		for i := range uint(3) {
+			document.PCRs[i] = make([]byte, 32)
+			document.PCRs[i][0] = 1
 		}
 
 		// when
@@ -274,8 +274,8 @@ func TestNitroIsDebugEnabled(t *testing.T) {
 		// given
 		document := &nitrite.Document{}
 		document.PCRs = make(map[uint][]byte, 2)
-		for i := range 2 {
-			document.PCRs[uint(i)] = make([]byte, 32)
+		for i := range uint(2) {
+			document.PCRs[i] = make([]byte, 32)
 		}
 
 		// when
