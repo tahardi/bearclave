@@ -10,9 +10,6 @@ import (
 )
 
 const (
-	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/8ec7eac72bbb2097f1058ee32c13e1ff232f13e8/src/driver/mod.rs#L29
-	NSMRequestMaxSize = 0x1000
-
 	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/src/api/mod.rs#L82
 	NSMDescribePCR    = "DescribePCR"
 	NSMExtendPCR      = "ExtendPCR"
