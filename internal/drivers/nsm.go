@@ -21,7 +21,7 @@ const (
 
 var (
 	ErrNSMClient = errors.New("nsm client")
-	ErrNSMDevice = fmt.Errorf("%w: nsm device", ErrNSMClient)
+	ErrNSMDevice = errors.New("nsm device")
 )
 
 type NSM interface {
@@ -412,17 +412,16 @@ type NSMDeviceError struct {
 	Error string `cbor:"error"`
 }
 
-// UnmarshalNSMDeviceError assumes that UnmarshalSerdeCBOR returns an error
-// because the data did *NOT* contain an NSMDeviceError. This is why
-// we return nil when UnmarshalSerdeCBOR fails. Otherwise, we successfully
-// unmarshalled an NSMDeviceError and should return an actual error.
 func UnmarshalNSMDeviceError(data []byte) error {
 	nsmError := &NSMDeviceError{}
 	err := cbor.Unmarshal(data, nsmError)
-	if err != nil {
-		return nil
+	switch {
+	case err != nil:
+		return fmt.Errorf("%w: unmarshaling error: %w", ErrNSMDevice, err)
+	case nsmError.Error != "":
+		return fmt.Errorf("%w: %s", ErrNSMDevice, nsmError.Error)
 	}
-	return fmt.Errorf("%w: %s", ErrNSMDevice, nsmError.Error)
+	return nil
 }
 
 // UnmarshalSerdeResponse our NSMClient.X functions assume that they will
