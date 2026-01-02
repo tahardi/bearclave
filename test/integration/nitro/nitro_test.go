@@ -160,6 +160,26 @@ func TestNitro_Drivers(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, got, int(wantLength))
 	})
+
+	t.Run("error - extend locked pcr", func(t *testing.T) {
+		// given
+		client, err := drivers.NewNSMClient()
+		require.NoError(t, err)
+		defer client.Close()
+
+		index := uint16(0)
+		data := []byte("Hello, World!")
+		_, lock, err := client.DescribePCR(index)
+		require.NoError(t, err)
+		require.True(t, lock)
+
+		// when
+		_, err = client.ExtendPCR(index, data)
+
+		// then
+		require.Error(t, err)
+		require.ErrorIs(t, err, drivers.ErrNSMDevice)
+	})
 }
 
 func TestNitro_Attestation(t *testing.T) {
