@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	NSMDeviceError    = "Error"
 	NSMDescribePCR    = "DescribePCR"
 	NSMExtendPCR      = "ExtendPCR"
 	NSMLockPCR        = "LockPCR"
@@ -409,17 +408,17 @@ func (n *NSMClient) getRandom() ([]byte, error) {
 	return resp.Random, nil
 }
 
-type NSMDeviceErrorResponse struct {
+type NSMDeviceError struct {
 	Error string `cbor:"error"`
 }
 
 // UnmarshalNSMDeviceError assumes that UnmarshalSerdeCBOR returns an error
-// because the data did *NOT* contain an NSMDeviceErrorResponse. This is why
+// because the data did *NOT* contain an NSMDeviceError. This is why
 // we return nil when UnmarshalSerdeCBOR fails. Otherwise, we successfully
-// unmarshalled an NSMDeviceErrorResponse and should return an actual error.
+// unmarshalled an NSMDeviceError and should return an actual error.
 func UnmarshalNSMDeviceError(data []byte) error {
-	nsmError := &NSMDeviceErrorResponse{}
-	err := UnmarshalSerdeCBOR(NSMDeviceError, data, nsmError)
+	nsmError := &NSMDeviceError{}
+	err := cbor.Unmarshal(data, nsmError)
 	if err != nil {
 		return nil
 	}
