@@ -413,12 +413,9 @@ type NSMDeviceError struct {
 }
 
 func UnmarshalNSMDeviceError(data []byte) error {
-	nsmError := &NSMDeviceError{}
-	err := cbor.Unmarshal(data, nsmError)
-	switch {
-	case err != nil:
-		return fmt.Errorf("%w: unmarshaling error: %w", ErrNSMDevice, err)
-	case nsmError.Error != "":
+	nsmError := &NSMDeviceError{Error: ""}
+	_ = cbor.Unmarshal(data, nsmError)
+	if nsmError.Error != "" {
 		return fmt.Errorf("%w: %s", ErrNSMDevice, nsmError.Error)
 	}
 	return nil
