@@ -1,4 +1,4 @@
-package integration_test
+package notee_test
 
 //revive:disable:context-as-argument
 
