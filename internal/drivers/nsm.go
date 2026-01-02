@@ -17,11 +17,32 @@ const (
 	NSMGetAttestation = "Attestation"
 	NSMGetDescription = "DescribeNSM"
 	NSMGetRandom      = "GetRandom"
+
+	// List of possible errors returned by the NSM device taken from:
+	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/src/api/mod.rs#L49
+	NSMDeviceErrorSuccess          = "Success"
+	NSMDeviceErrorInvalidArgument  = "InvalidArgument"
+	NSMDeviceErrorInvalidIndex     = "InvalidIndex"
+	NSMDeviceErrorInvalidResponse  = "InvalidResponse"
+	NSMDeviceErrorReadOnlyIndex    = "ReadOnlyIndex"
+	NSMDeviceErrorInvalidOperation = "InvalidOperation"
+	NSMDeviceErrorBufferTooSmall   = "BufferTooSmall"
+	NSMDeviceErrorInputTooLarge    = "InputTooLarge"
+	NSMDeviceErrorInternalError    = "InternalError"
 )
 
 var (
-	ErrNSMClient = errors.New("nsm client")
-	ErrNSMDevice = errors.New("nsm device")
+	ErrNSMClient                 = errors.New("nsm client")
+	ErrNSMDevice                 = errors.New("nsm device")
+	ErrNSMDeviceSuccess          = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorSuccess)
+	ErrNSMDeviceInvalidArgument  = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidArgument)
+	ErrNSMDeviceInvalidIndex     = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidIndex)
+	ErrNSMDeviceInvalidResponse  = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidResponse)
+	ErrNSMDeviceReadOnlyIndex    = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorReadOnlyIndex)
+	ErrNSMDeviceInvalidOperation = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidOperation)
+	ErrNSMDeviceBufferTooSmall   = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorBufferTooSmall)
+	ErrNSMDeviceInputTooLarge    = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInputTooLarge)
+	ErrNSMDeviceInternalError    = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInternalError)
 )
 
 type NSM interface {
@@ -415,10 +436,28 @@ type NSMDeviceError struct {
 func UnmarshalNSMDeviceError(data []byte) error {
 	nsmError := &NSMDeviceError{Error: ""}
 	_ = cbor.Unmarshal(data, nsmError)
-	if nsmError.Error != "" {
+	switch nsmError.Error {
+	case "", NSMDeviceErrorSuccess:
+		return nil
+	case NSMDeviceErrorInvalidArgument:
+		return ErrNSMDeviceInvalidArgument
+	case NSMDeviceErrorInvalidIndex:
+		return ErrNSMDeviceInvalidIndex
+	case NSMDeviceErrorInvalidResponse:
+		return ErrNSMDeviceInvalidResponse
+	case NSMDeviceErrorReadOnlyIndex:
+		return ErrNSMDeviceReadOnlyIndex
+	case NSMDeviceErrorInvalidOperation:
+		return ErrNSMDeviceInvalidOperation
+	case NSMDeviceErrorBufferTooSmall:
+		return ErrNSMDeviceBufferTooSmall
+	case NSMDeviceErrorInputTooLarge:
+		return ErrNSMDeviceInputTooLarge
+	case NSMDeviceErrorInternalError:
+		return ErrNSMDeviceInternalError
+	default:
 		return fmt.Errorf("%w: %s", ErrNSMDevice, nsmError.Error)
 	}
-	return nil
 }
 
 // UnmarshalSerdeResponse our NSMClient.X functions assume that they will
