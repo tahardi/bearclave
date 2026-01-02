@@ -22,5 +22,5 @@ while true; do
   echo "=== Exit Status: $TEST_EXIT ==="
   echo ""
   echo "Test completed. Press Ctrl+C to exit the enclave."
-  sleep 60
+  sleep 3600
 done

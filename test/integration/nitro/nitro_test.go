@@ -40,7 +40,7 @@ func TestNitro_Drivers(t *testing.T) {
 		for i := uint16(0); i <= index; i++ {
 			value, lock, err := client.DescribePCR(index)
 			require.NoError(t, err)
-			fmt.Printf("pcr[%d]: %s, locked: %t\n", i, value, lock)
+			fmt.Printf("pcr[%d]: %x, locked: %t\n", i, value, lock)
 			//assert.NotEmpty(t, value)
 			//assert.True(t, lock)
 		}
