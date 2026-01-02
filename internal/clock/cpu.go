@@ -118,7 +118,7 @@ func CalcTSCFrequencyFromTimer() (int64, error) {
 	switch {
 	case err != nil:
 		return 0, cpuErrorTSCFrequency("reading system clock source", err)
-	case !strings.Contains(TSC, string(source)):
+	case !strings.Contains(string(source), TSC):
 		msg := fmt.Sprintf("expected clock source '%q' got '%q'", TSC, source)
 		return 0, cpuErrorTSCFrequency(msg, nil)
 	}
