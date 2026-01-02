@@ -161,6 +161,21 @@ func TestNitro_Drivers(t *testing.T) {
 		assert.Len(t, got, int(wantLength))
 	})
 
+	t.Run("error - pcr index out-of-range", func(t *testing.T) {
+		// given
+		client, err := drivers.NewNSMClient()
+		require.NoError(t, err)
+		defer client.Close()
+
+		index := uint16(100)
+
+		// when
+		_, _, err = client.DescribePCR(index)
+
+		// then
+		require.ErrorIs(t, err, drivers.ErrNSMDeviceInvalidIndex)
+	})
+
 	t.Run("error - extend locked pcr", func(t *testing.T) {
 		// given
 		client, err := drivers.NewNSMClient()
@@ -177,9 +192,10 @@ func TestNitro_Drivers(t *testing.T) {
 		_, err = client.ExtendPCR(index, data)
 
 		// then
-		require.Error(t, err)
-		require.ErrorIs(t, err, drivers.ErrNSMDevice)
+		require.ErrorIs(t, err, drivers.ErrNSMDeviceReadOnlyIndex)
 	})
+
+	// input data too large?
 }
 
 func TestNitro_Attestation(t *testing.T) {
