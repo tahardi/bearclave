@@ -183,6 +183,7 @@ func TestNitro_Attestation(t *testing.T) {
 
 		verified, err := verifier.Verify(
 			attested,
+			attestation.WithVerifyMeasurement(nitroReportDebugMeasurementJSON),
 			attestation.WithVerifyVerifyNonce(nonce),
 			attestation.WithVerifyDebug(true),
 		)
