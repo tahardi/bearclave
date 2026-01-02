@@ -96,7 +96,7 @@ func TestNitro_Drivers(t *testing.T) {
 
 	t.Run("happy path - lock pcrs", func(t *testing.T) {
 		// given
-		end := uint16(31)
+		end := uint16(32)
 		client, err := drivers.NewNSMClient()
 		require.NoError(t, err)
 		defer client.Close()
@@ -106,7 +106,7 @@ func TestNitro_Drivers(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		for i := uint16(0); i <= end; i++ {
+		for i := uint16(0); i < end; i++ {
 			_, lock, err := client.DescribePCR(i)
 			require.NoError(t, err)
 			require.True(t, lock, "PCR %d should be locked", i)

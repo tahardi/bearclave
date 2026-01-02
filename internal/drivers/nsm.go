@@ -204,6 +204,7 @@ type LockPCRsRequest struct {
 	Range uint16 `cbor:"range"`
 }
 
+// LockPCRs locks all PCRs from 0 to end (exclusive).
 func (n *NSMClient) LockPCRs(end uint16) error {
 	req := &LockPCRsRequest{Range: end}
 	reqBytes, err := MarshalSerdeCBOR(NSMLockPCRs, req)
