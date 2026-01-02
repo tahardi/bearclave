@@ -30,7 +30,7 @@ build-eif: build-docker
 		--output-file ./bin/nitro-test.eif
 
 .PHONY: run-eif-debug
-run-eif-debug: build-eif
+run-eif-debug: terminate-eif build-eif
 	@nitro-cli run-enclave \
 		--cpu-count 2 \
 		--memory 512 \
