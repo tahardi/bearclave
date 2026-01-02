@@ -107,7 +107,7 @@ func TestNitro_Drivers(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		for i := uint16(0); i < end; i++ {
+		for i := range end {
 			_, lock, err := client.DescribePCR(i)
 			require.NoError(t, err)
 			require.True(t, lock, "PCR %d should be locked", i)

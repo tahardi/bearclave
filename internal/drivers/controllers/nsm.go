@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// NSMDevFile and other constants taken from:
 	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/8ec7eac72bbb2097f1058ee32c13e1ff232f13e8/src/driver/mod.rs#L12
 	NSMDevFile         = "/dev/nsm"
 	NSMIOControlMagic  = 0x0A
