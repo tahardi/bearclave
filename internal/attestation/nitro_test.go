@@ -10,6 +10,7 @@ import (
 	"github.com/hf/nitrite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tahardi/bearclave/mocks"
 
 	"github.com/tahardi/bearclave/internal/attestation"
 )
@@ -74,10 +75,34 @@ func TestNitro_Interfaces(t *testing.T) {
 }
 
 func TestNitroAttester_Attest(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		wantReport := []byte("report")
+		wantNonce := []byte("nonce")
+		wantUserData := []byte("Hello, world!")
+		client := mocks.NewNSM(t)
+		client.On("GetAttestation", wantNonce, []byte(nil), wantUserData).
+			Return(wantReport, nil)
+
+		attester, err := attestation.NewNitroAttesterWithClient(client)
+		require.NoError(t, err)
+
+		// when
+		got, err := attester.Attest(
+			attestation.WithAttestNonce(wantNonce),
+			attestation.WithAttestUserData(wantUserData),
+		)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, wantReport, got.Report)
+	})
+
 	t.Run("error - user data too long", func(t *testing.T) {
 		// given
 		userData := make([]byte, attestation.AwsNitroMaxUserDataSize+1)
-		attester, err := attestation.NewNitroAttester()
+		client := mocks.NewNSM(t)
+		attester, err := attestation.NewNitroAttesterWithClient(client)
 		require.NoError(t, err)
 
 		// when

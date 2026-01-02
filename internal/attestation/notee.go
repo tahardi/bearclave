@@ -58,6 +58,10 @@ func NewNoTEEAttesterWithPrivateKey(
 	return &NoTEEAttester{privateKey: privateKey, publicKey: publicKey}, nil
 }
 
+func (a *NoTEEAttester) Close() error {
+	return nil
+}
+
 func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {

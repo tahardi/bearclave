@@ -7,8 +7,7 @@ import (
 	"fmt"
 
 	"github.com/hf/nitrite"
-	"github.com/hf/nsm"
-	"github.com/hf/nsm/request"
+	"github.com/tahardi/bearclave/internal/drivers"
 )
 
 const (
@@ -16,10 +15,24 @@ const (
 	AWSNitroDebugPCRRange   = uint(3)
 )
 
-type NitroAttester struct{}
+type NitroAttester struct {
+	client drivers.NSM
+}
 
 func NewNitroAttester() (*NitroAttester, error) {
-	return &NitroAttester{}, nil
+	client, err := drivers.NewNSMClient()
+	if err != nil {
+		return nil, attesterError("making nsm client", err)
+	}
+	return NewNitroAttesterWithClient(client)
+}
+
+func NewNitroAttesterWithClient(client drivers.NSM) (*NitroAttester, error) {
+	return &NitroAttester{client: client}, nil
+}
+
+func (n *NitroAttester) Close() error {
+	return n.client.Close()
 }
 
 func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
@@ -36,29 +49,15 @@ func (n *NitroAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		return nil, attesterErrorUserData(msg, nil)
 	}
 
-	session, err := nsm.OpenDefaultSession()
+	attestation, err := n.client.GetAttestation(
+		opts.Nonce,
+		nil,
+		opts.UserData,
+	)
 	if err != nil {
-		return nil, attesterError("opening nsm session", err)
+		return nil, attesterError("getting attestation", err)
 	}
-	defer session.Close()
-
-	resp, err := session.Send(&request.Attestation{
-		Nonce:     opts.Nonce,
-		PublicKey: nil,
-		UserData:  opts.UserData,
-	})
-	switch {
-	case err != nil:
-		return nil, attesterError("sending attestation request", err)
-	case resp.Error != "":
-		msg := fmt.Sprintf("attestation error: %s", resp.Error)
-		return nil, attesterError(msg, nil)
-	case resp.Attestation == nil:
-		return nil, attesterError("attestation response missing attestation", nil)
-	case resp.Attestation.Document == nil:
-		return nil, attesterError("attestation response missing document", nil)
-	}
-	return &AttestResult{Report: resp.Attestation.Document}, nil
+	return &AttestResult{Report: attestation}, nil
 }
 
 type NitroVerifier struct{}
@@ -106,7 +105,7 @@ func (n *NitroVerifier) Verify(
 	}
 
 	verifyResult := &VerifyResult{
-		UserData:  result.Document.UserData,
+		UserData: result.Document.UserData,
 	}
 	return verifyResult, nil
 }
