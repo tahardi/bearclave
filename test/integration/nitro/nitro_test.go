@@ -195,7 +195,21 @@ func TestNitro_Drivers(t *testing.T) {
 		require.ErrorIs(t, err, drivers.ErrNSMDeviceReadOnlyIndex)
 	})
 
-	// input data too large?
+	t.Run("error - input too large", func(t *testing.T) {
+		// given
+		client, err := drivers.NewNSMClient()
+		require.NoError(t, err)
+		defer client.Close()
+
+		index := uint16(16)
+		data := make([]byte, drivers.NSMRequestMaxSize+1)
+
+		// when
+		_, err = client.ExtendPCR(index, data)
+
+		// then
+		require.ErrorIs(t, err, drivers.ErrNSMDeviceInputTooLarge)
+	})
 }
 
 func TestNitro_Attestation(t *testing.T) {
