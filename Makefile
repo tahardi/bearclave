@@ -52,5 +52,16 @@ test-unit-internal:
 	@go test -v -count=1 -race ./internal/...
 
 .PHONY: test-integration
-test-integration:
-	@go test -v -count=1 -race ./test/integration/...
+test-integration: test-integration-notee
+
+.PHONY: test-integration-notee
+test-integration-notee:
+	@go test -v -count=1 -race ./test/integration/notee/...
+
+.PHONY: test-integration-nitro
+test-integration-nitro:
+	@make -C ./test/integration/nitro
+
+.PHONY: clean
+clean:
+	@make -C ./test/integration/nitro clean

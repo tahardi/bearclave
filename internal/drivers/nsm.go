@@ -10,6 +10,8 @@ import (
 )
 
 const (
+	// NSMDescribePCR and other request types taken from:
+	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/src/api/mod.rs#L82
 	NSMDescribePCR    = "DescribePCR"
 	NSMExtendPCR      = "ExtendPCR"
 	NSMLockPCR        = "LockPCR"
@@ -17,10 +19,31 @@ const (
 	NSMGetAttestation = "Attestation"
 	NSMGetDescription = "DescribeNSM"
 	NSMGetRandom      = "GetRandom"
+
+	// NSMDeviceErrorSuccess and other error types taken from:
+	// https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/8ec7eac72bbb2097f1058ee32c13e1ff232f13e8/src/api/mod.rs#L49
+	NSMDeviceErrorSuccess          = "Success"
+	NSMDeviceErrorInvalidArgument  = "InvalidArgument"
+	NSMDeviceErrorInvalidIndex     = "InvalidIndex"
+	NSMDeviceErrorInvalidResponse  = "InvalidResponse"
+	NSMDeviceErrorReadOnlyIndex    = "ReadOnlyIndex"
+	NSMDeviceErrorInvalidOperation = "InvalidOperation"
+	NSMDeviceErrorBufferTooSmall   = "BufferTooSmall"
+	NSMDeviceErrorInputTooLarge    = "InputTooLarge"
+	NSMDeviceErrorInternalError    = "InternalError"
 )
 
 var (
-	ErrNSMClient = errors.New("nsm client")
+	ErrNSMClient                 = errors.New("nsm client")
+	ErrNSMDevice                 = errors.New("nsm device")
+	ErrNSMDeviceInvalidArgument  = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidArgument)
+	ErrNSMDeviceInvalidIndex     = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidIndex)
+	ErrNSMDeviceInvalidResponse  = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidResponse)
+	ErrNSMDeviceReadOnlyIndex    = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorReadOnlyIndex)
+	ErrNSMDeviceInvalidOperation = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInvalidOperation)
+	ErrNSMDeviceBufferTooSmall   = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorBufferTooSmall)
+	ErrNSMDeviceInputTooLarge    = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInputTooLarge)
+	ErrNSMDeviceInternalError    = fmt.Errorf("%w: %s", ErrNSMDevice, NSMDeviceErrorInternalError)
 )
 
 type NSM interface {
@@ -87,12 +110,13 @@ func (n *NSMClient) DescribePCR(index uint16) ([]byte, bool, error) {
 	}
 
 	resp := &DescribePCRResponse{}
-	err = UnmarshalSerdeCBOR(NSMDescribePCR, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMDescribePCR, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, false, fmt.Errorf(
-			"%w: unmarshaling describe pcr response: %w",
+			"%w: unmarshaling describe pcr response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Data) == 0:
@@ -135,17 +159,18 @@ func (n *NSMClient) ExtendPCR(index uint16, data []byte) ([]byte, error) {
 	}
 
 	resp := &ExtendPCRResponse{}
-	err = UnmarshalSerdeCBOR(NSMExtendPCR, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMExtendPCR, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling extend pcr response: %w",
+			"%w: unmarshaling extend pcr response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Data) == 0:
 		return nil, fmt.Errorf(
-			"%w: missing value for pcr: %s",
+			"%w: missing value for pcr: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -178,17 +203,18 @@ func (n *NSMClient) LockPCR(index uint16) error {
 	}
 
 	resp := ""
-	err = cbor.Unmarshal(respBytes, &resp)
+	err = UnmarshalResponse(respBytes, &resp)
 	switch {
 	case err != nil:
 		return fmt.Errorf(
-			"%w: unmarshaling lock pcr response: %w",
+			"%w: unmarshaling lock pcr response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case resp != NSMLockPCR:
 		return fmt.Errorf(
-			"%w: invalid lock pcr response: %s",
+			"%w: invalid lock pcr response: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -200,6 +226,7 @@ type LockPCRsRequest struct {
 	Range uint16 `cbor:"range"`
 }
 
+// LockPCRs locks all PCRs from 0 to end (exclusive).
 func (n *NSMClient) LockPCRs(end uint16) error {
 	req := &LockPCRsRequest{Range: end}
 	reqBytes, err := MarshalSerdeCBOR(NSMLockPCRs, req)
@@ -221,17 +248,18 @@ func (n *NSMClient) LockPCRs(end uint16) error {
 	}
 
 	resp := ""
-	err = cbor.Unmarshal(respBytes, &resp)
+	err = UnmarshalResponse(respBytes, &resp)
 	switch {
 	case err != nil:
 		return fmt.Errorf(
-			"%w: unmarshaling lock pcrs response: %w",
+			"%w: unmarshaling lock pcrs response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case resp != NSMLockPCRs:
 		return fmt.Errorf(
-			"%w: invalid lock pcrs response: %s",
+			"%w: invalid lock pcrs response: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -274,17 +302,18 @@ func (n *NSMClient) GetAttestation(
 	}
 
 	resp := &GetAttestationResponse{}
-	err = UnmarshalSerdeCBOR(NSMGetAttestation, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMGetAttestation, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling get attestation response: %w",
+			"%w: unmarshaling get attestation response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Document) == 0:
 		return nil, fmt.Errorf(
-			"%w: missing attestation: %s",
+			"%w: missing attestation: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -322,17 +351,18 @@ func (n *NSMClient) GetDescription() (*NSMDescription, error) {
 	}
 
 	resp := &NSMDescription{}
-	err = UnmarshalSerdeCBOR(NSMGetDescription, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMGetDescription, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling get description response: %w",
+			"%w: unmarshaling get description response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case resp.Digest == "" || resp.ModuleID == "":
 		return nil, fmt.Errorf(
-			"%w: missing description: %s",
+			"%w: missing description: %x",
 			ErrNSMClient,
 			respBytes,
 		)
@@ -381,22 +411,76 @@ func (n *NSMClient) getRandom() ([]byte, error) {
 	}
 
 	resp := &GetRandomResponse{}
-	err = UnmarshalSerdeCBOR(NSMGetRandom, respBytes, resp)
+	err = UnmarshalSerdeResponse(NSMGetRandom, respBytes, resp)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf(
-			"%w: unmarshaling get random response: %w",
+			"%w: unmarshaling get random response '%x': %w",
 			ErrNSMClient,
+			respBytes,
 			err,
 		)
 	case len(resp.Random) == 0:
 		return nil, fmt.Errorf(
-			"%w: missing random bytes: %s",
+			"%w: missing random bytes: %x",
 			ErrNSMClient,
 			respBytes,
 		)
 	}
 	return resp.Random, nil
+}
+
+type NSMDeviceError struct {
+	Error string `cbor:"error"`
+}
+
+func UnmarshalNSMDeviceError(data []byte) error {
+	nsmError := &NSMDeviceError{Error: ""}
+	_ = cbor.Unmarshal(data, nsmError)
+	switch nsmError.Error {
+	case "", NSMDeviceErrorSuccess:
+		return nil
+	case NSMDeviceErrorInvalidArgument:
+		return ErrNSMDeviceInvalidArgument
+	case NSMDeviceErrorInvalidIndex:
+		return ErrNSMDeviceInvalidIndex
+	case NSMDeviceErrorInvalidResponse:
+		return ErrNSMDeviceInvalidResponse
+	case NSMDeviceErrorReadOnlyIndex:
+		return ErrNSMDeviceReadOnlyIndex
+	case NSMDeviceErrorInvalidOperation:
+		return ErrNSMDeviceInvalidOperation
+	case NSMDeviceErrorBufferTooSmall:
+		return ErrNSMDeviceBufferTooSmall
+	case NSMDeviceErrorInputTooLarge:
+		return ErrNSMDeviceInputTooLarge
+	case NSMDeviceErrorInternalError:
+		return ErrNSMDeviceInternalError
+	default:
+		return fmt.Errorf("%w: %s", ErrNSMDevice, nsmError.Error)
+	}
+}
+
+// UnmarshalSerdeResponse our NSMClient.X functions assume that they will
+// get the proper response type for a given request (e.g., GetRandomRequest
+// returns GetRandomResponse). The NSM device will return an error, however,
+// if the operation failed. We use these convenience functions to first
+// check if we got an NSMDeviceError. If not, we try to unmarshal to the
+// expected response type.
+func UnmarshalSerdeResponse[T any](key string, data []byte, value *T) error {
+	err := UnmarshalNSMDeviceError(data)
+	if err != nil {
+		return err
+	}
+	return UnmarshalSerdeCBOR(key, data, value)
+}
+
+func UnmarshalResponse[T any](data []byte, value *T) error {
+	err := UnmarshalNSMDeviceError(data)
+	if err != nil {
+		return err
+	}
+	return cbor.Unmarshal(data, value)
 }
 
 func MarshalSerdeCBOR[T any](key string, value T) ([]byte, error) {

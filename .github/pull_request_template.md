@@ -10,3 +10,4 @@ If any of these checks are missing, please provide an explanation.
 - [ ] I have updated workflows, if applicable.
 - [ ] Dependencies in `go.mod` only reference tagged or `main` branch commits
 - [ ] I have run `make pre-pr` and all checks have passed.
+- [ ] I have run platform-specific integration tests, if applicable.
