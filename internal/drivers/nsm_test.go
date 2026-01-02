@@ -85,7 +85,6 @@ func TestNSMClient_DescribePCR(t *testing.T) {
 		_, _, err = client.DescribePCR(wantIndex)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -110,7 +109,6 @@ func TestNSMClient_DescribePCR(t *testing.T) {
 		_, _, err = client.DescribePCR(wantIndex)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing value for key")
 	})
@@ -137,7 +135,6 @@ func TestNSMClient_DescribePCR(t *testing.T) {
 		_, _, err = client.DescribePCR(wantIndex)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing value for pcr")
 	})
@@ -185,7 +182,6 @@ func TestNSMClient_ExtendPCR(t *testing.T) {
 		_, err = client.ExtendPCR(wantIndex, wantData)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -211,7 +207,6 @@ func TestNSMClient_ExtendPCR(t *testing.T) {
 		_, err = client.ExtendPCR(wantIndex, wantData)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing value for key")
 	})
@@ -239,7 +234,6 @@ func TestNSMClient_ExtendPCR(t *testing.T) {
 		_, err = client.ExtendPCR(wantIndex, wantData)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing value for pcr")
 	})
@@ -283,7 +277,6 @@ func TestNSMClient_LockPCR(t *testing.T) {
 		err = client.LockPCR(wantIndex)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -308,7 +301,6 @@ func TestNSMClient_LockPCR(t *testing.T) {
 		err = client.LockPCR(wantIndex)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "invalid lock pcr response")
 	})
@@ -352,7 +344,6 @@ func TestNSMClient_LockPCRs(t *testing.T) {
 		err = client.LockPCRs(wantRange)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -377,7 +368,6 @@ func TestNSMClient_LockPCRs(t *testing.T) {
 		err = client.LockPCRs(wantRange)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "invalid lock pcrs response")
 	})
@@ -432,7 +422,6 @@ func TestNSMClient_GetAttestation(t *testing.T) {
 		_, err = client.GetAttestation(wantNonce, wantPublicKey, wantUserData)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -459,7 +448,6 @@ func TestNSMClient_GetAttestation(t *testing.T) {
 		_, err = client.GetAttestation(wantNonce, wantPublicKey, wantUserData)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing value for key")
 	})
@@ -488,7 +476,6 @@ func TestNSMClient_GetAttestation(t *testing.T) {
 		_, err = client.GetAttestation(wantNonce, wantPublicKey, wantUserData)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing attestation")
 	})
@@ -541,7 +528,6 @@ func TestNSMClient_GetDescription(t *testing.T) {
 		_, err = client.GetDescription()
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -567,7 +553,6 @@ func TestNSMClient_GetDescription(t *testing.T) {
 		_, err = client.GetDescription()
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing value for key")
 	})
@@ -603,7 +588,6 @@ func TestNSMClient_GetDescription(t *testing.T) {
 		_, err = client.GetDescription()
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing description")
 	})
@@ -650,7 +634,6 @@ func TestNSMClient_GetRandom(t *testing.T) {
 		_, err = client.GetRandom(wantLength)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -675,7 +658,6 @@ func TestNSMClient_GetRandom(t *testing.T) {
 		_, err = client.GetRandom(wantLength)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing value for key")
 	})
@@ -702,7 +684,6 @@ func TestNSMClient_GetRandom(t *testing.T) {
 		_, err = client.GetRandom(wantLength)
 
 		// then
-		require.Error(t, err)
 		require.ErrorIs(t, err, drivers.ErrNSMClient)
 		assert.ErrorContains(t, err, "missing random bytes")
 	})
