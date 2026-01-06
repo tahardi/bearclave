@@ -3,7 +3,7 @@ module github.com/tahardi/bearclave
 go 1.24.3
 
 require (
-	github.com/fxamacker/cbor/v2 v2.2.0
+	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/google/go-sev-guest v0.14.1
 	github.com/google/go-tdx-guest v0.3.1
 	github.com/hf/nitrite v0.0.0-20241225144000-c2d5d3c4f303
