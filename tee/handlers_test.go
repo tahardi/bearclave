@@ -14,6 +14,8 @@ import (
 	"github.com/tahardi/bearclave/tee"
 )
 
+const defaultPath = "/"
+
 func makeRequest(
 	t *testing.T,
 	method string,
@@ -30,7 +32,7 @@ func makeRequest(
 	return req
 }
 
-func TestMakeForwardHttpRequestHandler(t *testing.T) {
+func TestMakeProxyHandler(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		want := map[string]string{"status": "ok"}
@@ -44,17 +46,17 @@ func TestMakeForwardHttpRequestHandler(t *testing.T) {
 		)
 		defer backend.Close()
 
-		ctxTimeout := tee.DefaultForwardHTTPRequestTimeout
+		ctxTimeout := tee.DefaultProxyTimeout
 		client := backend.Client()
 		var logBuffer bytes.Buffer
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
 		body := map[string]string{"hello": "world"}
-		req := makeRequest(t, "POST", tee.ForwardPath, body)
+		req := makeRequest(t, "POST", defaultPath, body)
 		req.Host = backend.Listener.Addr().String()
 
-		handler := tee.MakeForwardHTTPRequestHandler(client, logger, ctxTimeout)
+		handler := tee.MakeProxyHandler(client, logger, ctxTimeout)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -99,7 +101,7 @@ func TestMakeForwardHttpRequestHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		req := makeRequest(t, "GET", tee.ForwardPath, nil)
+		req := makeRequest(t, "GET", defaultPath, nil)
 		req.Host = backend.Listener.Addr().String()
 
 		for _, h := range ignoredHeaders {
@@ -107,7 +109,7 @@ func TestMakeForwardHttpRequestHandler(t *testing.T) {
 		}
 		req.Header.Set("X-Custom-Header", "allowed-value")
 
-		handler := tee.MakeForwardHTTPRequestHandler(client, logger, tee.DefaultForwardHTTPRequestTimeout)
+		handler := tee.MakeProxyHandler(client, logger, tee.DefaultProxyTimeout)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -132,10 +134,10 @@ func TestMakeForwardHttpRequestHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		req := makeRequest(t, "POST", tee.ForwardPath, map[string]string{"foo": "bar"})
+		req := makeRequest(t, "POST", defaultPath, map[string]string{"foo": "bar"})
 		req.Host = backend.Listener.Addr().String()
 
-		handler := tee.MakeForwardHTTPRequestHandler(client, logger, timeout)
+		handler := tee.MakeProxyHandler(client, logger, timeout)
 
 		// when
 		handler.ServeHTTP(recorder, req)

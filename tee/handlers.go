@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	// TODO: I think I can get rid of forward path
-	ForwardPath         = "/"
 	DefaultProxyTimeout = 30 * time.Second
+	ProxyConnectionEstablished = "HTTP/1.1 200 Connection Established\r\n\r\n"
+	ProxyBadGateway           = "HTTP/1.1 502 Bad Gateway\r\n\r\n"
 )
 
 func MakeProxyTLSHandler(
@@ -47,20 +47,21 @@ func MakeProxyTLSHandler(
 		}
 		defer clientConn.Close()
 
-		// TODO: Should I define these connection messages?
-		// TODO: So I stop writing to the response writer at this point?
+		// NOTE: Do NOT write to ResponseWriter after hijacking connection
 		targetAddr := r.RequestURI
-		serverConn, err := net.Dial(Network, targetAddr)
+		serverConn, err := net.Dial(NetworkTCP, targetAddr)
 		if err != nil {
 			msg := fmt.Sprintf("dialing '%s'", targetAddr)
 			logger.Error(msg, slog.String("error", err.Error()))
-			clientConn.Write([]byte("HTTP/1.1 502 Bad Gateway\r\n\r\n"))
+			clientConn.Write([]byte(ProxyBadGateway))
 			return
 		}
 		defer serverConn.Close()
 
-		// TODO: Should I create a context and switch on cancel and done?
-		clientConn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+
+		clientConn.Write([]byte(ProxyConnectionEstablished))
 		done := make(chan error, 2)
 		go func() {
 			_, err := io.Copy(serverConn, clientConn)
@@ -70,14 +71,22 @@ func MakeProxyTLSHandler(
 			_, err := io.Copy(clientConn, serverConn)
 			done <- err
 		}()
-		<-done
+
+		select {
+		case err := <-done:
+			if err != nil && err != io.EOF {
+				logger.Error("copy error", slog.String("error", err.Error()))
+			}
+		case <-ctx.Done():
+			logger.Error("proxy timeout", slog.String("error", ctx.Err().Error()))
+		}
 	}
 }
 
 func MakeProxyHandler(
 	client *http.Client,
 	logger *slog.Logger,
-	ctxTimeout time.Duration,
+	timeout time.Duration,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -89,7 +98,7 @@ func MakeProxyHandler(
 			RawQuery: r.URL.RawQuery,
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), ctxTimeout)
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 		f, err := http.NewRequestWithContext(
 			ctx, r.Method, targetURL.String(), r.Body,
