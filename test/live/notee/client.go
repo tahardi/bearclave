@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -21,6 +20,7 @@ type Client struct {
 }
 
 func NewClient(t *testing.T) *Client {
+	t.Helper()
 	return &Client{t: t, client: &http.Client{}}
 }
 
@@ -36,6 +36,7 @@ func (c *Client) AddCertChain(certChainJSON []byte) {
 	transport, ok := c.client.Transport.(*http.Transport)
 	require.True(c.t, ok)
 
+	//nolint:gosec
 	if transport.TLSClientConfig == nil {
 		transport.TLSClientConfig = &tls.Config{}
 	}
@@ -45,7 +46,7 @@ func (c *Client) AddCertChain(certChainJSON []byte) {
 
 	for i, certBytes := range chainDER {
 		x509Cert, err := x509.ParseCertificate(certBytes)
-		require.NoError(c.t, err, fmt.Sprintf("failed to parse cert #%d", i))
+		require.NoError(c.t, err, "failed to parse cert #%d", i)
 		transport.TLSClientConfig.RootCAs.AddCert(x509Cert)
 	}
 }

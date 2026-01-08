@@ -85,6 +85,7 @@ func TestReverseProxy(t *testing.T) {
 	})
 }
 
+//nolint:gosec
 func TestReverseProxyTLS(t *testing.T) {
 	ctx := context.Background()
 	platform := tee.NoTEE
@@ -111,6 +112,7 @@ func TestReverseProxyTLS(t *testing.T) {
 		require.NoError(t, err)
 		defer revProxyTLS.Close()
 
+		req := makeRequest(t, "GET", revProxyAddr, nil)
 		client := &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -119,7 +121,7 @@ func TestReverseProxyTLS(t *testing.T) {
 
 		// when
 		runService(func() { _ = revProxyTLS.Serve() }, 100*time.Millisecond)
-		resp, err := client.Get(revProxyAddr)
+		resp, err := client.Do(req)
 
 		// then
 		require.NoError(t, err)
@@ -143,6 +145,7 @@ func TestReverseProxyTLS(t *testing.T) {
 		require.NoError(t, err)
 		defer revProxyTLS.Close()
 
+		req := makeRequest(t, "GET", revProxyAddr, nil)
 		client := &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -151,7 +154,7 @@ func TestReverseProxyTLS(t *testing.T) {
 
 		// when
 		runService(func() { _ = revProxyTLS.Serve() }, 100*time.Millisecond)
-		_, err = client.Get(revProxyAddr)
+		_, err = client.Do(req)
 
 		// then
 		require.ErrorIs(t, err, io.EOF)

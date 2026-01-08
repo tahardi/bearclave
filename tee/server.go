@@ -18,6 +18,7 @@ const (
 	DefaultIdleTimeout       = 60 * time.Second
 	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
 	NetworkTCP               = "tcp"
+	NumConnDoneChannels      = 2
 )
 
 type CloseFunc func() error
@@ -62,6 +63,7 @@ func NewServerWithListener(
 	}, nil
 }
 
+//nolint:contextcheck
 func NewServerTLS(
 	ctx context.Context,
 	platform Platform,
@@ -84,6 +86,7 @@ func NewServerTLSWithListener(
 	logger *slog.Logger,
 ) (*Server, error) {
 	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
 		GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
 			defer cancel()

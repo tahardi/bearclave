@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 	"github.com/tahardi/bearclave/tee"
 )
 
@@ -26,24 +26,22 @@ func MakeAttestCertHandler(
 	attester *tee.Attester,
 	certProvider tee.CertProvider,
 ) http.HandlerFunc {
+	t.Helper()
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.Helper()
 		certReq := AttestCertRequest{}
 		err := json.NewDecoder(r.Body).Decode(&certReq)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		cert, err := certProvider.GetCert(r.Context())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
-		chainDER := [][]byte{}
-		for _, certBytes := range cert.Certificate {
-			chainDER = append(chainDER, certBytes)
-		}
+		chainDER := append([][]byte{}, cert.Certificate...)
 		chainJSON, err := json.Marshal(chainDER)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		att, err := attester.Attest(tee.WithAttestUserData(chainJSON))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		tee.WriteResponse(w, AttestCertResponse{Attestation: att})
 	}
 }
@@ -62,11 +60,12 @@ func MakeAttestHTTPCallHandler(
 	attester *tee.Attester,
 	client *http.Client,
 ) http.HandlerFunc {
+	t.Helper()
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.Helper()
 		httpCallReq := AttestHTTPCallRequest{}
 		err := json.NewDecoder(r.Body).Decode(&httpCallReq)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		req, err := http.NewRequestWithContext(
 			r.Context(),
@@ -74,17 +73,17 @@ func MakeAttestHTTPCallHandler(
 			httpCallReq.URL,
 			nil,
 		)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		resp, err := client.Do(req)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer resp.Body.Close()
 
 		respBytes, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		attestation, err := attester.Attest(tee.WithAttestUserData(respBytes))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		httpCallResp := AttestHTTPCallResponse{
 			Attestation: attestation,
@@ -107,11 +106,12 @@ func MakeAttestHTTPSCallHandler(
 	attester *tee.Attester,
 	client *http.Client,
 ) http.HandlerFunc {
+	t.Helper()
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.Helper()
 		httpsCallReq := AttestHTTPSCallRequest{}
 		err := json.NewDecoder(r.Body).Decode(&httpsCallReq)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		req, err := http.NewRequestWithContext(
 			r.Context(),
@@ -119,17 +119,17 @@ func MakeAttestHTTPSCallHandler(
 			httpsCallReq.URL,
 			nil,
 		)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		resp, err := client.Do(req)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer resp.Body.Close()
 
 		respBytes, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		attestation, err := attester.Attest(tee.WithAttestUserData(respBytes))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		httpsCallResp := AttestHTTPSCallResponse{
 			Attestation: attestation,

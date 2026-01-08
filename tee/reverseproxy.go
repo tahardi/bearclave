@@ -2,6 +2,7 @@ package tee
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -82,6 +83,7 @@ func NewReverseProxyTLS(
 	return NewReverseProxyTLSWithDialContext(ctx, dialContext, addr, targetAddr, logger)
 }
 
+//nolint:contextcheck
 func NewReverseProxyTLSWithDialContext(
 	ctx context.Context,
 	dialContext DialContext,
@@ -170,7 +172,7 @@ func proxyTLSConn(
 	connCtx, connCancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
 	defer connCancel()
 
-	connDone := make(chan error, 2)
+	connDone := make(chan error, NumConnDoneChannels)
 	go func() {
 		_, connErr := io.Copy(serverConn, clientConn)
 		connDone <- connErr
@@ -182,8 +184,8 @@ func proxyTLSConn(
 
 	select {
 	case connErr := <-connDone:
-		if connErr != nil && err != io.EOF {
-			logger.Error("conn error", slog.String("error", err.Error()))
+		if connErr != nil && !errors.Is(connErr, io.EOF) {
+			logger.Error("conn error", slog.String("error", connErr.Error()))
 		}
 		return
 	case <-closeRevProxy:

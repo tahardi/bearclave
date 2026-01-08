@@ -3,6 +3,7 @@ package tee
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -13,9 +14,9 @@ import (
 )
 
 const (
-	DefaultProxyTimeout = 30 * time.Second
+	DefaultProxyTimeout        = 30 * time.Second
 	ProxyConnectionEstablished = "HTTP/1.1 200 Connection Established\r\n\r\n"
-	ProxyBadGateway           = "HTTP/1.1 502 Bad Gateway\r\n\r\n"
+	ProxyBadGateway            = "HTTP/1.1 502 Bad Gateway\r\n\r\n"
 )
 
 func MakeProxyTLSHandler(
@@ -24,9 +25,9 @@ func MakeProxyTLSHandler(
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodConnect {
-			msg := fmt.Sprintf("method should be CONNECT but got %s", r.Method)
+			msg := "method should be CONNECT but got: " + r.Method
 			logger.Error(msg)
-			WriteError(w, fmt.Errorf("%s", msg))
+			WriteError(w, proxyError(msg, nil))
 			return
 		}
 
@@ -34,7 +35,7 @@ func MakeProxyTLSHandler(
 		if !ok {
 			msg := "hijacking is not supported"
 			logger.Error(msg)
-			WriteError(w, fmt.Errorf("%s", msg))
+			WriteError(w, proxyError(msg, nil))
 			return
 		}
 
@@ -42,43 +43,51 @@ func MakeProxyTLSHandler(
 		if err != nil {
 			msg := "hijacking connection"
 			logger.Error(msg, slog.String("error", err.Error()))
-			WriteError(w, fmt.Errorf("%w: %s", err, msg))
+			WriteError(w, proxyError(msg, err))
 			return
 		}
 		defer clientConn.Close()
 
 		// NOTE: Do NOT write to ResponseWriter after hijacking connection
+		dialCtx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+
 		targetAddr := r.RequestURI
-		serverConn, err := net.Dial(NetworkTCP, targetAddr)
+		serverConn, err := (&net.Dialer{}).DialContext(dialCtx, NetworkTCP, targetAddr)
 		if err != nil {
-			msg := fmt.Sprintf("dialing '%s'", targetAddr)
+			msg := "dialing: " + targetAddr
 			logger.Error(msg, slog.String("error", err.Error()))
-			clientConn.Write([]byte(ProxyBadGateway))
+			_, _ = clientConn.Write([]byte(ProxyBadGateway))
 			return
 		}
 		defer serverConn.Close()
 
-		ctx, cancel := context.WithTimeout(r.Context(), timeout)
-		defer cancel()
+		_, err = clientConn.Write([]byte(ProxyConnectionEstablished))
+		if err != nil {
+			logger.Error("writing response", slog.String("error", err.Error()))
+			return
+		}
 
-		clientConn.Write([]byte(ProxyConnectionEstablished))
-		done := make(chan error, 2)
+		connCtx, connCancel := context.WithTimeout(r.Context(), timeout)
+		defer connCancel()
+
+		connDone := make(chan error, NumConnDoneChannels)
 		go func() {
-			_, err := io.Copy(serverConn, clientConn)
-			done <- err
+			_, connErr := io.Copy(serverConn, clientConn)
+			connDone <- connErr
 		}()
 		go func() {
-			_, err := io.Copy(clientConn, serverConn)
-			done <- err
+			_, connErr := io.Copy(clientConn, serverConn)
+			connDone <- connErr
 		}()
 
 		select {
-		case err := <-done:
-			if err != nil && err != io.EOF {
-				logger.Error("copy error", slog.String("error", err.Error()))
+		case connErr := <-connDone:
+			if connErr != nil && !errors.Is(connErr, io.EOF) {
+				logger.Error("copy error", slog.String("error", connErr.Error()))
 			}
-		case <-ctx.Done():
-			logger.Error("proxy timeout", slog.String("error", ctx.Err().Error()))
+		case <-connCtx.Done():
+			logger.Error("proxy timeout", slog.String("error", connCtx.Err().Error()))
 		}
 	}
 }
@@ -107,7 +116,7 @@ func MakeProxyHandler(
 			logger.Error(
 				"creating request", slog.String("error", err.Error()),
 			)
-			WriteError(w, fmt.Errorf("creating request: %w", err))
+			WriteError(w, proxyError("creating request", err))
 			return
 		}
 
@@ -121,7 +130,7 @@ func MakeProxyHandler(
 			logger.Error(
 				"forwarding request", slog.String("error", err.Error()),
 			)
-			WriteError(w, fmt.Errorf("forwarding request: %w", err))
+			WriteError(w, proxyError("forwarding request", err))
 			return
 		}
 		defer resp.Body.Close()
@@ -137,7 +146,7 @@ func MakeProxyHandler(
 			logger.Error(
 				"copying response body", slog.String("error", err.Error()),
 			)
-			WriteError(w, fmt.Errorf("copying response body: %w", err))
+			WriteError(w, proxyError("copying response body", err))
 		}
 	}
 }
@@ -176,14 +185,14 @@ func WriteResponse(w http.ResponseWriter, out any) {
 	data, err := json.Marshal(out)
 	if err != nil {
 		fmt.Printf("marshaling response: %s", err.Error())
-		WriteError(w, fmt.Errorf("marshaling response: %w", err))
+		WriteError(w, proxyError("marshaling response", err))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(data)
 	if err != nil {
-		WriteError(w, fmt.Errorf("writing response: %w", err))
+		WriteError(w, proxyError("writing response", err))
 		return
 	}
 }
