@@ -3,11 +3,11 @@ package tee
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
 )
 
 type CloseFunc func() error
@@ -18,19 +18,18 @@ type ReverseProxy struct {
 	serveFunc ServeFunc
 }
 
-// TODO: Do I want route?
 func NewReverseProxy(
 	ctx context.Context,
 	platform Platform,
 	addr string,
 	targetAddr string,
-	route string,
+	logger *slog.Logger,
 ) (*ReverseProxy, error) {
 	dialContext, err := NewDialContext(platform)
 	if err != nil {
 		return nil, reverseProxyError("creating dialer", err)
 	}
-	return NewReverseProxyWithDialContext(ctx, dialContext, addr, targetAddr, route)
+	return NewReverseProxyWithDialContext(ctx, dialContext, addr, targetAddr, logger)
 }
 
 func NewReverseProxyWithDialContext(
@@ -38,7 +37,7 @@ func NewReverseProxyWithDialContext(
 	dialContext DialContext,
 	addr string,
 	targetAddr string,
-	route string,
+	logger *slog.Logger,
 ) (*ReverseProxy, error) {
 	targetURL, err := url.Parse(targetAddr)
 	if err != nil {
@@ -48,27 +47,15 @@ func NewReverseProxyWithDialContext(
 	reverseProxy := httputil.NewSingleHostReverseProxy(targetURL)
 	reverseProxy.Transport = &http.Transport{DialContext: dialContext}
 
-	// Customize the Director to strip the path prefix
-	originalDirector := reverseProxy.Director
-	reverseProxy.Director = func(req *http.Request) {
-		originalDirector(req)
-		req.URL.Path = strings.TrimPrefix(req.URL.Path, route)
-	}
-
-	// TODO: Explicitly use net to create listener to reduce chance of misconfig
-	// NOTE: We assume that reverse proxies are only ever run (1) outside a
-	// Nitro Enclave or (2) within an SEV-SNP/TDX enclave. For Nitro, the
-	// DialContext must use vsock to send to the Enclave, but it must use a
-	// normal socket to listen for inbound connections from remote clients.
-	// This is why we enforce a normal socket listener here. Even though a
-	// reverse proxy runs within the trusted zone for SEV-SNP and TDX, they
-	// both use normal sockets, so using a socket listener here is fine.
-	listener, err := NewListener(ctx, NoTEE, Network, addr)
+	// NOTE: Reverse Proxies are only ever run (1) outside a Nitro Enclave
+	// or (2) within an SEV-SNP/TDX enclave. This means the reverse proxy will
+	// always listen on a regular socket, which is why we use NoTEE here.
+	listener, err := NewListener(ctx, NoTEE, NetworkTCP, addr)
 	if err != nil {
 		return nil, reverseProxyError("creating listener", err)
 	}
 
-	server := DefaultReverseProxyServer(reverseProxy)
+	server := DefaultReverseProxyServer(reverseProxy, logger)
 	closeFunc := func() error {
 		if closeErr := listener.Close(); closeErr != nil {
 			return closeErr
@@ -88,12 +75,13 @@ func NewReverseProxyTLS(
 	platform Platform,
 	addr string,
 	targetAddr string,
+	logger *slog.Logger,
 ) (*ReverseProxy, error) {
 	dialContext, err := NewDialContext(platform)
 	if err != nil {
 		return nil, reverseProxyError("creating dialer", err)
 	}
-	return NewReverseProxyTLSWithDialContext(ctx, dialContext, addr, targetAddr)
+	return NewReverseProxyTLSWithDialContext(ctx, dialContext, addr, targetAddr, logger)
 }
 
 func NewReverseProxyTLSWithDialContext(
@@ -101,19 +89,22 @@ func NewReverseProxyTLSWithDialContext(
 	dialContext DialContext,
 	addr string,
 	targetAddr string,
+	logger *slog.Logger,
 ) (*ReverseProxy, error) {
-	// TODO: Explicitly use net to create listener to reduce chance of misconfig
-	listener, err := NewListener(ctx, NoTEE, Network, addr)
+	// NOTE: Reverse Proxies are only ever run (1) outside a Nitro Enclave
+	// or (2) within an SEV-SNP/TDX enclave. This means the reverse proxy will
+	// always listen on a regular socket, which is why we use NoTEE here.
+	listener, err := NewListener(ctx, NoTEE, NetworkTCP, addr)
 	if err != nil {
 		return nil, reverseProxyError("creating listener", err)
 	}
 
-	done := make(chan struct{})
+	closeRevProxy := make(chan struct{})
 	closeFunc := func() error {
-		close(done)
+		close(closeRevProxy)
 		return listener.Close()
 	}
-	serveFunc := MakeReverseProxyServeFunc(dialContext, listener, targetAddr, done)
+	serveFunc := MakeReverseProxyTLSServeFunc(dialContext, listener, targetAddr, closeRevProxy, logger)
 	return &ReverseProxy{
 		listener:  listener,
 		closeFunc: closeFunc,
@@ -125,57 +116,84 @@ func (r *ReverseProxy) Addr() string { return r.listener.Addr().String() }
 func (r *ReverseProxy) Close() error { return r.closeFunc() }
 func (r *ReverseProxy) Serve() error { return r.serveFunc() }
 
-func MakeReverseProxyServeFunc(
+func MakeReverseProxyTLSServeFunc(
 	dialContext DialContext,
 	listener net.Listener,
 	targetAddr string,
-	done chan struct{},
+	closeRevProxy chan struct{},
+	logger *slog.Logger,
 ) ServeFunc {
 	return func() error {
 		for {
 			select {
-			case <-done:
+			case <-closeRevProxy:
 				return nil
 			default:
 			}
 
 			clientConn, err := listener.Accept()
 			if err != nil {
-				return reverseProxyError("accepting connection", err)
+				logger.Error("accepting connection", slog.String("error", err.Error()))
+				continue
 			}
 
-			go proxyTLSConn(clientConn, dialContext, targetAddr)
+			logger.Info("accepted connection", slog.String("addr", clientConn.RemoteAddr().String()))
+			go proxyTLSConn(clientConn, dialContext, targetAddr, closeRevProxy, logger)
 		}
 	}
 }
 
-// TODO: Can I pass done? Should I pass done?
-// TODO: Error channel?
-// TODO: Logger?
-// TODO: AI code parsed target addr but im pretty sure my custom dial does that
 func proxyTLSConn(
 	clientConn net.Conn,
 	dialContext DialContext,
 	targetAddr string,
+	closeRevProxy chan struct{},
+	logger *slog.Logger,
 ) {
 	defer clientConn.Close()
 
-	// TODO: Pass in a timeout that can be used to create ctx for dial
-	serverConn, err := dialContext(context.Background(), Network, targetAddr)
+	dialCtx, dialCancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
+	defer dialCancel()
+
+	serverConn, err := dialContext(dialCtx, NetworkTCP, targetAddr)
 	if err != nil {
+		logger.Error("dialing target", slog.String("error", err.Error()))
 		return
 	}
 	defer serverConn.Close()
 
-	// Bi-directionally forward between client and server
-	go io.Copy(serverConn, clientConn)
-	io.Copy(clientConn, serverConn)
+	connCtx, connCancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
+	defer connCancel()
+
+	connDone := make(chan error, 2)
+	go func() {
+		_, connErr := io.Copy(serverConn, clientConn)
+		connDone <- connErr
+	}()
+	go func() {
+		_, connErr := io.Copy(clientConn, serverConn)
+		connDone <- connErr
+	}()
+
+	select {
+	case connErr := <-connDone:
+		if connErr != nil && err != io.EOF {
+			logger.Error("conn error", slog.String("error", err.Error()))
+		}
+		return
+	case <-closeRevProxy:
+		logger.Info("proxy shutdown signal received, closing connection")
+		return
+	case <-connCtx.Done():
+		logger.Error("proxy timeout", slog.String("error", connCtx.Err().Error()))
+		return
+	}
 }
 
-// TODO: Figure out defaults and move to options
-func DefaultReverseProxyServer(handler http.Handler) *http.Server {
+func DefaultReverseProxyServer(handler http.Handler, logger *slog.Logger) *http.Server {
 	return &http.Server{
 		Handler:           handler,
+		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		MaxHeaderBytes:    DefaultMaxHeaderBytes,
 		IdleTimeout:       DefaultIdleTimeout,
 		ReadHeaderTimeout: DefaultReadHeaderTimeout,
