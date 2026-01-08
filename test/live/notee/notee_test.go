@@ -90,9 +90,8 @@ func TestNoTEE_HTTP(t *testing.T) {
 	)
 
 	// given - a server that makes HTTP requests on behalf of some remote client
-	serverRoute := "app/v1"
 	serverAddr := "http://127.0.0.1:8081"
-	server, err := tee.NewServer(ctx, platform, serverAddr, serverMux)
+	server, err := tee.NewServer(ctx, platform, serverAddr, serverMux, logger)
 	require.NoError(t, err)
 	defer server.Close()
 
@@ -104,7 +103,7 @@ func TestNoTEE_HTTP(t *testing.T) {
 		platform,
 		revProxyAddr,
 		targetAddr,
-		serverRoute,
+		logger,
 	)
 	require.NoError(t, err)
 	defer revProxy.Close()
@@ -181,9 +180,8 @@ func TestNoTEE_HTTPS(t *testing.T) {
 		MakeAttestCertHandler(t, attester, certProvider),
 	)
 
-	serverRoute := "app/v1"
 	serverAddr := "http://127.0.0.1:8081"
-	server, err := tee.NewServer(ctx, platform, serverAddr, serverMux)
+	server, err := tee.NewServer(ctx, platform, serverAddr, serverMux, logger)
 	require.NoError(t, err)
 	defer server.Close()
 
@@ -195,7 +193,7 @@ func TestNoTEE_HTTPS(t *testing.T) {
 		platform,
 		revProxyAddr,
 		targetAddr,
-		serverRoute,
+		logger,
 	)
 	require.NoError(t, err)
 	defer revProxy.Close()
@@ -224,6 +222,7 @@ func TestNoTEE_HTTPS(t *testing.T) {
 		serverTLSAddr,
 		serverTLSMux,
 		certProvider,
+		logger,
 	)
 	require.NoError(t, err)
 	defer serverTLS.Close()
@@ -236,6 +235,7 @@ func TestNoTEE_HTTPS(t *testing.T) {
 		platform,
 		revProxyTLSAddr,
 		targetTLSAddr,
+		logger,
 	)
 	require.NoError(t, err)
 	defer revProxyTLS.Close()
