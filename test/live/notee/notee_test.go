@@ -18,7 +18,7 @@ import (
 )
 
 //go:embed testdata/userdata.txt
-var userdata []byte
+var userData []byte
 
 func runService(service func(), wait time.Duration) {
 	var serviceReady sync.WaitGroup
@@ -38,65 +38,213 @@ type HTTPBinGetResponse struct {
 	URL     string            `json:"url"`
 }
 
-// TODO: Create a simpler example that only uses http. Then do https in another
-func TestNoTEE_KitchenSink(t *testing.T) {
+func TestNoTEE_Attestation(t *testing.T) {
 	// given
-	ctx := context.Background()
+	wantData := userData
+	wantNonce := []byte("nonce")
 	platform := tee.NoTEE
+
 	attester, err := tee.NewAttester(platform)
 	require.NoError(t, err)
 
-	// given - make self-signed cert provider for our https enclave server
-	domain := "bearclave.com"
-	validity := 1 * time.Hour
-	certProvider, err := tee.NewSelfSignedCertProvider(domain, validity)
+	verifier, err := tee.NewVerifier(platform)
 	require.NoError(t, err)
 
-	// given - Create an http enclave server that attests to the cert used by the
-	// https enclave server
-	serverMux := http.NewServeMux()
-	serverMux.Handle(
-		"POST "+AttestCertPath,
-		MakeAttestCertHandler(t, attester, certProvider),
+	// when
+	attested, err := attester.Attest(
+		tee.WithAttestNonce(wantNonce),
+		tee.WithAttestUserData(wantData),
 	)
 
+	// then
+	require.NoError(t, err)
+	verified, err := verifier.Verify(attested, tee.WithVerifyNonce(wantNonce))
+	require.NoError(t, err)
+	assert.Equal(t, wantData, verified.UserData)
+}
+
+func TestNoTEE_Socket(t *testing.T) {
+	// given
+	ctx := context.Background()
+	platform := tee.NoTEE
+
+	service1Addr := "127.0.0.1:8080"
+	service1, err := tee.NewSocket(ctx, platform, service1Addr)
+	require.NoError(t, err)
+	defer service1.Close()
+
+	service2Addr := "127.0.0.1:8081"
+	service2, err := tee.NewSocket(ctx, platform, service2Addr)
+	require.NoError(t, err)
+	defer service2.Close()
+
+	want := []byte("hello from service 1")
+	service2Func := func() {
+		got, err := service2.Receive(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+	}
+
+	// when/then
+	runService(service2Func, 100*time.Millisecond)
+	err = service1.Send(ctx, service2Addr, want)
+	require.NoError(t, err)
+}
+
+func TestNoTEE_HTTP(t *testing.T) {
+	// given
+	ctx := context.Background()
+	platform := tee.NoTEE
+	logger := slog.New(slog.DiscardHandler)
+
+	// given - a proxy that forwards the server's HTTP requests
+	proxyClient := &http.Client{}
+	proxyAddr := "http://127.0.0.1:8082"
+	proxy, err := tee.NewProxy(ctx, platform, proxyAddr, proxyClient, logger)
+	require.NoError(t, err)
+	defer proxy.Close()
+
+	attester, err := tee.NewAttester(platform)
+	require.NoError(t, err)
+
+	// given - a client that routes the server's HTTP requests through the proxy
+	proxiedClient, err := tee.NewProxiedClient(platform, proxyAddr)
+	require.NoError(t, err)
+
+	serverMux := http.NewServeMux()
+	serverMux.HandleFunc(
+		AttestHTTPCallPath,
+		MakeAttestHTTPCallHandler(t, attester, proxiedClient),
+	)
+
+	// given - a server that makes HTTP requests on behalf of some remote client
+	serverRoute := "app/v1"
 	serverAddr := "http://127.0.0.1:8081"
 	server, err := tee.NewServer(ctx, platform, serverAddr, serverMux)
 	require.NoError(t, err)
 	defer server.Close()
 
-	// given - create a reverse proxy so we can call the http enclave server
+	// given - a reverse proxy that forwards a remote client's requests to the server
+	targetAddr := serverAddr
 	revProxyAddr := "http://127.0.0.1:8080"
-	route := "app/v1"
 	revProxy, err := tee.NewReverseProxy(
 		ctx,
 		platform,
 		revProxyAddr,
-		serverAddr,
-		route,
+		targetAddr,
+		serverRoute,
 	)
 	require.NoError(t, err)
 	defer revProxy.Close()
 
-	// given - create a TLS proxy so the enclave can make HTTPS calls
+	// given - a remote client that wants the server to make an attested HTTP call
+	wantMethod := "GET"
+	wantURL := "http://httpbin.org/get"
+	client := NewClient(t)
+
+	// when
+	runService(func() { _ = proxy.Serve() }, 100*time.Millisecond)
+	runService(func() { _ = server.Serve() }, 100*time.Millisecond)
+	runService(func() { _ = revProxy.Serve() }, 100*time.Millisecond)
+
+	attested := client.AttestHTTPCall(ctx, revProxyAddr, wantMethod, wantURL)
+
+	// then
+	verifier, err := tee.NewVerifier(platform)
+	require.NoError(t, err)
+
+	verified, err := verifier.Verify(attested)
+	require.NoError(t, err)
+
+	httpBinResp := HTTPBinGetResponse{}
+	err = json.Unmarshal(verified.UserData, &httpBinResp)
+	require.NoError(t, err)
+	assert.Equal(t, wantURL, httpBinResp.URL)
+}
+
+// This test demonstrates HTTPS in and out of a TEE. In this test scenario, a
+// client wants our TEE server to make an attested HTTPS call on their behalf.
+// The client also wishes to use HTTPS when communicating with our TEE server.
+//
+// To use HTTPS, the client must first retrieve our TEE server's certificate.
+// This is done by making an HTTP call to our HTTP server, which returns an
+// attestation containing the HTTPS server's certificate. Note that we have
+// a separate reverse proxy and HTTP server for this workflow.
+//
+// After verifying the attestation and extracting the certificate, the client
+// can now establish an HTTPS connection to our HTTPS TEE server via a
+// reverse TLS proxy.
+//
+// Upon receiving a request, our HTTPS server makes an HTTPS call via a proxy
+// TLS server. It attests to the result and returns it to the client.
+//
+// The test topology looks like this:
+//
+//	---- revProxy ------- server
+//	|
+//
+// client -
+//
+//	|
+//	---- revProxyTLS ---- serverTLS ---- proxyTLS ---- httpbin
+func TestNoTEE_HTTPS(t *testing.T) {
+	// given
+	ctx := context.Background()
+	platform := tee.NoTEE
 	logger := slog.New(slog.DiscardHandler)
+
+	attester, err := tee.NewAttester(platform)
+	require.NoError(t, err)
+
+	// given - a self-signed TLS certificate provider for our HTTPS server
+	domain := "bearclave.org"
+	validity := 1 * time.Hour
+	certProvider, err := tee.NewSelfSignedCertProvider(domain, validity)
+	require.NoError(t, err)
+
+	// given - a server that attests to the HTTPS server's certificate
+	serverMux := http.NewServeMux()
+	serverMux.HandleFunc(
+		AttestCertPath,
+		MakeAttestCertHandler(t, attester, certProvider),
+	)
+
+	serverRoute := "app/v1"
+	serverAddr := "http://127.0.0.1:8081"
+	server, err := tee.NewServer(ctx, platform, serverAddr, serverMux)
+	require.NoError(t, err)
+	defer server.Close()
+
+	// given - a reverse proxy that forwards a remote client's requests to the server
+	targetAddr := serverAddr
+	revProxyAddr := "http://127.0.0.1:8080"
+	revProxy, err := tee.NewReverseProxy(
+		ctx,
+		platform,
+		revProxyAddr,
+		targetAddr,
+		serverRoute,
+	)
+	require.NoError(t, err)
+	defer revProxy.Close()
+
+	// given - a proxy that forwards the HTTPS server's requests
 	proxyTLSAddr := "http://127.0.0.1:8082"
 	proxyTLS, err := tee.NewProxyTLS(ctx, platform, proxyTLSAddr, logger)
 	require.NoError(t, err)
 	defer proxyTLS.Close()
 
-	// given - configure a client that will route the enclave's HTTPS calls
-	// through the TLS Proxy
+	// given - a client that routes the HTTPS server's requests through the proxy
 	proxiedClient, err := tee.NewProxiedClient(platform, proxyTLSAddr)
 	require.NoError(t, err)
 
-	// given - create an https enclave server with a handler that makes HTTPS
-	// calls on behalf of a client and attests to the output
 	serverTLSMux := http.NewServeMux()
-	serverTLSMux.Handle(
-		"POST "+AttestHTTPSCallPath, MakeAttestHTTPSCallHandler(t, attester, proxiedClient),
+	serverTLSMux.HandleFunc(
+		AttestHTTPSCallPath,
+		MakeAttestHTTPSCallHandler(t, attester, proxiedClient),
 	)
 
+	// given - a server that makes HTTPS requests on behalf of some remote client
 	serverTLSAddr := "https://127.0.0.1:8444"
 	serverTLS, err := tee.NewServerTLS(
 		ctx,
@@ -108,51 +256,45 @@ func TestNoTEE_KitchenSink(t *testing.T) {
 	require.NoError(t, err)
 	defer serverTLS.Close()
 
-	// given - create a reverse TLS proxy so we can make HTTPS calls to the
-	// HTTPS enclave server
+	// given - a reverse proxy that forwards a remote client's requests to the HTTPS server
+	targetTLSAddr := serverTLSAddr
 	revProxyTLSAddr := "https://127.0.0.1:8443"
 	revProxyTLS, err := tee.NewReverseProxyTLS(
 		ctx,
 		platform,
 		revProxyTLSAddr,
-		serverTLSAddr,
+		targetTLSAddr,
 	)
 	require.NoError(t, err)
 	defer revProxyTLS.Close()
 
+	// given - a remote client that wants the server to make an attested HTTP call
+	wantMethod := "GET"
+	wantURL := "https://httpbin.org/get"
 	client := NewClient(t)
 
-	// when - start proxies and servers
+	// when
 	runService(func() { _ = server.Serve() }, 100*time.Millisecond)
 	runService(func() { _ = revProxy.Serve() }, 100*time.Millisecond)
+	runService(func() { _ = proxyTLS.Serve() }, 100*time.Millisecond)
 	runService(func() { _ = serverTLS.Serve() }, 100*time.Millisecond)
 	runService(func() { _ = revProxyTLS.Serve() }, 100*time.Millisecond)
-	runService(func() { _ = proxyTLS.Serve() }, 100*time.Millisecond)
 
-	// when - make an http call to get the attested cert chain
-	nonce := []byte("first nonce")
-	attested := client.AttestCertChain(ctx, revProxyAddr, nonce)
-
-	// then - verify the attestation and add the cert chain to our client
+	attestedCert := client.AttestCertChain(ctx, revProxyAddr)
 	verifier, err := tee.NewVerifier(platform)
 	require.NoError(t, err)
-
-	verified, err := verifier.Verify(attested, tee.WithVerifyNonce(nonce))
+	verifiedCert, err := verifier.Verify(attestedCert)
 	require.NoError(t, err)
 
-	client.AddCertChain(verified.UserData)
+	client.AddCertChain(verifiedCert.UserData)
+	attestedCall := client.AttestHTTPSCall(ctx, revProxyTLSAddr, wantMethod, wantURL)
 
-	// when - make an https call with the https server's self-signed cert
-	targetMethod := "GET"
-	targetURL := "https://httpbin.org/get"
-	attested = client.AttestHTTPSCall(ctx, revProxyTLSAddr, targetMethod, targetURL)
-
-	// then - verify the attestation and user data
-	verified, err = verifier.Verify(attested)
+	// then
+	verifiedCall, err := verifier.Verify(attestedCall)
 	require.NoError(t, err)
 
 	httpBinResp := HTTPBinGetResponse{}
-	err = json.Unmarshal(verified.UserData, &httpBinResp)
+	err = json.Unmarshal(verifiedCall.UserData, &httpBinResp)
 	require.NoError(t, err)
-	assert.Equal(t, "https://httpbin.org/get", httpBinResp.URL)
+	assert.Equal(t, wantURL, httpBinResp.URL)
 }

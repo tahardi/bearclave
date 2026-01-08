@@ -26,7 +26,7 @@ func NewClient(t *testing.T) *Client {
 
 func (c *Client) AddCertChain(certChainJSON []byte) {
 	c.t.Helper()
-	var chainDER [][]byte
+	chainDER := [][]byte{}
 	err := json.Unmarshal(certChainJSON, &chainDER)
 	require.NoError(c.t, err)
 
@@ -53,10 +53,9 @@ func (c *Client) AddCertChain(certChainJSON []byte) {
 func (c *Client) AttestCertChain(
 	ctx context.Context,
 	host string,
-	nonce []byte,
 ) *tee.AttestResult {
 	c.t.Helper()
-	attReq := AttestCertRequest{Nonce: nonce}
+	attReq := AttestCertRequest{}
 	attRes := AttestCertResponse{}
 	c.DoRequest(
 		ctx,
@@ -69,12 +68,33 @@ func (c *Client) AttestCertChain(
 	return attRes.Attestation
 }
 
+func (c *Client) AttestHTTPCall(
+	ctx context.Context,
+	host string,
+	method string,
+	url string,
+) *tee.AttestResult {
+	c.t.Helper()
+	attReq := AttestHTTPCallRequest{Method: method, URL: url}
+	attRes := AttestHTTPCallResponse{}
+	c.DoRequest(
+		ctx,
+		host,
+		"POST",
+		AttestHTTPCallPath,
+		attReq,
+		&attRes,
+	)
+	return attRes.Attestation
+}
+
 func (c *Client) AttestHTTPSCall(
 	ctx context.Context,
 	host string,
 	method string,
 	url string,
 ) *tee.AttestResult {
+	c.t.Helper()
 	attReq := AttestHTTPSCallRequest{Method: method, URL: url}
 	attRes := AttestHTTPSCallResponse{}
 	c.DoRequest(
@@ -82,26 +102,6 @@ func (c *Client) AttestHTTPSCall(
 		host,
 		"POST",
 		AttestHTTPSCallPath,
-		attReq,
-		&attRes,
-	)
-	return attRes.Attestation
-}
-
-func (c *Client) AttestUserData(
-	ctx context.Context,
-	host string,
-	nonce []byte,
-	userData []byte,
-) *tee.AttestResult {
-	c.t.Helper()
-	attReq := AttestUserDataRequest{Nonce: nonce, UserData: userData}
-	attRes := AttestUserDataResponse{}
-	c.DoRequest(
-		ctx,
-		host,
-		"POST",
-		AttestUserDataPath,
 		attReq,
 		&attRes,
 	)
