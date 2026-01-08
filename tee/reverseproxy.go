@@ -10,8 +10,6 @@ import (
 	"net/url"
 )
 
-type CloseFunc func() error
-type ServeFunc func() error
 type ReverseProxy struct {
 	listener  net.Listener
 	closeFunc CloseFunc
@@ -104,7 +102,14 @@ func NewReverseProxyTLSWithDialContext(
 		close(closeRevProxy)
 		return listener.Close()
 	}
-	serveFunc := MakeReverseProxyTLSServeFunc(dialContext, listener, targetAddr, closeRevProxy, logger)
+
+	serveFunc := MakeReverseProxyTLSServeFunc(
+		dialContext,
+		listener,
+		targetAddr,
+		closeRevProxy,
+		logger,
+	)
 	return &ReverseProxy{
 		listener:  listener,
 		closeFunc: closeFunc,
