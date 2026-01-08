@@ -40,6 +40,11 @@ func NewVerifierWithBase(base bearclave.Verifier) (*Verifier, error) {
 	return &Verifier{base: base}, nil
 }
 
+type VerifyResult struct {
+	Base     *bearclave.VerifyResult `json:"base"`
+	UserData []byte                  `json:"userdata,omitempty"`
+}
+
 func (v *Verifier) Verify(
 	attestResult *AttestResult,
 	options ...VerifyOption,
@@ -71,10 +76,27 @@ func (v *Verifier) Verify(
 	return verifyResult, nil
 }
 
-type VerifyResult struct {
-	Base     *bearclave.VerifyResult `json:"base"`
-	UserData []byte                  `json:"userdata,omitempty"`
+func VerifyUserData(expectedMeasurement []byte, userData []byte) error {
+	gotMeasurement, err := MeasureUserData(userData)
+	if err != nil {
+		return verifierError("measuring user data", err)
+	}
+
+	// The SEV and TDX TEE platforms always return 64 bytes for user data
+	// even if the provided user data was shorter. Ensure that we use the
+	// correct length when comparing so we don't falsely mismatch
+	correctedMeasurement := expectedMeasurement[:len(gotMeasurement)]
+	if !bytes.Equal(correctedMeasurement, gotMeasurement) {
+		msg := fmt.Sprintf(
+			"user data measurement mismatch: expected %s, got %s",
+			base64.StdEncoding.EncodeToString(correctedMeasurement),
+			base64.StdEncoding.EncodeToString(gotMeasurement),
+		)
+		return verifierError(msg, nil)
+	}
+	return nil
 }
+
 type VerifyOption func(*VerifyOptions)
 type VerifyOptions struct {
 	Base []bearclave.VerifyOption `json:"base,omitempty"`
@@ -108,25 +130,4 @@ func WithVerifyTimestamp(timestamp time.Time) VerifyOption {
 	return func(opts *VerifyOptions) {
 		opts.Base = append(opts.Base, bearclave.WithVerifyTimestamp(timestamp))
 	}
-}
-
-func VerifyUserData(expectedMeasurement []byte, userData []byte) error {
-	gotMeasurement, err := MeasureUserData(userData)
-	if err != nil {
-		return verifierError("measuring user data", err)
-	}
-
-	// The SEV and TDX TEE platforms always return 64 bytes for user data
-	// even if the provided user data was shorter. Ensure that we use the
-	// correct length when comparing so we don't falsely mismatch
-	correctedMeasurement := expectedMeasurement[:len(gotMeasurement)]
-	if !bytes.Equal(correctedMeasurement, gotMeasurement) {
-		msg := fmt.Sprintf(
-			"user data measurement mismatch: expected %s, got %s",
-			base64.StdEncoding.EncodeToString(correctedMeasurement),
-			base64.StdEncoding.EncodeToString(gotMeasurement),
-		)
-		return verifierError(msg, nil)
-	}
-	return nil
 }
