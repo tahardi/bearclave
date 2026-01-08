@@ -6,17 +6,75 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
 )
 
 const (
-	ForwardPath = "/"
-	DefaultForwardHTTPRequestTimeout = 30 * time.Second
+	// TODO: I think I can get rid of forward path
+	ForwardPath         = "/"
+	DefaultProxyTimeout = 30 * time.Second
 )
 
-func MakeForwardHTTPRequestHandler(
+func MakeProxyTLSHandler(
+	logger *slog.Logger,
+	timeout time.Duration,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodConnect {
+			msg := fmt.Sprintf("method should be CONNECT but got %s", r.Method)
+			logger.Error(msg)
+			WriteError(w, fmt.Errorf("%s", msg))
+			return
+		}
+
+		hijacker, ok := w.(http.Hijacker)
+		if !ok {
+			msg := "hijacking is not supported"
+			logger.Error(msg)
+			WriteError(w, fmt.Errorf("%s", msg))
+			return
+		}
+
+		clientConn, _, err := hijacker.Hijack()
+		if err != nil {
+			msg := "hijacking connection"
+			logger.Error(msg, slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("%w: %s", err, msg))
+			return
+		}
+		defer clientConn.Close()
+
+		// TODO: Should I define these connection messages?
+		// TODO: So I stop writing to the response writer at this point?
+		targetAddr := r.RequestURI
+		serverConn, err := net.Dial(Network, targetAddr)
+		if err != nil {
+			msg := fmt.Sprintf("dialing '%s'", targetAddr)
+			logger.Error(msg, slog.String("error", err.Error()))
+			clientConn.Write([]byte("HTTP/1.1 502 Bad Gateway\r\n\r\n"))
+			return
+		}
+		defer serverConn.Close()
+
+		// TODO: Should I create a context and switch on cancel and done?
+		clientConn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+		done := make(chan error, 2)
+		go func() {
+			_, err := io.Copy(serverConn, clientConn)
+			done <- err
+		}()
+		go func() {
+			_, err := io.Copy(clientConn, serverConn)
+			done <- err
+		}()
+		<-done
+	}
+}
+
+func MakeProxyHandler(
 	client *http.Client,
 	logger *slog.Logger,
 	ctxTimeout time.Duration,
@@ -46,9 +104,6 @@ func MakeForwardHTTPRequestHandler(
 
 		CopyHTTPHeadersForForwarding(f.Header, r.Header)
 		SetHTTPHeadersForForwarding(f, r)
-		f.Header.Set("X-Forwarded-Host", r.Host)
-		f.Header.Set("X-Forwarded-For", r.RemoteAddr)
-		f.Header.Set("X-Forwarded-Proto", r.Proto)
 		f.RequestURI = ""
 
 		logger.Info("forwarding request", slog.String("url", f.URL.String()))
