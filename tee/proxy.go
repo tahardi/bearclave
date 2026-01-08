@@ -7,16 +7,11 @@ import (
 	"net/http"
 )
 
-const (
-	Network = "tcp"
-)
-
 type Proxy struct {
 	listener net.Listener
 	server   *http.Server
 }
 
-// TODO: Consider if you want options and what (e.g., WithLogger)
 func NewProxy(
 	ctx context.Context,
 	platform Platform,
@@ -24,7 +19,7 @@ func NewProxy(
 	client *http.Client,
 	logger *slog.Logger,
 ) (*Proxy, error) {
-	listener, err := NewListener(ctx, platform, Network, addr)
+	listener, err := NewListener(ctx, platform, NetworkTCP, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +32,7 @@ func NewProxyWithListener(
 	listener net.Listener,
 ) (*Proxy, error) {
 	handler := MakeProxyHandler(client, logger, DefaultProxyTimeout)
-	server := DefaultProxyServer(handler)
+	server := DefaultProxyServer(handler, logger)
 	return &Proxy{
 		server:   server,
 		listener: listener,
@@ -50,7 +45,7 @@ func NewProxyTLS(
 	addr string,
 	logger *slog.Logger,
 ) (*Proxy, error) {
-	listener, err := NewListener(ctx, platform, Network, addr)
+	listener, err := NewListener(ctx, platform, NetworkTCP, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +55,9 @@ func NewProxyTLS(
 func NewProxyTLSWithListener(
 	logger *slog.Logger,
 	listener net.Listener,
-	) (*Proxy, error) {
+) (*Proxy, error) {
 	handler := MakeProxyTLSHandler(logger, DefaultProxyTimeout)
-	server := DefaultProxyServer(handler)
+	server := DefaultProxyServer(handler, logger)
 	return &Proxy{
 		server:   server,
 		listener: listener,
@@ -90,10 +85,10 @@ func (p *Proxy) Serve() error {
 	return p.server.Serve(p.listener)
 }
 
-// TODO: Consider defaults and what we want to make configurable
-func DefaultProxyServer(handler http.Handler) *http.Server {
+func DefaultProxyServer(handler http.Handler, logger *slog.Logger) *http.Server {
 	return &http.Server{
 		Handler:           handler,
+		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		MaxHeaderBytes:    DefaultMaxHeaderBytes,
 		IdleTimeout:       DefaultIdleTimeout,
 		ReadHeaderTimeout: DefaultReadHeaderTimeout,
