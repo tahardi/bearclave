@@ -25,11 +25,10 @@ type Server struct {
 func NewServer(
 	ctx context.Context,
 	platform Platform,
-	network string,
 	addr string,
 	handler http.Handler,
 ) (*Server, error) {
-	listener, err := NewListener(ctx, platform, network, addr)
+	listener, err := NewListener(ctx, platform, Network, addr)
 	if err != nil {
 		return nil, serverError("creating listener", err)
 	}
@@ -50,12 +49,11 @@ func NewServerWithListener(
 func NewServerTLS(
 	ctx context.Context,
 	platform Platform,
-	network string,
 	addr string,
 	handler http.Handler,
 	certProvider CertProvider,
 ) (*Server, error) {
-	listener, err := NewListener(ctx, platform, network, addr)
+	listener, err := NewListener(ctx, platform, Network, addr)
 	if err != nil {
 		return nil, serverError("creating listener", err)
 	}
@@ -67,17 +65,21 @@ func NewServerTLSWithListener(
 	handler http.Handler,
 	certProvider CertProvider,
 ) (*Server, error) {
-	server := DefaultServer(handler)
-	server.TLSConfig.GetCertificate = func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
-		ctx, cancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
-		defer cancel()
+	tlsConfig := &tls.Config {
+		GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+			ctx, cancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
+			defer cancel()
 
-		cert, err := certProvider.GetCert(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return cert, nil
+			cert, err := certProvider.GetCert(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return cert, nil
+		},
 	}
+
+	server := DefaultServer(handler)
+	server.TLSConfig = tlsConfig
 	return &Server{
 		listener: listener,
 		server:   server,
@@ -99,7 +101,14 @@ func (s *Server) Close() error {
 	return nil
 }
 
+// TODO: Consider using serve func instead
 func (s *Server) Serve() error {
+	if s.server.TLSConfig == nil {
+		return s.server.Serve(s.listener)
+	}
+
+	tlsListener := tls.NewListener(s.listener, s.server.TLSConfig)
+	s.listener = tlsListener
 	return s.server.Serve(s.listener)
 }
 
