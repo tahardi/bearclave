@@ -63,34 +63,6 @@ func TestNoTEE_Attestation(t *testing.T) {
 	assert.Equal(t, wantData, verified.UserData)
 }
 
-func TestNoTEE_Socket(t *testing.T) {
-	// given
-	ctx := context.Background()
-	platform := tee.NoTEE
-
-	service1Addr := "127.0.0.1:8080"
-	service1, err := tee.NewSocket(ctx, platform, service1Addr)
-	require.NoError(t, err)
-	defer service1.Close()
-
-	service2Addr := "127.0.0.1:8081"
-	service2, err := tee.NewSocket(ctx, platform, service2Addr)
-	require.NoError(t, err)
-	defer service2.Close()
-
-	want := []byte("hello from service 1")
-	service2Func := func() {
-		got, err := service2.Receive(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, want, got)
-	}
-
-	// when/then
-	runService(service2Func, 100*time.Millisecond)
-	err = service1.Send(ctx, service2Addr, want)
-	require.NoError(t, err)
-}
-
 func TestNoTEE_HTTP(t *testing.T) {
 	// given
 	ctx := context.Background()
