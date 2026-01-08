@@ -2,7 +2,7 @@ package tee
 
 import (
 	"context"
-	"log"
+	"crypto/tls"
 	"net"
 	"net/http"
 	"time"
@@ -17,44 +17,6 @@ const (
 	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
 )
 
-type ServerOption func(server *http.Server)
-
-func WithServerErrorLog(logger *log.Logger) ServerOption {
-	return func(server *http.Server) {
-		server.ErrorLog = logger
-	}
-}
-
-func WithServerMaxHeaderBytes(bytes int) ServerOption {
-	return func(server *http.Server) {
-		server.MaxHeaderBytes = bytes
-	}
-}
-
-func WithServerIdleTimeout(timeout time.Duration) ServerOption {
-	return func(server *http.Server) {
-		server.IdleTimeout = timeout
-	}
-}
-
-func WithServerReadHeaderTimeout(timeout time.Duration) ServerOption {
-	return func(server *http.Server) {
-		server.ReadHeaderTimeout = timeout
-	}
-}
-
-func WithServerReadTimeout(timeout time.Duration) ServerOption {
-	return func(server *http.Server) {
-		server.ReadTimeout = timeout
-	}
-}
-
-func WithServerWriteTimeout(timeout time.Duration) ServerOption {
-	return func(server *http.Server) {
-		server.WriteTimeout = timeout
-	}
-}
-
 type Server struct {
 	listener net.Listener
 	server   *http.Server
@@ -66,32 +28,56 @@ func NewServer(
 	network string,
 	addr string,
 	handler http.Handler,
-	opts ...ServerOption,
 ) (*Server, error) {
 	listener, err := NewListener(ctx, platform, network, addr)
 	if err != nil {
 		return nil, serverError("creating listener", err)
 	}
-	return NewServerWithListener(listener, handler, opts...)
+	return NewServerWithListener(listener, handler)
 }
 
 func NewServerWithListener(
 	listener net.Listener,
 	handler http.Handler,
-	opts ...ServerOption,
 ) (*Server, error) {
-	server := &http.Server{
-		Handler:           handler,
-		MaxHeaderBytes:    DefaultMaxHeaderBytes,
-		IdleTimeout:       DefaultIdleTimeout,
-		ReadHeaderTimeout: DefaultReadHeaderTimeout,
-		ReadTimeout:       DefaultReadTimeout,
-		WriteTimeout:      DefaultWriteTimeout,
-	}
-	for _, opt := range opts {
-		opt(server)
-	}
+	server := DefaultServer(handler)
+	return &Server{
+		listener: listener,
+		server:   server,
+	}, nil
+}
 
+func NewServerTLS(
+	ctx context.Context,
+	platform Platform,
+	network string,
+	addr string,
+	handler http.Handler,
+	certProvider CertProvider,
+) (*Server, error) {
+	listener, err := NewListener(ctx, platform, network, addr)
+	if err != nil {
+		return nil, serverError("creating listener", err)
+	}
+	return NewServerTLSWithListener(listener, handler, certProvider)
+}
+
+func NewServerTLSWithListener(
+	listener net.Listener,
+	handler http.Handler,
+	certProvider CertProvider,
+) (*Server, error) {
+	server := DefaultServer(handler)
+	server.TLSConfig.GetCertificate = func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
+		defer cancel()
+
+		cert, err := certProvider.GetCert(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return cert, nil
+	}
 	return &Server{
 		listener: listener,
 		server:   server,
@@ -113,10 +99,17 @@ func (s *Server) Close() error {
 	return nil
 }
 
-func (s *Server) Handler() http.Handler {
-	return s.server.Handler
+func (s *Server) Serve() error {
+	return s.server.Serve(s.listener)
 }
 
-func (s *Server) ListenAndServe() error {
-	return s.server.Serve(s.listener)
+func DefaultServer(handler http.Handler) *http.Server {
+	return &http.Server{
+		Handler:           handler,
+		MaxHeaderBytes:    DefaultMaxHeaderBytes,
+		IdleTimeout:       DefaultIdleTimeout,
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		ReadTimeout:       DefaultReadTimeout,
+		WriteTimeout:      DefaultWriteTimeout,
+	}
 }
