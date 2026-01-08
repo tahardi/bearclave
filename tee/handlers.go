@@ -3,23 +3,99 @@ package tee
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
 )
 
 const (
-	ForwardPath = "/"
-	DefaultForwardHTTPRequestTimeout = 30 * time.Second
+	DefaultProxyTimeout        = 30 * time.Second
+	ProxyConnectionEstablished = "HTTP/1.1 200 Connection Established\r\n\r\n"
+	ProxyBadGateway            = "HTTP/1.1 502 Bad Gateway\r\n\r\n"
 )
 
-func MakeForwardHTTPRequestHandler(
+func MakeProxyTLSHandler(
+	logger *slog.Logger,
+	timeout time.Duration,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodConnect {
+			msg := "method should be CONNECT but got: " + r.Method
+			logger.Error(msg)
+			WriteError(w, proxyError(msg, nil))
+			return
+		}
+
+		hijacker, ok := w.(http.Hijacker)
+		if !ok {
+			msg := "hijacking is not supported"
+			logger.Error(msg)
+			WriteError(w, proxyError(msg, nil))
+			return
+		}
+
+		clientConn, _, err := hijacker.Hijack()
+		if err != nil {
+			msg := "hijacking connection"
+			logger.Error(msg, slog.String("error", err.Error()))
+			WriteError(w, proxyError(msg, err))
+			return
+		}
+		defer clientConn.Close()
+
+		// NOTE: Do NOT write to ResponseWriter after hijacking connection
+		dialCtx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+
+		targetAddr := r.RequestURI
+		serverConn, err := (&net.Dialer{}).DialContext(dialCtx, NetworkTCP, targetAddr)
+		if err != nil {
+			msg := "dialing: " + targetAddr
+			logger.Error(msg, slog.String("error", err.Error()))
+			_, _ = clientConn.Write([]byte(ProxyBadGateway))
+			return
+		}
+		defer serverConn.Close()
+
+		_, err = clientConn.Write([]byte(ProxyConnectionEstablished))
+		if err != nil {
+			logger.Error("writing response", slog.String("error", err.Error()))
+			return
+		}
+
+		connCtx, connCancel := context.WithTimeout(r.Context(), timeout)
+		defer connCancel()
+
+		connDone := make(chan error, NumConnDoneChannels)
+		go func() {
+			_, connErr := io.Copy(serverConn, clientConn)
+			connDone <- connErr
+		}()
+		go func() {
+			_, connErr := io.Copy(clientConn, serverConn)
+			connDone <- connErr
+		}()
+
+		select {
+		case connErr := <-connDone:
+			if connErr != nil && !errors.Is(connErr, io.EOF) {
+				logger.Error("copy error", slog.String("error", connErr.Error()))
+			}
+		case <-connCtx.Done():
+			logger.Error("proxy timeout", slog.String("error", connCtx.Err().Error()))
+		}
+	}
+}
+
+func MakeProxyHandler(
 	client *http.Client,
 	logger *slog.Logger,
-	ctxTimeout time.Duration,
+	timeout time.Duration,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -31,7 +107,7 @@ func MakeForwardHTTPRequestHandler(
 			RawQuery: r.URL.RawQuery,
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), ctxTimeout)
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 		f, err := http.NewRequestWithContext(
 			ctx, r.Method, targetURL.String(), r.Body,
@@ -40,15 +116,12 @@ func MakeForwardHTTPRequestHandler(
 			logger.Error(
 				"creating request", slog.String("error", err.Error()),
 			)
-			WriteError(w, fmt.Errorf("creating request: %w", err))
+			WriteError(w, proxyError("creating request", err))
 			return
 		}
 
 		CopyHTTPHeadersForForwarding(f.Header, r.Header)
 		SetHTTPHeadersForForwarding(f, r)
-		f.Header.Set("X-Forwarded-Host", r.Host)
-		f.Header.Set("X-Forwarded-For", r.RemoteAddr)
-		f.Header.Set("X-Forwarded-Proto", r.Proto)
 		f.RequestURI = ""
 
 		logger.Info("forwarding request", slog.String("url", f.URL.String()))
@@ -57,7 +130,7 @@ func MakeForwardHTTPRequestHandler(
 			logger.Error(
 				"forwarding request", slog.String("error", err.Error()),
 			)
-			WriteError(w, fmt.Errorf("forwarding request: %w", err))
+			WriteError(w, proxyError("forwarding request", err))
 			return
 		}
 		defer resp.Body.Close()
@@ -73,7 +146,7 @@ func MakeForwardHTTPRequestHandler(
 			logger.Error(
 				"copying response body", slog.String("error", err.Error()),
 			)
-			WriteError(w, fmt.Errorf("copying response body: %w", err))
+			WriteError(w, proxyError("copying response body", err))
 		}
 	}
 }
@@ -112,14 +185,14 @@ func WriteResponse(w http.ResponseWriter, out any) {
 	data, err := json.Marshal(out)
 	if err != nil {
 		fmt.Printf("marshaling response: %s", err.Error())
-		WriteError(w, fmt.Errorf("marshaling response: %w", err))
+		WriteError(w, proxyError("marshaling response", err))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(data)
 	if err != nil {
-		WriteError(w, fmt.Errorf("writing response: %w", err))
+		WriteError(w, proxyError("writing response", err))
 		return
 	}
 }

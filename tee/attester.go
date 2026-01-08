@@ -41,6 +41,11 @@ func (a *Attester) Close() error {
 	return a.base.Close()
 }
 
+type AttestResult struct {
+	Base     *bearclave.AttestResult `json:"base,omitempty"`
+	UserData []byte                  `json:"userdata,omitempty"`
+}
+
 func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {
@@ -66,21 +71,18 @@ func (a *Attester) Attest(options ...AttestOption) (*AttestResult, error) {
 	return attestResult, nil
 }
 
-type AttestResult struct {
-	Base     *bearclave.AttestResult `json:"base,omitempty"`
-	UserData []byte                  `json:"userdata,omitempty"`
+func MeasureUserData(output []byte) ([]byte, error) {
+	if output == nil {
+		return nil, nil
+	}
+	hash := sha256.Sum256(output)
+	return hash[:], nil
 }
+
 type AttestOption func(*AttestOptions)
 type AttestOptions struct {
 	Base     []bearclave.AttestOption `json:"base,omitempty"`
 	UserData []byte                   `json:"output,omitempty"`
-}
-
-func MakeDefaultAttestOptions() AttestOptions {
-	return AttestOptions{
-		Base:     []bearclave.AttestOption{},
-		UserData: nil,
-	}
 }
 
 func WithAttestNonce(nonce []byte) AttestOption {
@@ -95,10 +97,9 @@ func WithAttestUserData(userData []byte) AttestOption {
 	}
 }
 
-func MeasureUserData(output []byte) ([]byte, error) {
-	if output == nil {
-		return nil, nil
+func MakeDefaultAttestOptions() AttestOptions {
+	return AttestOptions{
+		Base:     []bearclave.AttestOption{},
+		UserData: nil,
 	}
-	hash := sha256.Sum256(output)
-	return hash[:], nil
 }

@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const DefaultConnTimeout = 5 * time.Second
-
 type Socket struct {
 	platform Platform
 	network  string

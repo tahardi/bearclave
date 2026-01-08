@@ -12,6 +12,7 @@ var (
 	ErrAttesterUserData    = bearclave.ErrAttesterUserData
 	ErrDialContext         = bearclave.ErrDialContext
 	ErrListener            = bearclave.ErrListener
+	ErrProxy               = errors.New("proxy")
 	ErrReverseProxy        = errors.New("reverse proxy")
 	ErrServer              = errors.New("server")
 	ErrSocket              = errors.New("socket")
@@ -21,6 +22,7 @@ var (
 	ErrVerifierMeasurement = bearclave.ErrVerifierMeasurement
 	ErrVerifierNonce       = bearclave.ErrVerifierNonce
 	ErrVerifierTimestamp   = bearclave.ErrVerifierTimestamp
+	ErrCertProvider        = errors.New("cert provider")
 	ErrUnsupportedPlatform = errors.New("unsupported platform")
 )
 
@@ -39,6 +41,14 @@ func wrapError(baseErr error, msg string, err error) error {
 
 func attesterError(msg string, err error) error {
 	return wrapError(ErrAttester, msg, err)
+}
+
+func certProviderError(msg string, err error) error {
+	return wrapError(ErrCertProvider, msg, err)
+}
+
+func proxyError(msg string, err error) error {
+	return wrapError(ErrProxy, msg, err)
 }
 
 func reverseProxyError(msg string, err error) error {

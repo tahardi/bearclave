@@ -7,7 +7,7 @@ SHELL := bash
 .SUFFIXES:
 
 .PHONY: pre-pr
-pre-pr: tidy mock lint test-unit test-integration
+pre-pr: tidy mock lint test-unit test-integration test-live
 
 # https://golangci-lint.run/welcome/install/#install-from-sources
 # They do not recommend using golangci-lint via go tool directive
@@ -52,15 +52,18 @@ test-unit-internal:
 	@go test -v -count=1 -race ./internal/...
 
 .PHONY: test-integration
-test-integration: test-integration-notee
-
-.PHONY: test-integration-notee
-test-integration-notee:
-	@go test -v -count=1 -race ./test/integration/notee/...
+test-integration:
 
 .PHONY: test-integration-nitro
 test-integration-nitro:
 	@make -C ./test/integration/nitro
+
+.PHONY: test-live
+test-live: test-live-notee
+
+.PHONY: test-live-notee
+test-live-notee:
+	@go test -v -count=1 -race ./test/live/notee/...
 
 .PHONY: clean
 clean:
