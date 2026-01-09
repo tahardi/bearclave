@@ -3,6 +3,7 @@ package tee
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -197,28 +198,32 @@ func proxyTLSConn(
 	}
 }
 
-// copyNoSplice copies from src to dst without using splice, avoiding kernel issues on SEV/TDX
-func copyNoSplice(dst io.Writer, src io.Reader) (written int64, err error) {
-	buf := make([]byte, 32*1024) // 32KB buffer
+// copyNoSplice copies from src to dst without using splice, which avoids
+// kernel issues on SEV/TDX and TDX. If you try using io.Copy with a splice-enabled
+// connection, you'll get an error.
+func copyNoSplice(dst io.Writer, src io.Reader)  (int64, error) {
+	total := int64(0)
+	buf := make([]byte, DefaultConnBufferSize) // 32KB buffer
 	for {
-		nr, err := src.Read(buf)
-		if nr > 0 {
-			nw, ew := dst.Write(buf[0:nr])
-			if nw > 0 {
-				written += int64(nw)
-			}
-			if ew != nil {
-				return written, ew
-			}
-			if nr != nw {
-				return written, io.ErrShortWrite
+		// Read may return bytes and an error (i.e., EOF). So, if we get bytes,
+		// write them before checking the error and returning.
+		numRead, readErr := src.Read(buf)
+		if numRead > 0 {
+			numWrite, writeErr := dst.Write(buf[0:numRead])
+			total += int64(numWrite)
+			switch {
+			case writeErr != nil:
+				return total, reverseProxyError("writing bytes", writeErr)
+			case numRead != numWrite:
+				msg := fmt.Sprintf("read %d bytes, wrote %d bytes", numRead, numWrite)
+				return total, reverseProxyError(msg, io.ErrShortWrite)
 			}
 		}
-		if err != nil {
-			if err == io.EOF {
-				return written, nil
+		if readErr != nil {
+			if errors.Is(readErr, io.EOF) {
+				return total, nil
 			}
-			return written, err
+			return total, reverseProxyError("reading bytes", readErr)
 		}
 	}
 }

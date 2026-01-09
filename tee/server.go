@@ -10,8 +10,10 @@ import (
 )
 
 const (
+	KiloByte                 = 1 << 10
 	Megabyte                 = 1 << 20
 	DefaultConnTimeout       = 15 * time.Second
+	DefaultConnBufferSize    = 32 * KiloByte
 	DefaultReadHeaderTimeout = 10 * time.Second
 	DefaultReadTimeout       = 15 * time.Second
 	DefaultWriteTimeout      = 15 * time.Second
