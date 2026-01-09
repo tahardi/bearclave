@@ -174,11 +174,11 @@ func proxyTLSConn(
 
 	connDone := make(chan error, NumConnDoneChannels)
 	go func() {
-		_, connErr := io.Copy(serverConn, clientConn)
+		_, connErr := copyBuffer(serverConn, clientConn)
 		connDone <- connErr
 	}()
 	go func() {
-		_, connErr := io.Copy(clientConn, serverConn)
+		_, connErr := copyBuffer(clientConn, serverConn)
 		connDone <- connErr
 	}()
 
@@ -194,6 +194,32 @@ func proxyTLSConn(
 	case <-connCtx.Done():
 		logger.Error("proxy timeout", slog.String("error", connCtx.Err().Error()))
 		return
+	}
+}
+
+// copyBuffer copies from src to dst without using splice, avoiding kernel issues on SEV/TDX
+func copyBuffer(dst io.Writer, src io.Reader) (written int64, err error) {
+	buf := make([]byte, 32*1024) // 32KB buffer
+	for {
+		nr, err := src.Read(buf)
+		if nr > 0 {
+			nw, ew := dst.Write(buf[0:nr])
+			if nw > 0 {
+				written += int64(nw)
+			}
+			if ew != nil {
+				return written, ew
+			}
+			if nr != nw {
+				return written, io.ErrShortWrite
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				return written, nil
+			}
+			return written, err
+		}
 	}
 }
 

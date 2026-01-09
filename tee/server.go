@@ -17,7 +17,7 @@ const (
 	DefaultWriteTimeout      = 15 * time.Second
 	DefaultIdleTimeout       = 60 * time.Second
 	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
-	NetworkTCP               = "tcp4"
+	NetworkTCP               = "tcp"
 	NumConnDoneChannels      = 2
 )
 
