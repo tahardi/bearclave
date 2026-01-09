@@ -75,11 +75,11 @@ func MakeProxyTLSHandler(
 
 		connDone := make(chan error, NumConnDoneChannels)
 		go func() {
-			_, connErr := io.Copy(serverConn, clientConn)
+			_, connErr := copyNoSplice(serverConn, clientConn)
 			connDone <- connErr
 		}()
 		go func() {
-			_, connErr := io.Copy(clientConn, serverConn)
+			_, connErr := copyNoSplice(clientConn, serverConn)
 			connDone <- connErr
 		}()
 
