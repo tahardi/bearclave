@@ -3,6 +3,7 @@ package tee
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -174,11 +175,11 @@ func proxyTLSConn(
 
 	connDone := make(chan error, NumConnDoneChannels)
 	go func() {
-		_, connErr := io.Copy(serverConn, clientConn)
+		_, connErr := copyNoSplice(serverConn, clientConn)
 		connDone <- connErr
 	}()
 	go func() {
-		_, connErr := io.Copy(clientConn, serverConn)
+		_, connErr := copyNoSplice(clientConn, serverConn)
 		connDone <- connErr
 	}()
 
@@ -194,6 +195,36 @@ func proxyTLSConn(
 	case <-connCtx.Done():
 		logger.Error("proxy timeout", slog.String("error", connCtx.Err().Error()))
 		return
+	}
+}
+
+// copyNoSplice copies from src to dst without using splice, which avoids
+// kernel issues on SEV/TDX and TDX. If you try using io.Copy with a splice-enabled
+// connection, you'll get an error.
+func copyNoSplice(dst io.Writer, src io.Reader)  (int64, error) {
+	total := int64(0)
+	buf := make([]byte, DefaultConnBufferSize) // 32KB buffer
+	for {
+		// Read may return bytes and an error (i.e., EOF). So, if we get bytes,
+		// write them before checking the error and returning.
+		numRead, readErr := src.Read(buf)
+		if numRead > 0 {
+			numWrite, writeErr := dst.Write(buf[0:numRead])
+			total += int64(numWrite)
+			switch {
+			case writeErr != nil:
+				return total, reverseProxyError("writing bytes", writeErr)
+			case numRead != numWrite:
+				msg := fmt.Sprintf("read %d bytes, wrote %d bytes", numRead, numWrite)
+				return total, reverseProxyError(msg, io.ErrShortWrite)
+			}
+		}
+		if readErr != nil {
+			if errors.Is(readErr, io.EOF) {
+				return total, nil
+			}
+			return total, reverseProxyError("reading bytes", readErr)
+		}
 	}
 }
 

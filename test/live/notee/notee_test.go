@@ -154,7 +154,7 @@ func TestNoTEE_HTTP(t *testing.T) {
 //	---- revProxy ------- server
 //	|
 //
-// client -
+// client
 //
 //	|
 //	---- revProxyTLS ---- serverTLS ---- proxyTLS ---- httpbin
@@ -173,7 +173,7 @@ func TestNoTEE_HTTPS(t *testing.T) {
 	certProvider, err := tee.NewSelfSignedCertProvider(domain, validity)
 	require.NoError(t, err)
 
-	// given - a server that attests to the HTTPS server's certificate
+	// given - an HTTP server that attests to the HTTPS server's certificate
 	serverMux := http.NewServeMux()
 	serverMux.HandleFunc(
 		AttestCertPath,
@@ -185,7 +185,7 @@ func TestNoTEE_HTTPS(t *testing.T) {
 	require.NoError(t, err)
 	defer server.Close()
 
-	// given - a reverse proxy that forwards a remote client's requests to the server
+	// given - a reverse proxy that forwards HTTP requests to the HTTP server
 	targetAddr := serverAddr
 	revProxyAddr := "http://127.0.0.1:8080"
 	revProxy, err := tee.NewReverseProxy(
@@ -214,7 +214,7 @@ func TestNoTEE_HTTPS(t *testing.T) {
 		MakeAttestHTTPSCallHandler(t, attester, proxiedClient),
 	)
 
-	// given - a server that makes HTTPS requests on behalf of some remote client
+	// given - an HTTPS server that makes HTTPS requests on behalf of a remote client
 	serverTLSAddr := "https://127.0.0.1:8444"
 	serverTLS, err := tee.NewServerTLS(
 		ctx,
@@ -227,7 +227,7 @@ func TestNoTEE_HTTPS(t *testing.T) {
 	require.NoError(t, err)
 	defer serverTLS.Close()
 
-	// given - a reverse proxy that forwards a remote client's requests to the HTTPS server
+	// given - a reverse proxy that forwards HTTPS requests to the HTTPS server
 	targetTLSAddr := serverTLSAddr
 	revProxyTLSAddr := "https://127.0.0.1:8443"
 	revProxyTLS, err := tee.NewReverseProxyTLS(

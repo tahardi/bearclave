@@ -49,6 +49,7 @@ func NewSocketListener(
 	for _, opt := range options {
 		opt(&opts)
 	}
+
 	listenConfig := &net.ListenConfig{
 		Control:         opts.Control,
 		KeepAlive:       opts.KeepAlive,

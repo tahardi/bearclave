@@ -24,6 +24,7 @@ func MakeProxyTLSHandler(
 	timeout time.Duration,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("proxy tls request received", slog.String("URL", r.URL.String()))
 		if r.Method != http.MethodConnect {
 			msg := "method should be CONNECT but got: " + r.Method
 			logger.Error(msg)
@@ -62,6 +63,7 @@ func MakeProxyTLSHandler(
 		}
 		defer serverConn.Close()
 
+		logger.Info("connection established")
 		_, err = clientConn.Write([]byte(ProxyConnectionEstablished))
 		if err != nil {
 			logger.Error("writing response", slog.String("error", err.Error()))
@@ -73,11 +75,11 @@ func MakeProxyTLSHandler(
 
 		connDone := make(chan error, NumConnDoneChannels)
 		go func() {
-			_, connErr := io.Copy(serverConn, clientConn)
+			_, connErr := copyNoSplice(serverConn, clientConn)
 			connDone <- connErr
 		}()
 		go func() {
-			_, connErr := io.Copy(clientConn, serverConn)
+			_, connErr := copyNoSplice(clientConn, serverConn)
 			connDone <- connErr
 		}()
 
@@ -85,6 +87,8 @@ func MakeProxyTLSHandler(
 		case connErr := <-connDone:
 			if connErr != nil && !errors.Is(connErr, io.EOF) {
 				logger.Error("copy error", slog.String("error", connErr.Error()))
+			} else {
+				logger.Info("connection closed")
 			}
 		case <-connCtx.Done():
 			logger.Error("proxy timeout", slog.String("error", connCtx.Err().Error()))
