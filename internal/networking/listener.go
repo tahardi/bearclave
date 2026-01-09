@@ -50,20 +50,6 @@ func NewSocketListener(
 		opt(&opts)
 	}
 
-	// Wrap user's Control function with dual-stack control
-	userControl := opts.Control
-	opts.Control = func(network, address string, c syscall.RawConn) error {
-		// Always apply dual-stack control first
-		if err := dualStackControl(network, address, c); err != nil {
-			return err
-		}
-		// Then apply user's custom control if provided
-		if userControl != nil {
-			return userControl(network, address, c)
-		}
-		return nil
-	}
-
 	listenConfig := &net.ListenConfig{
 		Control:         opts.Control,
 		KeepAlive:       opts.KeepAlive,
@@ -119,14 +105,4 @@ func NewVSocketListener(
 	case data := <-dataChan:
 		return data, nil
 	}
-}
-
-// dualStackControl sets IPV6_V6ONLY to 0 to enable dual-stack (IPv4 + IPv6)
-func dualStackControl(network, address string, c syscall.RawConn) error {
-	return c.Control(func(fd uintptr) {
-		// Only apply to IPv6 sockets
-		if network == "tcp" || network == "tcp6" {
-			_ = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IPV6, syscall.IPV6_V6ONLY, 0)
-		}
-	})
 }
