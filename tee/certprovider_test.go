@@ -50,11 +50,13 @@ func TestNewSelfSignedCertProvider_GetCert(t *testing.T) {
 		// given
 		ctx := context.Background()
 		privateKey := newTestECDSAPrivateKey(t)
-		domain := "bearclave.com"
-		validity := 1 * time.Hour
+		domain := tee.DefaultDomain
+		ip := tee.DefaultIP
+		validity := tee.DefaultValidity
 		certProvider, err := tee.NewSelfSignedCertProviderWithKey(
 			privateKey,
 			domain,
+			ip,
 			validity,
 		)
 		require.NoError(t, err)
@@ -73,11 +75,13 @@ func TestNewSelfSignedCertProvider_RotateCert(t *testing.T) {
 		// given
 		ctx := context.Background()
 		privateKey := newTestECDSAPrivateKey(t)
-		domain := "bearclave.com"
-		validity := 1 * time.Hour
+		domain := tee.DefaultDomain
+		ip := tee.DefaultIP
+		validity := tee.DefaultValidity
 		certProvider, err := tee.NewSelfSignedCertProviderWithKey(
 			privateKey,
 			domain,
+			ip,
 			validity,
 		)
 		require.NoError(t, err)
@@ -101,11 +105,12 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		privateKey := newTestECDSAPrivateKey(t)
-		domain := "bearclave.com"
-		validity := 1 * time.Hour
+		domain := tee.DefaultDomain
+		ip := tee.DefaultIP
+		validity := tee.DefaultValidity
 
 		// when
-		cert, err := tee.GenerateSelfSignedCert(privateKey, domain, validity)
+		cert, err := tee.GenerateSelfSignedCert(privateKey, domain, ip, validity)
 
 		// then
 		require.NoError(t, err)
@@ -120,7 +125,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 		// Verify certificate properties
 		assert.Equal(t, domain, x509Cert.Subject.CommonName)
 		assert.Contains(t, x509Cert.DNSNames, domain)
-		assert.True(t, x509Cert.IPAddresses[0].Equal(net.ParseIP("127.0.0.1")))
+		assert.True(t, x509Cert.IPAddresses[0].Equal(net.ParseIP(ip)))
 		assert.Equal(t, x509.KeyUsageKeyEncipherment|x509.KeyUsageDigitalSignature, x509Cert.KeyUsage)
 		assert.Contains(t, x509Cert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
 		assert.True(t, x509Cert.BasicConstraintsValid)
