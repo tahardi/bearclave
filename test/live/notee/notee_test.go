@@ -168,9 +168,10 @@ func TestNoTEE_HTTPS(t *testing.T) {
 	require.NoError(t, err)
 
 	// given - a self-signed TLS certificate provider for our HTTPS server
-	domain := "bearclave.org"
-	validity := 1 * time.Hour
-	certProvider, err := tee.NewSelfSignedCertProvider(domain, validity)
+	domain := tee.DefaultDomain
+	ip := tee.DefaultIP
+	validity := tee.DefaultValidity
+	certProvider, err := tee.NewSelfSignedCertProvider(domain, ip, validity)
 	require.NoError(t, err)
 
 	// given - an HTTP server that attests to the HTTPS server's certificate

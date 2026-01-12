@@ -18,6 +18,12 @@ import (
 	"time"
 )
 
+const (
+	DefaultDomain = "localhost"
+	DefaultIP     = "127.0.0.1"
+	DefaultValidity = 365 * 24 * time.Hour
+)
+
 type CertProvider interface {
 	GetCert(ctx context.Context) (*tls.Certificate, error)
 	RotateCert(ctx context.Context) error
@@ -28,26 +34,29 @@ type SelfSignedCertProvider struct {
 	cert       *tls.Certificate
 	privateKey crypto.PrivateKey
 	domain     string
+	ip         string
 	validity   time.Duration
 }
 
 func NewSelfSignedCertProvider(
 	domain string,
+	ip string,
 	validity time.Duration,
 ) (*SelfSignedCertProvider, error) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
 	if err != nil {
 		return nil, certProviderError("generating private key", err)
 	}
-	return NewSelfSignedCertProviderWithKey(privateKey, domain, validity)
+	return NewSelfSignedCertProviderWithKey(privateKey, domain, ip, validity)
 }
 
 func NewSelfSignedCertProviderWithKey(
 	privateKey crypto.PrivateKey,
 	domain string,
+	ip string,
 	validity time.Duration,
 ) (*SelfSignedCertProvider, error) {
-	cert, err := GenerateSelfSignedCert(privateKey, domain, validity)
+	cert, err := GenerateSelfSignedCert(privateKey, domain, ip, validity)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +65,7 @@ func NewSelfSignedCertProviderWithKey(
 		cert:       cert,
 		privateKey: privateKey,
 		domain:     domain,
+		ip:         ip,
 		validity:   validity,
 	}, nil
 }
@@ -76,6 +86,7 @@ func (s *SelfSignedCertProvider) RotateCert(
 	cert, err := GenerateSelfSignedCert(
 		s.privateKey,
 		s.domain,
+		s.ip,
 		s.validity,
 	)
 	if err != nil {
@@ -88,6 +99,7 @@ func (s *SelfSignedCertProvider) RotateCert(
 func GenerateSelfSignedCert(
 	privateKey crypto.PrivateKey,
 	domain string,
+	ip string,
 	validity time.Duration,
 ) (*tls.Certificate, error) {
 	template := x509.Certificate{
@@ -101,7 +113,7 @@ func GenerateSelfSignedCert(
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		DNSNames:              []string{domain},
-		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1")},
+		IPAddresses:           []net.IP{net.ParseIP(ip)},
 	}
 
 	publicKey, err := GetPublicKey(privateKey)
