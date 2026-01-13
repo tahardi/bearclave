@@ -19,7 +19,7 @@ func NewProxy(
 	client *http.Client,
 	logger *slog.Logger,
 ) (*Proxy, error) {
-	listener, err := NewListener(ctx, platform, NetworkTCP, addr)
+	listener, err := NewListener(ctx, platform, NetworkTCP4, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func NewProxyTLS(
 	addr string,
 	logger *slog.Logger,
 ) (*Proxy, error) {
-	listener, err := NewListener(ctx, platform, NetworkTCP, addr)
+	listener, err := NewListener(ctx, platform, NetworkTCP4, addr)
 	if err != nil {
 		return nil, err
 	}
