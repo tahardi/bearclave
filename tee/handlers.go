@@ -54,7 +54,7 @@ func MakeProxyTLSHandler(
 		defer cancel()
 
 		targetAddr := r.RequestURI
-		serverConn, err := (&net.Dialer{}).DialContext(dialCtx, NetworkTCP, targetAddr)
+		serverConn, err := (&net.Dialer{}).DialContext(dialCtx, NetworkTCP4, targetAddr)
 		if err != nil {
 			msg := "dialing: " + targetAddr
 			logger.Error(msg, slog.String("error", err.Error()))

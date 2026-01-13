@@ -19,7 +19,7 @@ const (
 	DefaultWriteTimeout      = 15 * time.Second
 	DefaultIdleTimeout       = 60 * time.Second
 	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
-	NetworkTCP               = "tcp"
+	NetworkTCP4              = "tcp4"
 	NumConnDoneChannels      = 2
 )
 
@@ -38,7 +38,7 @@ func NewServer(
 	handler http.Handler,
 	logger *slog.Logger,
 ) (*Server, error) {
-	listener, err := NewListener(ctx, platform, NetworkTCP, addr)
+	listener, err := NewListener(ctx, platform, NetworkTCP4, addr)
 	if err != nil {
 		return nil, serverError("creating listener", err)
 	}
@@ -74,7 +74,7 @@ func NewServerTLS(
 	certProvider CertProvider,
 	logger *slog.Logger,
 ) (*Server, error) {
-	listener, err := NewListener(ctx, platform, NetworkTCP, addr)
+	listener, err := NewListener(ctx, platform, NetworkTCP4, addr)
 	if err != nil {
 		return nil, serverError("creating listener", err)
 	}

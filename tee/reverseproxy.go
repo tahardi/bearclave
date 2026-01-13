@@ -50,7 +50,7 @@ func NewReverseProxyWithDialContext(
 	// NOTE: Reverse Proxies are only ever run (1) outside a Nitro Enclave
 	// or (2) within an SEV-SNP/TDX enclave. This means the reverse proxy will
 	// always listen on a regular socket, which is why we use NoTEE here.
-	listener, err := NewListener(ctx, NoTEE, NetworkTCP, addr)
+	listener, err := NewListener(ctx, NoTEE, NetworkTCP4, addr)
 	if err != nil {
 		return nil, reverseProxyError("creating listener", err)
 	}
@@ -95,7 +95,7 @@ func NewReverseProxyTLSWithDialContext(
 	// NOTE: Reverse Proxies are only ever run (1) outside a Nitro Enclave
 	// or (2) within an SEV-SNP/TDX enclave. This means the reverse proxy will
 	// always listen on a regular socket, which is why we use NoTEE here.
-	listener, err := NewListener(ctx, NoTEE, NetworkTCP, addr)
+	listener, err := NewListener(ctx, NoTEE, NetworkTCP4, addr)
 	if err != nil {
 		return nil, reverseProxyError("creating listener", err)
 	}
@@ -163,7 +163,7 @@ func proxyTLSConn(
 	dialCtx, dialCancel := context.WithTimeout(context.Background(), DefaultConnTimeout)
 	defer dialCancel()
 
-	serverConn, err := dialContext(dialCtx, NetworkTCP, targetAddr)
+	serverConn, err := dialContext(dialCtx, NetworkTCP4, targetAddr)
 	if err != nil {
 		logger.Error("dialing target", slog.String("error", err.Error()))
 		return
@@ -201,7 +201,7 @@ func proxyTLSConn(
 // copyNoSplice copies from src to dst without using splice, which avoids
 // kernel issues on SEV/TDX and TDX. If you try using io.Copy with a splice-enabled
 // connection, you'll get an error.
-func copyNoSplice(dst io.Writer, src io.Reader)  (int64, error) {
+func copyNoSplice(dst io.Writer, src io.Reader) (int64, error) {
 	total := int64(0)
 	buf := make([]byte, DefaultConnBufferSize) // 32KB buffer
 	for {
