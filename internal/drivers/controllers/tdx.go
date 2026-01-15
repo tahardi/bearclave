@@ -14,12 +14,6 @@ const (
 	TDXReportIOControlNumber = 1
 	TDXReportDataLen         = 64
 	TDXReportLen             = 1014
-	TDXQuoteIOControlNumber  = 2
-	TDXQuoteBufSize          = 8192
-	TDXQuoteVersion          = 1
-	TDXQuoteInFlight         = 0xffffffffffffffff
-	TDXQuoteSuccess          = 0
-	TDXQuoteTimeout          = 30
 )
 
 var (
