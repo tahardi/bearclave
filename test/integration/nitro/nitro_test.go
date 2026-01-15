@@ -27,7 +27,8 @@ func TestNitro_Drivers(t *testing.T) {
 		client, err := drivers.NewNSMClient()
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		client.Close()
+		err = client.Close()
+		require.NoError(t, err)
 	})
 
 	// NOTE: PCRs 0-15 are always locked regardless of whether you are running
