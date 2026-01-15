@@ -51,11 +51,11 @@ func NewTDXControllerWithFile(file *os.File) (*TDXController, error) {
 	return &TDXController{file: file}, nil
 }
 
-func (n *TDXController) Close() error {
-	return n.file.Close()
+func (t *TDXController) Close() error {
+	return t.file.Close()
 }
 
-func (n *TDXController) Send(request []byte) ([]byte, error) {
+func (t *TDXController) Send(request []byte) ([]byte, error) {
 	switch {
 	case request == nil:
 		return nil, ErrReportDataNil
@@ -80,7 +80,7 @@ func (n *TDXController) Send(request []byte) ([]byte, error) {
 
 	_, _, errno := syscall.Syscall(
 		syscall.SYS_IOCTL,
-		n.file.Fd(),
+		t.file.Fd(),
 		uintptr(command),
 		uintptr(unsafe.Pointer(&message)),
 	)

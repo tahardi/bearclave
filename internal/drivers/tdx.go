@@ -37,8 +37,8 @@ func NewTDXClientWithController(
 	return &TDXClient{ioctrl: ioctrl}, nil
 }
 
-func (n *TDXClient) Close() error {
-	return n.ioctrl.Close()
+func (t *TDXClient) Close() error {
+	return t.ioctrl.Close()
 }
 
 func (t *TDXClient) GetReport0(reportData []byte) ([]byte, error) {
