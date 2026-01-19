@@ -7,20 +7,30 @@ import (
 	"fmt"
 
 	"github.com/google/go-sev-guest/abi"
-	"github.com/google/go-sev-guest/client"
 	"github.com/google/go-sev-guest/proto/sevsnp"
 	"github.com/google/go-sev-guest/verify"
+	"github.com/tahardi/bearclave/internal/drivers"
 )
 
 const AmdSevMaxUserDataSize = 64
 
-type SEVAttester struct{}
-
-func NewSEVAttester() (*SEVAttester, error) {
-	return &SEVAttester{}, nil
+type SEVAttester struct {
+	client drivers.SEV
 }
 
-func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
+func NewSEVAttester() (*SEVAttester, error) {
+	client, err := drivers.NewSEVClient()
+	if err != nil {
+		return nil, attesterError("making sev client", err)
+	}
+	return NewSEVAttesterWithClient(client)
+}
+
+func NewSEVAttesterWithClient(client drivers.SEV) (*SEVAttester, error) {
+	return &SEVAttester{client: client}, nil
+}
+
+func (s *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {
 		opt(&opts)
@@ -34,23 +44,20 @@ func (n *SEVAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		return nil, attesterErrorUserData(msg, nil)
 	}
 
-	sevQP, err := client.GetQuoteProvider()
+	result, err := s.client.GetReport(
+		drivers.WithSEVReportUserData(opts.UserData),
+		drivers.WithSEVReportCertTable(true),
+	)
 	if err != nil {
-		return nil, attesterError("getting sev quote provider", err)
+		return nil, attesterError("getting sev report", err)
 	}
 
-	var reportData [64]byte
-	if opts.UserData != nil {
-		copy(reportData[:], opts.UserData)
-	}
-	quote, err := sevQP.GetRawQuote(reportData)
-	if err != nil {
-		return nil, attesterError("getting sev quote", err)
-	}
-	return &AttestResult{Report: quote}, nil
+	return &AttestResult {
+		Report: append(result.Report, result.CertTable...),
+	}, nil
 }
 
-func (n *SEVAttester) Close() error {
+func (s *SEVAttester) Close() error {
 	return nil
 }
 
@@ -60,7 +67,7 @@ func NewSEVVerifier() (*SEVVerifier, error) {
 	return &SEVVerifier{}, nil
 }
 
-func (n *SEVVerifier) Verify(
+func (s *SEVVerifier) Verify(
 	attestResult *AttestResult,
 	options ...VerifyOption,
 ) (*VerifyResult, error) {

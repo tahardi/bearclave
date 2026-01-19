@@ -10,7 +10,10 @@ import (
 	"github.com/google/go-sev-guest/proto/sevsnp"
 	"github.com/google/go-sev-guest/verify"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/tahardi/bearclave/internal/drivers"
+	"github.com/tahardi/bearclave/mocks"
 
 	"github.com/tahardi/bearclave/internal/attestation"
 )
@@ -81,11 +84,33 @@ func TestSEV_Interfaces(t *testing.T) {
 }
 
 func TestSEVAttester_Attest(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		wantReport := []byte("report")
+		wantCertTable := []byte("cert table")
+		wantUserData := []byte("Hello, world!")
+
+		want := &drivers.SEVReportResult{Report: wantReport, CertTable: wantCertTable}
+		client := mocks.NewSEV(t)
+		client.On("GetReport", mock.Anything).Return(want, nil)
+
+		attester, err := attestation.NewSEVAttesterWithClient(client)
+		require.NoError(t, err)
+
+		// when
+		got, err := attester.Attest(attestation.WithAttestUserData(wantUserData))
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, append(want.Report, wantCertTable...), got.Report)
+	})
+
 	t.Run("error - user data too long", func(t *testing.T) {
 		// given
-		attester, err := attestation.NewSEVAttester()
+		userData := make([]byte, attestation.IntelTdxMaxUserDataSize+1)
+		client := mocks.NewSEV(t)
+		attester, err := attestation.NewSEVAttesterWithClient(client)
 		require.NoError(t, err)
-		userData := make([]byte, attestation.AmdSevMaxUserDataSize+1)
 
 		// when
 		_, err = attester.Attest(attestation.WithAttestUserData(userData))

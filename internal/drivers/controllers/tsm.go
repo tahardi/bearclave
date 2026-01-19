@@ -81,15 +81,15 @@ func WithTSMReportInBlob(inBlob []byte) TSMReportOption {
 	}
 }
 
-func WithTSMReportAuxBlob() TSMReportOption {
+func WithTSMReportAuxBlob(auxBlob bool) TSMReportOption {
 	return func(opts *TSMReportOptions) {
-		opts.AuxBlob = true
+		opts.AuxBlob = auxBlob
 	}
 }
 
-func WithTSMReportManifestBlob() TSMReportOption {
+func WithTSMReportManifestBlob(manifestBlob bool) TSMReportOption {
 	return func(opts *TSMReportOptions) {
-		opts.ManifestBlob = true
+		opts.ManifestBlob = manifestBlob
 	}
 }
 
