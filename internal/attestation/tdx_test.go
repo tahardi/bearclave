@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-tdx-guest/verify"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tahardi/bearclave/mocks"
 
 	"github.com/tahardi/bearclave/internal/attestation"
 )
@@ -73,11 +74,30 @@ func TestTDX_Interfaces(t *testing.T) {
 }
 
 func TestTDXAttester_Attest(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		wantReport := []byte("report")
+		wantUserData := []byte("Hello, world!")
+		client := mocks.NewTDX(t)
+		client.On("GetReport", wantUserData).Return(wantReport, nil)
+
+		attester, err := attestation.NewTDXAttesterWithClient(client)
+		require.NoError(t, err)
+
+		// when
+		got, err := attester.Attest(attestation.WithAttestUserData(wantUserData))
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, wantReport, got.Report)
+	})
+
 	t.Run("error - user data too long", func(t *testing.T) {
 		// given
-		attester, err := attestation.NewTDXAttester()
-		require.NoError(t, err)
 		userData := make([]byte, attestation.IntelTdxMaxUserDataSize+1)
+		client := mocks.NewTDX(t)
+		attester, err := attestation.NewTDXAttesterWithClient(client)
+		require.NoError(t, err)
 
 		// when
 		_, err = attester.Attest(attestation.WithAttestUserData(userData))

@@ -51,19 +51,6 @@ func (t *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		return nil, attesterErrorUserData(msg, nil)
 	}
 
-	//tdxQP, err := client.GetQuoteProvider()
-	//if err != nil {
-	//	return nil, attesterError("getting tdx quote provider", err)
-	//}
-	//
-	//var reportData [64]byte
-	//if opts.UserData != nil {
-	//	copy(reportData[:], opts.UserData)
-	//}
-	//quote, err := tdxQP.GetRawQuote(reportData)
-	//if err != nil {
-	//	return nil, attesterError("getting tdx quote", err)
-	//}
 	report, err := t.client.GetReport(opts.UserData)
 	if err != nil {
 		return nil, attesterError("getting tdx report", err)
