@@ -27,6 +27,7 @@ const (
 
 type IOController interface {
 	io.Closer
+
 	Send(request []byte) (response []byte, err error)
 }
 
