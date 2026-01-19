@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/google/go-tdx-guest/abi"
-	"github.com/google/go-tdx-guest/client"
 	pb "github.com/google/go-tdx-guest/proto/tdx"
 	"github.com/google/go-tdx-guest/verify"
+	"github.com/tahardi/bearclave/internal/drivers"
 )
 
 const (
@@ -17,17 +17,27 @@ const (
 	IntelTdxMaxUserDataSize = 64
 )
 
-type TDXAttester struct{}
-
-func NewTDXAttester() (*TDXAttester, error) {
-	return &TDXAttester{}, nil
+type TDXAttester struct{
+	client drivers.TDX
 }
 
-func (n *TDXAttester) Close() error {
+func NewTDXAttester() (*TDXAttester, error) {
+	client, err := drivers.NewTDXClient()
+	if err != nil {
+		return nil, attesterError("making tdx client", err)
+	}
+	return NewTDXAttesterWithClient(client)
+}
+
+func NewTDXAttesterWithClient(client drivers.TDX) (*TDXAttester, error) {
+	return &TDXAttester{client: client}, nil
+}
+
+func (t *TDXAttester) Close() error {
 	return nil
 }
 
-func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
+func (t *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 	opts := MakeDefaultAttestOptions()
 	for _, opt := range options {
 		opt(&opts)
@@ -41,20 +51,24 @@ func (n *TDXAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		return nil, attesterErrorUserData(msg, nil)
 	}
 
-	tdxQP, err := client.GetQuoteProvider()
+	//tdxQP, err := client.GetQuoteProvider()
+	//if err != nil {
+	//	return nil, attesterError("getting tdx quote provider", err)
+	//}
+	//
+	//var reportData [64]byte
+	//if opts.UserData != nil {
+	//	copy(reportData[:], opts.UserData)
+	//}
+	//quote, err := tdxQP.GetRawQuote(reportData)
+	//if err != nil {
+	//	return nil, attesterError("getting tdx quote", err)
+	//}
+	report, err := t.client.GetReport(opts.UserData)
 	if err != nil {
-		return nil, attesterError("getting tdx quote provider", err)
+		return nil, attesterError("getting tdx report", err)
 	}
-
-	var reportData [64]byte
-	if opts.UserData != nil {
-		copy(reportData[:], opts.UserData)
-	}
-	quote, err := tdxQP.GetRawQuote(reportData)
-	if err != nil {
-		return nil, attesterError("getting tdx quote", err)
-	}
-	return &AttestResult{Report: quote}, nil
+	return &AttestResult{Report: report}, nil
 }
 
 type TDXVerifier struct{}
@@ -63,7 +77,7 @@ func NewTDXVerifier() (*TDXVerifier, error) {
 	return &TDXVerifier{}, nil
 }
 
-func (n *TDXVerifier) Verify(
+func (t *TDXVerifier) Verify(
 	attestResult *AttestResult,
 	options ...VerifyOption,
 ) (*VerifyResult, error) {
