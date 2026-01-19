@@ -3,6 +3,7 @@ package drivers
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/tahardi/bearclave/internal/drivers/controllers"
 )
@@ -40,7 +41,7 @@ func (t *TDXClient) GetReport(data []byte) (report []byte, err error) {
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("%w: getting report: %w", ErrTDXClient, err)
-	case result.Provider != TDXProvider:
+	case !strings.Contains(result.Provider, TDXProvider):
 		return nil, fmt.Errorf("%w: unexpected provider '%s'", ErrTDXClient, result.Provider)
 	}
 	return result.OutBlob, nil

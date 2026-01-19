@@ -18,6 +18,7 @@ const (
 	TSMReportPath                      = TSMPath + "/report"
 	TSMReportPattern                   = "bearclave-report-*"
 	TSMReportInBlob                    = "/inblob"
+	TSMReportInBlobSize                = 64
 	TSMReportOutBlob                   = "/outblob"
 	TSMReportAuxBlob                   = "/auxblob"
 	TSMReportManifestBlob              = "/manifestblob"
@@ -31,10 +32,13 @@ const (
 	TSMReportServiceGUID               = "/service_guid"
 	TSMReportServiceManifestVersion    = "/service_manifest_version"
 	TSMReportServiceManifestVersionNil = -1
+	TSMReportUintBase                  = 10
+	TSMReportUintSize                  = 64
 )
 
 var (
 	ErrTSM = errors.New("tsm")
+	ErrTSMReport = fmt.Errorf("%w: report", ErrTSM)
 )
 
 type TSMController interface {
@@ -136,7 +140,7 @@ func NewTSMWithConfigFS(configFS CFSController) (*TSM, error) {
 	case info != nil && !info.IsDir():
 		return nil, fmt.Errorf("%w: tsm path '%s' is not a directory", ErrTSM, tmsPath)
 	default:
-		return nil, fmt.Errorf("%w: unexpected error reading tsm path '%s': %w", ErrTSM, tmsPath, err)
+		return nil, fmt.Errorf("%w: unexpected error checking tsm path '%s': %w", ErrTSM, tmsPath, err)
 	}
 	return &TSM{configFS: configFS}, nil
 }
@@ -151,7 +155,7 @@ func (t *TSM) GetReport(options ...TSMReportOption) (*TSMReportResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: making dir '%s': %w",
-			ErrTSM, reportPath, err,
+			ErrTSMReport, reportPath, err,
 		)
 	}
 	defer t.configFS.RemoveAll(reportPath)
@@ -176,7 +180,7 @@ func (t *TSM) getReportAttributes(
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: reading outblob from '%s': %w",
-			ErrTSM, outBlobPath, err,
+			ErrTSMReport, outBlobPath, err,
 		)
 	}
 	result.OutBlob = outBlob
@@ -187,7 +191,7 @@ func (t *TSM) getReportAttributes(
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: reading provider from '%s': %w",
-			ErrTSM, providerPath, err,
+			ErrTSMReport, providerPath, err,
 		)
 	}
 	result.Provider = string(provider)
@@ -198,7 +202,7 @@ func (t *TSM) getReportAttributes(
 		if err != nil {
 			return nil, fmt.Errorf(
 				"%w: reading auxblob from '%s': %w",
-				ErrTSM, auxBlobPath, err,
+				ErrTSMReport, auxBlobPath, err,
 			)
 		}
 		result.AuxBlob = auxBlob
@@ -210,7 +214,7 @@ func (t *TSM) getReportAttributes(
 		if err != nil {
 			return nil, fmt.Errorf(
 				"%w: reading manifestblob from '%s': %w",
-				ErrTSM, manifestBlobPath, err,
+				ErrTSMReport, manifestBlobPath, err,
 			)
 		}
 		result.ManifestBlob = manifestBlob
@@ -232,21 +236,8 @@ func (t *TSM) setReportAttributes(
 	if err != nil {
 		return fmt.Errorf(
 			"%w: reading generation from '%s': %w",
-			ErrTSM, generationPath, err,
+			ErrTSMReport, generationPath, err,
 		)
-	}
-
-	// The inblob holds inputs user data (e.g., nonce, data hash) for the report.
-	if opts.InBlob != nil {
-		inBlobPath := reportPath + TSMReportInBlob
-		err = t.configFS.WriteFile(inBlobPath, opts.InBlob)
-		if err != nil {
-			return fmt.Errorf(
-				"%w: writing inblob to '%s': %w",
-				ErrTSM, inBlobPath, err,
-			)
-		}
-		expectedGeneration++
 	}
 
 	if opts.PrivLevel != TSMReportPrivLevelNil {
@@ -256,17 +247,17 @@ func (t *TSM) setReportAttributes(
 		case err != nil:
 			return fmt.Errorf(
 				"%w: reading priv level floor from '%s': %w",
-				ErrTSM, privLevelFloorPath, err,
+				ErrTSMReport, privLevelFloorPath, err,
 			)
 		case opts.PrivLevel < int(privLevelFloor):
 			return fmt.Errorf(
 				"%w: priv level %d is below floor %d",
-				ErrTSM, opts.PrivLevel, privLevelFloor,
+				ErrTSMReport, opts.PrivLevel, privLevelFloor,
 			)
 		case opts.PrivLevel > TSMReportPrivLevelMax:
 			return fmt.Errorf(
 				"%w: priv level %d is above max %d",
-				ErrTSM, opts.PrivLevel, TSMReportPrivLevelMax,
+				ErrTSMReport, opts.PrivLevel, TSMReportPrivLevelMax,
 			)
 		}
 
@@ -275,7 +266,7 @@ func (t *TSM) setReportAttributes(
 		if err != nil {
 			return fmt.Errorf(
 				"%w: writing priv level to '%s': %w",
-				ErrTSM, privLevelPath, err,
+				ErrTSMReport, privLevelPath, err,
 			)
 		}
 		expectedGeneration++
@@ -287,7 +278,7 @@ func (t *TSM) setReportAttributes(
 		if err != nil {
 			return fmt.Errorf(
 				"%w: writing service provider to '%s': %w",
-				ErrTSM, serviceProviderPath, err,
+				ErrTSMReport, serviceProviderPath, err,
 			)
 		}
 		expectedGeneration++
@@ -299,7 +290,7 @@ func (t *TSM) setReportAttributes(
 		if err != nil {
 			return fmt.Errorf(
 				"%w: writing service GUID to '%s': %w",
-				ErrTSM, serviceGUIDPath, err,
+				ErrTSMReport, serviceGUIDPath, err,
 			)
 		}
 		expectedGeneration++
@@ -311,7 +302,22 @@ func (t *TSM) setReportAttributes(
 		if err != nil {
 			return fmt.Errorf(
 				"%w: writing service manifest version to '%s': %w",
-				ErrTSM, serviceManifestVersionPath, err,
+				ErrTSMReport, serviceManifestVersionPath, err,
+			)
+		}
+		expectedGeneration++
+	}
+
+	if opts.InBlob != nil {
+		inBlobFixedSize := make([]byte, TSMReportInBlobSize)
+		copy(inBlobFixedSize[:], opts.InBlob)
+
+		inBlobPath := reportPath + TSMReportInBlob
+		err = t.configFS.WriteFile(inBlobPath, inBlobFixedSize)
+		if err != nil {
+			return fmt.Errorf(
+				"%w: writing inblob to '%s': %w",
+				ErrTSMReport, inBlobPath, err,
 			)
 		}
 		expectedGeneration++
@@ -322,12 +328,12 @@ func (t *TSM) setReportAttributes(
 	case err != nil:
 		return fmt.Errorf(
 			"%w: reading generation from '%s': %w",
-			ErrTSM, generationPath, err,
+			ErrTSMReport, generationPath, err,
 		)
 	case gotGeneration != expectedGeneration:
 		return fmt.Errorf(
 			"%w: generation mismatch, expected %d, got %d",
-			ErrTSM, expectedGeneration, gotGeneration,
+			ErrTSMReport, expectedGeneration, gotGeneration,
 		)
 	}
 	return nil
@@ -340,10 +346,10 @@ func (t *TSM) readUint64(path string) (uint64, error) {
 	}
 
 	trimmed := strings.TrimRight(string(bytes), "\n")
-	return strconv.ParseUint(trimmed, 10, 64)
+	return strconv.ParseUint(trimmed, TSMReportUintBase, TSMReportUintSize)
 }
 
 func (t *TSM) writeUint64(path string, value uint64) error {
-	bytes := []byte(strconv.FormatUint(value, 10))
+	bytes := []byte(strconv.FormatUint(value, TSMReportUintBase))
 	return t.configFS.WriteFile(path, bytes)
 }

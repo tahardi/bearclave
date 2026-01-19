@@ -57,7 +57,11 @@ func (c *ConfigFS) Path() string {
 
 func (c *ConfigFS) MkdirTemp(path string, pattern string) (string, error) {
 	if !strings.HasPrefix(path, c.cfsPath) {
-		path = c.cfsPath + "/" + path
+		if !strings.HasPrefix(path, "/") {
+			path = c.cfsPath + "/" + path
+		} else {
+			path = c.cfsPath + path
+		}
 	}
 	name, err := os.MkdirTemp(path, pattern)
 	if err != nil {
@@ -81,6 +85,7 @@ func (c *ConfigFS) ReadFile(path string) ([]byte, error) {
 	if !strings.HasPrefix(path, c.cfsPath) {
 		path = c.cfsPath + "/" + path
 	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("%w: reading file '%s': %w", ErrConfigFS, path, err)
@@ -92,6 +97,7 @@ func (c *ConfigFS) WriteFile(path string, data []byte) error {
 	if !strings.HasPrefix(path, c.cfsPath) {
 		path = c.cfsPath + "/" + path
 	}
+
 	err := os.WriteFile(path, data, WriteOnly)
 	if err != nil {
 		return fmt.Errorf("%w: writing file '%s': %w", ErrConfigFS, path, err)
