@@ -26,18 +26,18 @@ const (
 	TSMReportGeneration                = "/generation"
 	TSMReportPrivLevel                 = "/privlevel"
 	TSMReportPrivLevelFloor            = "/privlevel_floor"
-	TSMReportPrivLevelNil              = -1
 	TSMReportPrivLevelMax              = 3
+	TSMReportPrivLevelNil              = TSMReportPrivLevelMax + 1
 	TSMReportServiceProvider           = "/service_provider"
 	TSMReportServiceGUID               = "/service_guid"
 	TSMReportServiceManifestVersion    = "/service_manifest_version"
-	TSMReportServiceManifestVersionNil = -1
+	TSMReportServiceManifestVersionNil = 0
 	TSMReportUintBase                  = 10
 	TSMReportUintSize                  = 64
 )
 
 var (
-	ErrTSM = errors.New("tsm")
+	ErrTSM       = errors.New("tsm")
 	ErrTSMReport = fmt.Errorf("%w: report", ErrTSM)
 )
 
@@ -57,10 +57,10 @@ type TSMReportOptions struct {
 	InBlob                 []byte
 	AuxBlob                bool
 	ManifestBlob           bool
-	PrivLevel              int
+	PrivLevel              uint64
 	ServiceProvider        []byte
 	ServiceGUID            []byte
-	ServiceManifestVersion int
+	ServiceManifestVersion uint64
 }
 
 func MakeDefaultTSMReportOptions() TSMReportOptions {
@@ -93,7 +93,7 @@ func WithTSMReportManifestBlob() TSMReportOption {
 	}
 }
 
-func WithTSMReportPrivLevel(privLevel int) TSMReportOption {
+func WithTSMReportPrivLevel(privLevel uint64) TSMReportOption {
 	return func(opts *TSMReportOptions) {
 		opts.PrivLevel = privLevel
 	}
@@ -111,7 +111,7 @@ func WithTSMReportServiceGUID(serviceGUID []byte) TSMReportOption {
 	}
 }
 
-func WithTSMReportServiceManifestVersion(serviceManifestVersion int) TSMReportOption {
+func WithTSMReportServiceManifestVersion(serviceManifestVersion uint64) TSMReportOption {
 	return func(opts *TSMReportOptions) {
 		opts.ServiceManifestVersion = serviceManifestVersion
 	}
@@ -130,7 +130,7 @@ func NewTSM() (*TSM, error) {
 }
 
 func NewTSMWithConfigFS(configFS CFSController) (*TSM, error) {
-	tmsPath := configFS.Path() + "/" + TSMPath
+	tmsPath := configFS.Path() + TSMPath
 	info, err := os.Stat(tmsPath)
 	switch {
 	case err == nil && info.IsDir():
@@ -158,7 +158,12 @@ func (t *TSM) GetReport(options ...TSMReportOption) (*TSMReportResult, error) {
 			ErrTSMReport, reportPath, err,
 		)
 	}
-	defer t.configFS.RemoveAll(reportPath)
+	defer func() {
+		rmErr := t.configFS.RemoveAll(reportPath)
+		if rmErr != nil {
+			fmt.Printf("removing remove report dir '%s': %v\n", reportPath, rmErr)
+		}
+	}()
 
 	err = t.setReportAttributes(reportPath, opts)
 	if err != nil {
@@ -249,7 +254,7 @@ func (t *TSM) setReportAttributes(
 				"%w: reading priv level floor from '%s': %w",
 				ErrTSMReport, privLevelFloorPath, err,
 			)
-		case opts.PrivLevel < int(privLevelFloor):
+		case opts.PrivLevel < privLevelFloor:
 			return fmt.Errorf(
 				"%w: priv level %d is below floor %d",
 				ErrTSMReport, opts.PrivLevel, privLevelFloor,
@@ -262,7 +267,7 @@ func (t *TSM) setReportAttributes(
 		}
 
 		privLevelPath := reportPath + TSMReportPrivLevel
-		err = t.writeUint64(privLevelPath, uint64(opts.PrivLevel))
+		err = t.writeUint64(privLevelPath, opts.PrivLevel)
 		if err != nil {
 			return fmt.Errorf(
 				"%w: writing priv level to '%s': %w",
@@ -298,7 +303,7 @@ func (t *TSM) setReportAttributes(
 
 	if opts.ServiceManifestVersion != TSMReportServiceManifestVersionNil {
 		serviceManifestVersionPath := reportPath + TSMReportServiceManifestVersion
-		err = t.writeUint64(serviceManifestVersionPath, uint64(opts.ServiceManifestVersion))
+		err = t.writeUint64(serviceManifestVersionPath, opts.ServiceManifestVersion)
 		if err != nil {
 			return fmt.Errorf(
 				"%w: writing service manifest version to '%s': %w",
@@ -310,7 +315,7 @@ func (t *TSM) setReportAttributes(
 
 	if opts.InBlob != nil {
 		inBlobFixedSize := make([]byte, TSMReportInBlobSize)
-		copy(inBlobFixedSize[:], opts.InBlob)
+		copy(inBlobFixedSize, opts.InBlob)
 
 		inBlobPath := reportPath + TSMReportInBlob
 		err = t.configFS.WriteFile(inBlobPath, inBlobFixedSize)

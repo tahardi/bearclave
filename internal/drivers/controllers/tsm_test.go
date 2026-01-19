@@ -56,8 +56,7 @@ func TestNewTMSWithConfigFS(t *testing.T) {
 	t.Run("error - path is not a directory", func(_ *testing.T) {
 		// given
 		cfsPath := os.TempDir()
-		defer os.RemoveAll(cfsPath)
-		require.NoError(t, os.WriteFile(cfsPath+controllers.TSMPath, []byte{}, 0644))
+		require.NoError(t, os.WriteFile(cfsPath+controllers.TSMPath, []byte{}, 0600))
 
 		cfs := mocks.NewCFSController(t)
 		cfs.On("Path").Return(cfsPath)

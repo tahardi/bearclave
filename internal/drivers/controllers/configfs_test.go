@@ -18,7 +18,6 @@ func TestNewConfigFSWithPath(t *testing.T) {
 	t.Run("happy path", func(_ *testing.T) {
 		// given
 		cfsPath := os.TempDir()
-		defer os.RemoveAll(cfsPath)
 
 		// when
 		_, err := controllers.NewConfigFSWithPath(cfsPath)
@@ -30,7 +29,6 @@ func TestNewConfigFSWithPath(t *testing.T) {
 	t.Run("error - directory does not exist", func(_ *testing.T) {
 		// given
 		cfsPath := os.TempDir() + "/nonexistent"
-		defer os.RemoveAll(cfsPath)
 
 		// when
 		_, err := controllers.NewConfigFSWithPath(cfsPath)
@@ -42,8 +40,7 @@ func TestNewConfigFSWithPath(t *testing.T) {
 	t.Run("error - path is not a directory", func(_ *testing.T) {
 		// given
 		cfsPath := os.TempDir() + "/file"
-		defer os.RemoveAll(cfsPath)
-		require.NoError(t, os.WriteFile(cfsPath, []byte{}, 0644))
+		require.NoError(t, os.WriteFile(cfsPath, []byte{}, 0600))
 
 		// when
 		_, err := controllers.NewConfigFSWithPath(cfsPath)
