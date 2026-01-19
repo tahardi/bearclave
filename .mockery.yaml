@@ -14,10 +14,13 @@ packages:
     config:
     interfaces:
       NSM:
+      TDX:
   github.com/tahardi/bearclave/internal/drivers/controllers:
     config:
     interfaces:
       IOController:
+      CFSController:
+      TSMController:
   io:
     config:
     interfaces:
