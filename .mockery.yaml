@@ -14,6 +14,7 @@ packages:
     config:
     interfaces:
       NSM:
+      SEV:
       TDX:
   github.com/tahardi/bearclave/internal/drivers/controllers:
     config:

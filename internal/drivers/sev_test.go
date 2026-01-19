@@ -11,31 +11,33 @@ import (
 	"github.com/tahardi/bearclave/mocks"
 )
 
-func TestTDXClient_Interfaces(t *testing.T) {
-	t.Run("TDX", func(_ *testing.T) {
-		var _ drivers.TDX = &drivers.TDXClient{}
+func TestSEVClient_Interfaces(t *testing.T) {
+	t.Run("SEV", func(_ *testing.T) {
+		var _ drivers.SEV = &drivers.SEVClient{}
 	})
 }
 
-func TestTDXClient_GetReport(t *testing.T) {
-	t.Run("happy path - no user data", func(_ *testing.T) {
+func TestSEVClient_GetReport(t *testing.T) {
+	t.Run("happy path", func(_ *testing.T) {
 		// given
 		want := &controllers.TSMReportResult{
 			OutBlob:  []byte("report"),
-			Provider: drivers.TDXProvider,
+			AuxBlob:  []byte("cert table"),
+			Provider: drivers.SEVProvider,
 		}
 		tsm := mocks.NewTSMController(t)
 		tsm.On("GetReport", mock.Anything).Return(want, nil)
 
-		client, err := drivers.NewTDXClientWithTSM(tsm)
+		client, err := drivers.NewSEVClientWithTSM(tsm)
 		require.NoError(t, err)
 
 		// when
-		got, err := client.GetReport(nil)
+		got, err := client.GetReport(drivers.WithSEVReportCertTable(true))
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, want.OutBlob, got)
+		assert.Equal(t, want.OutBlob, got.Report)
+		assert.Equal(t, want.AuxBlob, got.CertTable)
 	})
 
 	t.Run("error - tsm", func(_ *testing.T) {
@@ -43,11 +45,11 @@ func TestTDXClient_GetReport(t *testing.T) {
 		tsm := mocks.NewTSMController(t)
 		tsm.On("GetReport", mock.Anything).Return(nil, assert.AnError)
 
-		client, err := drivers.NewTDXClientWithTSM(tsm)
+		client, err := drivers.NewSEVClientWithTSM(tsm)
 		require.NoError(t, err)
 
 		// when
-		_, err = client.GetReport(nil)
+		_, err = client.GetReport()
 
 		// then
 		require.ErrorIs(t, err, assert.AnError)
@@ -62,13 +64,13 @@ func TestTDXClient_GetReport(t *testing.T) {
 		tsm := mocks.NewTSMController(t)
 		tsm.On("GetReport", mock.Anything).Return(want, nil)
 
-		client, err := drivers.NewTDXClientWithTSM(tsm)
+		client, err := drivers.NewSEVClientWithTSM(tsm)
 		require.NoError(t, err)
 
 		// when
-		_, err = client.GetReport(nil)
+		_, err = client.GetReport()
 
 		// then
-		require.ErrorIs(t, err, drivers.ErrTDXClient)
+		require.ErrorIs(t, err, drivers.ErrSEVClient)
 	})
 }
