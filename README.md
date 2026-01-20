@@ -17,8 +17,6 @@ AMD SEV-SNP, and Intel TDX.
 - **Examples** demonstrating how to write, build, and deploy real-world
 TEE-based applications.
 
-> A Note on Costs:
-> 
 > Running cloud-based TEE applications is not free. AWS and GCP TEE
 compute instances typically cost between $0.20 to $0.50 per hour.
 Fortunately, Bearclave provides a _NoTEE_ mode that allows you to develop
