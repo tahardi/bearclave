@@ -6,7 +6,7 @@ by traditional computing systems. For this reason, curious developers often
 want to explore TEE technology for securing sensitive workloads, but find
 themselves overwhelmed by steep learning curves and complicated requirements. 
 The _Bearclave_ project is a collection of code and documentation that aims to
-address these challenges. This includes:
+address these challenges.
 
 ## What's Included?
 
@@ -18,6 +18,7 @@ AMD SEV-SNP, and Intel TDX.
 TEE-based applications.
 
 > A Note on Costs:
+> 
 > Running cloud-based TEE applications is not free. AWS and GCP TEE
 compute instances typically cost between $0.20 to $0.50 per hour.
 Fortunately, Bearclave provides a _NoTEE_ mode that allows you to develop
