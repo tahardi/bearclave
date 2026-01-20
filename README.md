@@ -26,8 +26,6 @@ a month.
 
 ## Project Structure
 
-The Bearclave project consists of the following repositories:
-
 - [**Bearclave**](https://github.com/tahardi/bearclave) an SDK for developing
 TEE-based applications in Go.
 - [**Bearclave Examples**](https://github.com/tahardi/bearclave-examples) a
@@ -46,4 +44,4 @@ To learn how to develop TEE-based applications, begin with the following resourc
 
 1. [TEE Concepts](./docs/concepts.md)
 2. [Install & Setup](./docs/setup.md)
-3. [Examples](https://github.com/tahardi/bearclave-examples)
+3. [Hello, World!](https://github.com/tahardi/bearclave-examples/hello-world)
