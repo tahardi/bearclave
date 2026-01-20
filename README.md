@@ -28,9 +28,8 @@ a month.
 
 The Bearclave project consists of the following repositories:
 
-- [**Bearclave SDK**](https://github.com/tahardi/bearclave) low-level primitives
-that provide basic TEE functionalities (e.g., attestation) and high-level
-modules for building TEE-based applications (e.g., HTTP/S servers).
+- [**Bearclave**](https://github.com/tahardi/bearclave) an SDK for developing
+TEE-based applications in Go.
 - [**Bearclave Examples**](https://github.com/tahardi/bearclave-examples) a
 collection of real-world TEE-based applications demonstrating how to use the
 Bearclave SDK.
@@ -45,6 +44,6 @@ code into Markdown documents so that documentation does not go stale.
 
 To learn how to develop TEE-based applications, begin with the following resources:
 
-- [TEE Concepts](./docs/concepts.md)
-- [Install & Setup](./docs/setup.md)
-- [Examples](https://github.com/tahardi/bearclave-examples)
+1. [TEE Concepts](./docs/concepts.md)
+2. [Install & Setup](./docs/setup.md)
+3. [Examples](https://github.com/tahardi/bearclave-examples)
