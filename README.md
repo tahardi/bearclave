@@ -41,8 +41,8 @@ code into Markdown documents.
 ## Getting Started
 
 1. Check out our documentation to learn about fundamental
-TEE concepts ([Here](./docs/concepts.md)).
-2. Get your environment [setup](./docs/setup.md) for developing with the
-Bearclave SDK.
-3. Try running our [Hello, World!](https://github.com/tahardi/bearclave-examples/hello-world)
-example application.
+TEE concepts. ([Here](./docs/concepts.md))
+2. Get your environment setup for developing with the
+Bearclave SDK. ([Here](./docs/setup.md))
+3. Run through our Hello, World! example application. 
+([Here](https://github.com/tahardi/bearclave-examples/hello-world))
