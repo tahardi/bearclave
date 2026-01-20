@@ -24,21 +24,21 @@ and test applications locally. By limiting your cloud usage with _NoTEE_ you
 should be able to prototype and test TEE applications for just a few dollars
 a month.
 
-## Project Repositories
+## Project Structure
 
 The Bearclave project consists of the following repositories:
 
 - [**Bearclave**](https://github.com/tahardi/bearclave) an SDK for developing
 TEE-based applications in Go.
 - [**Bearclave Examples**](https://github.com/tahardi/bearclave-examples) a
-collection of real-world TEE-based applications demonstrating how to use the
+collection of TEE-based applications demonstrating how to use the
 Bearclave SDK.
 - [**Bearclave TF**](https://github.com/tahardi/bearclave-tf) a collection of
 Terraform modules for deploying Bearclave applications to AWS and GCP.
 - [**Bearchain**](https://github.com/tahardi/bearchain) a (soon-to-be) collection
 of TEE-related blockchain smart contracts.
 - [**PluckMD**](https://github.com/tahardi/pluckmd) a handy tool for inserting
-code into Markdown documents so that documentation does not go stale.
+code into Markdown documents.
 
 ## Getting Started
 
