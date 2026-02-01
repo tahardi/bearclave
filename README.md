@@ -33,8 +33,11 @@ collection of TEE-based applications demonstrating how to use the
 Bearclave SDK.
 - [**Bearclave TF**](https://github.com/tahardi/bearclave-tf) a collection of
 Terraform modules for deploying Bearclave applications to AWS and GCP.
-- [**Bearchain**](https://github.com/tahardi/bearchain) a (soon-to-be) collection
-of TEE-related blockchain smart contracts.
+- [**Bearclave Smart Contracts**](https://github.com/tahardi/bearclave-contracts)
+a (soon-to-be) collection of TEE-related blockchain smart contracts.
+- [**Bearclave zkVMs**](https://github.com/tahardi/bearclave-zkvms)
+  a (soon-to-be) collection of Rust crates for verifying TEE attestations in
+Zero-Knowledge Proof Virtual Machines (zkVMs).
 - [**PluckMD**](https://github.com/tahardi/pluckmd) a handy tool for inserting
 code into Markdown documents.
 
