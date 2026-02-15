@@ -27,7 +27,31 @@ GCP setup guides below.
 
 ## Install & Setup (AWS)
 
-TODO: [setup - aws](https://taylor-a-hardin.atlassian.net/browse/BCL-53)
+Amazon Web Services (AWS) has its own proprietary TEE platform known as AWS
+Nitro Enclaves. Follow the steps below to set up the necessary tools and
+infrastructure to run Bearclave applications on AWS Nitro Enclaves.
+
+1. Create an [AWS Account](https://aws.amazon.com/). Note that this is your
+"root" account and should only be used to configure Billing and IAM roles.
+2. Install and configure the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+The Makefile targets in the [Bearclave Examples](https://github.com/tahardi/bearclave-examples)
+repository assume that the AWS CLI is installed and configured to use a role
+with sufficient permissions to manage EC2 instances (see the Makefiles for details).
+3. Install the [Terraform CLI](https://developer.hashicorp.com/terraform/install)
+version 1.14.3 or higher.
+4. Clone the [Bearclave TF](https://github.com/tahardi/bearclave-tf) repository.
+5. Use the `aws-nitro-enclaves/` module to create an AWS Nitro Enclaves enabled
+EC2 instance with the necessary dependencies to run Bearclave applications.
+```bash
+git clone https://github.com/tahardi/bearclave-tf.git
+cd bearclave-tf/modules/aws-nitro-enclaves/
+terraform init
+terraform plan
+terraform apply
+```
+6. Follow the steps in the [Bearclave Examples](https://github.com/tahardi/bearclave-examples)
+repository to build and run an example application on the newly provisioned
+instance.
 
 ## Install & Setup (GCP)
 
