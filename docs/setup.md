@@ -29,7 +29,7 @@ GCP setup guides below.
 
 Amazon Web Services (AWS) has its own proprietary TEE platform known as AWS
 Nitro Enclaves. Follow the steps below to set up the necessary tools and
-infrastructure to run Bearclave applications on AWS Nitro Enclaves.
+infrastructure to develop Bearclave applications on AWS Nitro Enclaves.
 
 1. Create an [AWS Account](https://aws.amazon.com/). Note that this is your
 "root" account and should only be used to configure Billing and IAM roles.
@@ -42,17 +42,65 @@ version 1.14.3 or higher.
 4. Clone the [Bearclave TF](https://github.com/tahardi/bearclave-tf) repository.
 5. Use the `aws-nitro-enclaves/` module to create an AWS Nitro Enclaves enabled
 EC2 instance with the necessary dependencies to run Bearclave applications.
-```bash
-git clone https://github.com/tahardi/bearclave-tf.git
-cd bearclave-tf/modules/aws-nitro-enclaves/
-terraform init
-terraform plan
-terraform apply
-```
+    ```bash
+    git clone https://github.com/tahardi/bearclave-tf.git
+    cd bearclave-tf/modules/aws-nitro-enclaves/
+    terraform init
+    terraform plan
+    terraform apply
+    ```
 6. Follow the steps in the [Bearclave Examples](https://github.com/tahardi/bearclave-examples)
 repository to build and run an example application on the newly provisioned
 instance.
 
 ## Install & Setup (GCP)
 
-TODO: [setup - gcp](https://taylor-a-hardin.atlassian.net/browse/BCL-54)
+Google Cloud Platform (GCP) provides compute instances that support the
+AMD SEV-SNP and Intel TDX TEE platforms. Follow the steps below to set up the
+necessary tools and infrastructure to develop Bearclave applications on
+AMD SEV-SNP and Intel TDX.
+
+1. Create a [Google Account](https://accounts.google.com/). If you use GMail,
+Drive, or any other similar Google service, then you already have an account;
+feel free to use that account. At the time of this writing, Google offers
+$300 in free credits to new users.
+2. Install and configure the [GCP CLI](https://docs.cloud.google.com/sdk/docs/install-sdk).
+The Makefile targets in the [Bearclave Examples](https://github.com/tahardi/bearclave-examples)
+repository assume that the GCP CLI is installed and configured to use a role
+with sufficient permissions to manage Compute VMs and the Artifact Registry 
+(see the Makefiles for details).
+3. Install [Docker Engine](https://docs.docker.com/engine/install/) to containerize
+and deploy Bearclave applications.
+4. Create an image repository in the Artifact Registry and authorize docker to
+push images to it. Note that some of these values may be out-of-date. Check the
+[Bearclave Examples](https://github.com/tahardi/bearclave-examples) repository
+to see what values are used in the Makefile for pushing images.
+    ```bash
+    gcloud artifacts repositories create bearclave \
+    --repository-format=docker \
+    --location=us-east1 \
+    --description="Docker repository for bearclave images" \
+    --project=bearclave
+    gcloud auth configure-docker us-east1-docker.pkg.dev
+    ```
+5. Install the [Terraform CLI](https://developer.hashicorp.com/terraform/install)
+version 1.14.3 or higher.
+6. Clone the [Bearclave TF](https://github.com/tahardi/bearclave-tf) repository.
+7. Use the `gcp-sev-snp/` and `gcp-tdx/` modules to create AMD SEV-SNP and
+Intel TDX enabled compute instances with the necessary dependencies to run
+Bearclave applications.
+    ```bash
+    git clone https://github.com/tahardi/bearclave-tf.git
+    cd bearclave-tf/modules/gcp-sev-snp/
+    terraform init
+    terraform plan
+    terraform apply
+    
+    cd ../gcp-tdx/
+    terraform init
+    terraform plan
+    terraform apply
+    ```
+8. Follow the steps in the [Bearclave Examples](https://github.com/tahardi/bearclave-examples)
+   repository to build and run an example application on the newly provisioned
+   instances.
