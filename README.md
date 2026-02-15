@@ -35,7 +35,7 @@ Bearclave SDK.
 Terraform modules for deploying Bearclave applications to AWS and GCP.
 - [**Bearclave Smart Contracts**](https://github.com/tahardi/bearclave-contracts)
 a (soon-to-be) collection of TEE-related blockchain smart contracts.
-- [**Bearclave zkVMs**](https://github.com/tahardi/bearclave-zkvms)
+- [**Bearclave zkVM**](https://github.com/tahardi/bearclave-zkvm)
   a (soon-to-be) collection of Rust crates for verifying TEE attestations in
 Zero-Knowledge Proof Virtual Machines (zkVMs).
 - [**PluckMD**](https://github.com/tahardi/pluckmd) a handy tool for inserting
