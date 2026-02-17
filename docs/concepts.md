@@ -1,4 +1,18 @@
-# Overview
+# Trusted Execution Environments (TEEs)
+
+This document covers foundational TEE concepts, popular platforms and their
+differences, and issues to consider when developing applications for them. 
+It is intended for developers who are interested in learning more about TEEs
+and how they can be used to protect their security-critical applications and
+sensitive data from unauthorized access.
+
+- [**Introduction**](#introduction)
+- [**AWS Nitro Enclaves**](#aws-nitro-enclaves)
+- [**AMD Secure Encrypted Virtualization (SEV)**](#amd-secure-encrypted-virtualization-sev)
+- [**Intel Trusted Domain Extensions (TDX)**](#intel-trusted-domain-extensions-tdx)
+- [**Code Reproducibility**](#code-reproducibility)
+
+## Introduction
 
 A **Trusted Computing Base (TCB)** is the collection of hardware, firmware,
 and software that secures a computing system. Normally, this might consist of
@@ -222,3 +236,34 @@ external KMS if persistent keys are desired. The Intel TDX system can be
 purchased and managed privately, or through cloud providers like Azure and GCP.
 Application-level attestations are not provided by default but can be achieved
 through the use of a virtual Trusted Platform Module.
+
+## Code Reproducibility
+
+One of the main draws to TEEs is their ability to attest to the integrity
+and authenticity of the code they are executing. This functionality, however, is
+predicated on your ability to accurately and consistently reproduce the TEE
+application's binary. To demonstrate why, consider the following scenario:
+
+You are a service provider offering a TEE-based application to customers. To
+provide customers with the utmost confidence in your service, you allow them to
+audit your application's source code. The idea is that when they later connect
+to your service and request an attestation report, they can verify that the
+application they are connecting to is the one they expected. The code
+measurement in the attestation report is not taken from the application's source
+code, however, but from the application's binary. Thus, along with auditing your
+source code, your customers need to build it too. Otherwise, they would have no
+way to determine that the code measurement in the attestation report is correct.
+
+Reproducibly building applications can be extremely challenging, however, as
+there are many factors that can affect the build process. This includes:
+- programming language
+- compiler
+- build flags
+- environment variables
+- dependencies
+- containerization technology
+
+Before offering your service to customers you should carefully consider
+whether it is even possible to reproduce your application's binary. You'll want
+to use reproducible languages (e.g., Golang, Rust), containerization
+technologies (e.g., Bazel, Nix), and package managers (e.g., Nix, StageX).
