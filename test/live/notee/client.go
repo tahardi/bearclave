@@ -126,6 +126,7 @@ func (c *Client) DoRequest(
 	require.NoError(c.t, err)
 	req.Header.Set("Content-Type", "application/json")
 
+	//nolint:gosec
 	resp, err := c.client.Do(req)
 	require.NoError(c.t, err)
 	require.Equal(c.t, http.StatusOK, resp.StatusCode)

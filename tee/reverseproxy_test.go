@@ -53,6 +53,7 @@ func TestReverseProxy(t *testing.T) {
 
 		// when
 		runService(func() { _ = revProxy.Serve() }, 100*time.Millisecond)
+		//nolint:gosec
 		resp, err := client.Do(req)
 
 		// then
@@ -77,6 +78,7 @@ func TestReverseProxy(t *testing.T) {
 
 		// when
 		runService(func() { _ = revProxy.Serve() }, 100*time.Millisecond)
+		//nolint:gosec
 		resp, err := client.Do(req)
 
 		// then

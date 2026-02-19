@@ -129,6 +129,13 @@ func MakeProxyHandler(
 		f.RequestURI = ""
 
 		logger.Info("forwarding request", slog.String("url", f.URL.String()))
+		// G704 - potential for Server-Side Request Forgery (SSRF) because the
+		// targetURL is constructed from the incoming HTTP request. This is
+		// user-controlled, and since we don't validate it, can be used to
+		// call loopback/private addresses. Since this proxy is meant to be
+		// used by TEE applications, we are going to ignore here and let the
+		// TEE app validate URLs for requests they make on behalf of users.
+		//nolint:gosec
 		resp, err := client.Do(f)
 		if err != nil {
 			logger.Error(
