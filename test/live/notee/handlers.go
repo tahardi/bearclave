@@ -16,7 +16,7 @@ const (
 	AttestHTTPSCallPath = "/attest-https-call"
 )
 
-type AttestCertRequest struct {}
+type AttestCertRequest struct{}
 type AttestCertResponse struct {
 	Attestation *tee.AttestResult `json:"attestation"`
 }
@@ -75,6 +75,7 @@ func MakeAttestHTTPCallHandler(
 		)
 		assert.NoError(t, err)
 
+		//nolint:gosec
 		resp, err := client.Do(req)
 		assert.NoError(t, err)
 		defer resp.Body.Close()
@@ -121,6 +122,7 @@ func MakeAttestHTTPSCallHandler(
 		)
 		assert.NoError(t, err)
 
+		//nolint:gosec
 		resp, err := client.Do(req)
 		assert.NoError(t, err)
 		defer resp.Body.Close()
