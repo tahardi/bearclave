@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/fxamacker/cbor/v2 v2.9.1
-	github.com/google/go-sev-guest v0.14.1
+	github.com/google/go-sev-guest v0.15.0
 	github.com/google/go-tdx-guest v0.3.1
 	github.com/hf/nitrite v0.0.0-20241225144000-c2d5d3c4f303
 	github.com/mdlayher/vsock v1.2.1
