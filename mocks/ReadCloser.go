@@ -14,10 +14,19 @@ func NewReadCloser(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *ReadCloser {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &ReadCloser{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -111,14 +120,20 @@ type ReadCloser_Read_Call struct {
 }
 
 // Read is a helper method to define mock.On call
-//   - p
-func (_e *ReadCloser_Expecter) Read(p interface{}) *ReadCloser_Read_Call {
+//   - p []byte
+func (_e *ReadCloser_Expecter) Read(p any) *ReadCloser_Read_Call {
 	return &ReadCloser_Read_Call{Call: _e.mock.On("Read", p)}
 }
 
 func (_c *ReadCloser_Read_Call) Run(run func(p []byte)) *ReadCloser_Read_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		var arg0 []byte
+		if args[0] != nil {
+			arg0 = args[0].([]byte)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

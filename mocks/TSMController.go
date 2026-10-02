@@ -15,10 +15,19 @@ func NewTSMController(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *TSMController {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &TSMController{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -76,16 +85,23 @@ type TSMController_GetReport_Call struct {
 }
 
 // GetReport is a helper method to define mock.On call
-//   - options
-func (_e *TSMController_Expecter) GetReport(options ...interface{}) *TSMController_GetReport_Call {
+//   - options ...controllers.TSMReportOption
+func (_e *TSMController_Expecter) GetReport(options ...any) *TSMController_GetReport_Call {
 	return &TSMController_GetReport_Call{Call: _e.mock.On("GetReport",
-		append([]interface{}{}, options...)...)}
+		append([]any{}, options...)...)}
 }
 
 func (_c *TSMController_GetReport_Call) Run(run func(options ...controllers.TSMReportOption)) *TSMController_GetReport_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[0].([]controllers.TSMReportOption)
-		run(variadicArgs...)
+		var arg0 []controllers.TSMReportOption
+		var variadicArgs []controllers.TSMReportOption
+		if len(args) > 0 {
+			variadicArgs = args[0].([]controllers.TSMReportOption)
+		}
+		arg0 = variadicArgs
+		run(
+			arg0...,
+		)
 	})
 	return _c
 }

@@ -15,10 +15,19 @@ func NewNSM(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *NSM {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &NSM{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -120,14 +129,20 @@ type NSM_DescribePCR_Call struct {
 }
 
 // DescribePCR is a helper method to define mock.On call
-//   - index
-func (_e *NSM_Expecter) DescribePCR(index interface{}) *NSM_DescribePCR_Call {
+//   - index uint16
+func (_e *NSM_Expecter) DescribePCR(index any) *NSM_DescribePCR_Call {
 	return &NSM_DescribePCR_Call{Call: _e.mock.On("DescribePCR", index)}
 }
 
 func (_c *NSM_DescribePCR_Call) Run(run func(index uint16)) *NSM_DescribePCR_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint16))
+		var arg0 uint16
+		if args[0] != nil {
+			arg0 = args[0].(uint16)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -176,15 +191,26 @@ type NSM_ExtendPCR_Call struct {
 }
 
 // ExtendPCR is a helper method to define mock.On call
-//   - index
-//   - data
-func (_e *NSM_Expecter) ExtendPCR(index interface{}, data interface{}) *NSM_ExtendPCR_Call {
+//   - index uint16
+//   - data []byte
+func (_e *NSM_Expecter) ExtendPCR(index any, data any) *NSM_ExtendPCR_Call {
 	return &NSM_ExtendPCR_Call{Call: _e.mock.On("ExtendPCR", index, data)}
 }
 
 func (_c *NSM_ExtendPCR_Call) Run(run func(index uint16, data []byte)) *NSM_ExtendPCR_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint16), args[1].([]byte))
+		var arg0 uint16
+		if args[0] != nil {
+			arg0 = args[0].(uint16)
+		}
+		var arg1 []byte
+		if args[1] != nil {
+			arg1 = args[1].([]byte)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -233,16 +259,32 @@ type NSM_GetAttestation_Call struct {
 }
 
 // GetAttestation is a helper method to define mock.On call
-//   - nonce
-//   - publicKey
-//   - userData
-func (_e *NSM_Expecter) GetAttestation(nonce interface{}, publicKey interface{}, userData interface{}) *NSM_GetAttestation_Call {
+//   - nonce []byte
+//   - publicKey []byte
+//   - userData []byte
+func (_e *NSM_Expecter) GetAttestation(nonce any, publicKey any, userData any) *NSM_GetAttestation_Call {
 	return &NSM_GetAttestation_Call{Call: _e.mock.On("GetAttestation", nonce, publicKey, userData)}
 }
 
 func (_c *NSM_GetAttestation_Call) Run(run func(nonce []byte, publicKey []byte, userData []byte)) *NSM_GetAttestation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte), args[1].([]byte), args[2].([]byte))
+		var arg0 []byte
+		if args[0] != nil {
+			arg0 = args[0].([]byte)
+		}
+		var arg1 []byte
+		if args[1] != nil {
+			arg1 = args[1].([]byte)
+		}
+		var arg2 []byte
+		if args[2] != nil {
+			arg2 = args[2].([]byte)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -346,14 +388,20 @@ type NSM_GetRandom_Call struct {
 }
 
 // GetRandom is a helper method to define mock.On call
-//   - length
-func (_e *NSM_Expecter) GetRandom(length interface{}) *NSM_GetRandom_Call {
+//   - length uint16
+func (_e *NSM_Expecter) GetRandom(length any) *NSM_GetRandom_Call {
 	return &NSM_GetRandom_Call{Call: _e.mock.On("GetRandom", length)}
 }
 
 func (_c *NSM_GetRandom_Call) Run(run func(length uint16)) *NSM_GetRandom_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint16))
+		var arg0 uint16
+		if args[0] != nil {
+			arg0 = args[0].(uint16)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -391,14 +439,20 @@ type NSM_LockPCR_Call struct {
 }
 
 // LockPCR is a helper method to define mock.On call
-//   - index
-func (_e *NSM_Expecter) LockPCR(index interface{}) *NSM_LockPCR_Call {
+//   - index uint16
+func (_e *NSM_Expecter) LockPCR(index any) *NSM_LockPCR_Call {
 	return &NSM_LockPCR_Call{Call: _e.mock.On("LockPCR", index)}
 }
 
 func (_c *NSM_LockPCR_Call) Run(run func(index uint16)) *NSM_LockPCR_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint16))
+		var arg0 uint16
+		if args[0] != nil {
+			arg0 = args[0].(uint16)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -436,14 +490,20 @@ type NSM_LockPCRs_Call struct {
 }
 
 // LockPCRs is a helper method to define mock.On call
-//   - end
-func (_e *NSM_Expecter) LockPCRs(end interface{}) *NSM_LockPCRs_Call {
+//   - end uint16
+func (_e *NSM_Expecter) LockPCRs(end any) *NSM_LockPCRs_Call {
 	return &NSM_LockPCRs_Call{Call: _e.mock.On("LockPCRs", end)}
 }
 
 func (_c *NSM_LockPCRs_Call) Run(run func(end uint16)) *NSM_LockPCRs_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint16))
+		var arg0 uint16
+		if args[0] != nil {
+			arg0 = args[0].(uint16)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

@@ -14,10 +14,19 @@ func NewCFSController(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *CFSController {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &CFSController{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -67,15 +76,26 @@ type CFSController_MkdirTemp_Call struct {
 }
 
 // MkdirTemp is a helper method to define mock.On call
-//   - path
-//   - pattern
-func (_e *CFSController_Expecter) MkdirTemp(path interface{}, pattern interface{}) *CFSController_MkdirTemp_Call {
+//   - path string
+//   - pattern string
+func (_e *CFSController_Expecter) MkdirTemp(path any, pattern any) *CFSController_MkdirTemp_Call {
 	return &CFSController_MkdirTemp_Call{Call: _e.mock.On("MkdirTemp", path, pattern)}
 }
 
 func (_c *CFSController_MkdirTemp_Call) Run(run func(path string, pattern string)) *CFSController_MkdirTemp_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -168,14 +188,20 @@ type CFSController_ReadFile_Call struct {
 }
 
 // ReadFile is a helper method to define mock.On call
-//   - path
-func (_e *CFSController_Expecter) ReadFile(path interface{}) *CFSController_ReadFile_Call {
+//   - path string
+func (_e *CFSController_Expecter) ReadFile(path any) *CFSController_ReadFile_Call {
 	return &CFSController_ReadFile_Call{Call: _e.mock.On("ReadFile", path)}
 }
 
 func (_c *CFSController_ReadFile_Call) Run(run func(path string)) *CFSController_ReadFile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -213,14 +239,20 @@ type CFSController_RemoveAll_Call struct {
 }
 
 // RemoveAll is a helper method to define mock.On call
-//   - path
-func (_e *CFSController_Expecter) RemoveAll(path interface{}) *CFSController_RemoveAll_Call {
+//   - path string
+func (_e *CFSController_Expecter) RemoveAll(path any) *CFSController_RemoveAll_Call {
 	return &CFSController_RemoveAll_Call{Call: _e.mock.On("RemoveAll", path)}
 }
 
 func (_c *CFSController_RemoveAll_Call) Run(run func(path string)) *CFSController_RemoveAll_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -258,15 +290,26 @@ type CFSController_WriteFile_Call struct {
 }
 
 // WriteFile is a helper method to define mock.On call
-//   - path
-//   - data
-func (_e *CFSController_Expecter) WriteFile(path interface{}, data interface{}) *CFSController_WriteFile_Call {
+//   - path string
+//   - data []byte
+func (_e *CFSController_Expecter) WriteFile(path any, data any) *CFSController_WriteFile_Call {
 	return &CFSController_WriteFile_Call{Call: _e.mock.On("WriteFile", path, data)}
 }
 
 func (_c *CFSController_WriteFile_Call) Run(run func(path string, data []byte)) *CFSController_WriteFile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].([]byte))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 []byte
+		if args[1] != nil {
+			arg1 = args[1].([]byte)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

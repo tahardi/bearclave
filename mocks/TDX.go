@@ -14,10 +14,19 @@ func NewTDX(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *TDX {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &TDX{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -69,14 +78,20 @@ type TDX_GetReport_Call struct {
 }
 
 // GetReport is a helper method to define mock.On call
-//   - data
-func (_e *TDX_Expecter) GetReport(data interface{}) *TDX_GetReport_Call {
+//   - data []byte
+func (_e *TDX_Expecter) GetReport(data any) *TDX_GetReport_Call {
 	return &TDX_GetReport_Call{Call: _e.mock.On("GetReport", data)}
 }
 
 func (_c *TDX_GetReport_Call) Run(run func(data []byte)) *TDX_GetReport_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		var arg0 []byte
+		if args[0] != nil {
+			arg0 = args[0].([]byte)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

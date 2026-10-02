@@ -15,10 +15,19 @@ func NewSEV(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *SEV {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &SEV{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -76,16 +85,23 @@ type SEV_GetReport_Call struct {
 }
 
 // GetReport is a helper method to define mock.On call
-//   - options
-func (_e *SEV_Expecter) GetReport(options ...interface{}) *SEV_GetReport_Call {
+//   - options ...drivers.SEVReportOption
+func (_e *SEV_Expecter) GetReport(options ...any) *SEV_GetReport_Call {
 	return &SEV_GetReport_Call{Call: _e.mock.On("GetReport",
-		append([]interface{}{}, options...)...)}
+		append([]any{}, options...)...)}
 }
 
 func (_c *SEV_GetReport_Call) Run(run func(options ...drivers.SEVReportOption)) *SEV_GetReport_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[0].([]drivers.SEVReportOption)
-		run(variadicArgs...)
+		var arg0 []drivers.SEVReportOption
+		var variadicArgs []drivers.SEVReportOption
+		if len(args) > 0 {
+			variadicArgs = args[0].([]drivers.SEVReportOption)
+		}
+		arg0 = variadicArgs
+		run(
+			arg0...,
+		)
 	})
 	return _c
 }
