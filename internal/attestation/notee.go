@@ -18,9 +18,14 @@ const (
 	NoTeeMeasurement     = "Not a TEE platform. Code measurements are not real."
 	NoTeeValidityPeriod  = int64(31536000)
 
+	bitsPerByte             = 8
 	p256CoordinateSize      = 32
-	p256UncompressedKeySize = 1 + 2*p256CoordinateSize
+	p256CoordinateBits      = p256CoordinateSize * bitsPerByte
 	uncompressedPointPrefix = 0x04
+	prefixSize              = 1
+	p256XOffset             = prefixSize
+	p256YOffset             = p256XOffset + p256CoordinateSize
+	p256UncompressedKeySize = p256YOffset + p256CoordinateSize
 )
 
 type PublicKey struct {
@@ -185,15 +190,15 @@ func ECDSAVerify(publicKey *PublicKey, data []byte, signature *Signature) error 
 
 	coordinates := []*big.Int{publicKey.X, publicKey.Y}
 	for _, c := range coordinates {
-		if c.Sign() < 0 || c.BitLen() > p256CoordinateSize*8 {
+		if c.Sign() < 0 || c.BitLen() > p256CoordinateBits {
 			return verifierError("invalid public key", nil)
 		}
 	}
 
 	raw := make([]byte, p256UncompressedKeySize)
 	raw[0] = uncompressedPointPrefix
-	publicKey.X.FillBytes(raw[1 : 1+p256CoordinateSize])
-	publicKey.Y.FillBytes(raw[1+p256CoordinateSize:])
+	publicKey.X.FillBytes(raw[p256XOffset:p256YOffset])
+	publicKey.Y.FillBytes(raw[p256YOffset:])
 	key, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), raw)
 	if err != nil {
 		return verifierError("parsing public key", err)
