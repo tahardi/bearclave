@@ -14,10 +14,19 @@ func NewIOController(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *IOController {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &IOController{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -113,14 +122,20 @@ type IOController_Send_Call struct {
 }
 
 // Send is a helper method to define mock.On call
-//   - request
-func (_e *IOController_Expecter) Send(request interface{}) *IOController_Send_Call {
+//   - request []byte
+func (_e *IOController_Expecter) Send(request any) *IOController_Send_Call {
 	return &IOController_Send_Call{Call: _e.mock.On("Send", request)}
 }
 
 func (_c *IOController_Send_Call) Run(run func(request []byte)) *IOController_Send_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		var arg0 []byte
+		if args[0] != nil {
+			arg0 = args[0].([]byte)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

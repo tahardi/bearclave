@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	crand "crypto/rand"
 	"encoding/json"
+	"math/big"
 	"testing"
 	"time"
 
@@ -311,5 +312,45 @@ func TestECDSAVerify(t *testing.T) {
 		// then
 		require.ErrorIs(t, err, attestation.ErrVerifier)
 		assert.ErrorContains(t, err, "ecdsa verification failed")
+	})
+
+	t.Run("error - public key not on curve", func(t *testing.T) {
+		// given
+		data := []byte("Hello, World!")
+		privateKey := newTestPrivateKey(t)
+		signature, err := attestation.ECDSASign(privateKey, data)
+		require.NoError(t, err)
+
+		publicKey := &attestation.PublicKey{
+			X: privateKey.X,
+			Y: new(big.Int).Add(privateKey.Y, big.NewInt(1)),
+		}
+
+		// when
+		err = attestation.ECDSAVerify(publicKey, data, signature)
+
+		// then
+		require.ErrorIs(t, err, attestation.ErrVerifier)
+		assert.ErrorContains(t, err, "parsing public key")
+	})
+
+	t.Run("error - public key coordinate too large", func(t *testing.T) {
+		// given
+		data := []byte("Hello, World!")
+		privateKey := newTestPrivateKey(t)
+		signature, err := attestation.ECDSASign(privateKey, data)
+		require.NoError(t, err)
+
+		publicKey := &attestation.PublicKey{
+			X: new(big.Int).Lsh(big.NewInt(1), 257),
+			Y: privateKey.Y,
+		}
+
+		// when
+		err = attestation.ECDSAVerify(publicKey, data, signature)
+
+		// then
+		require.ErrorIs(t, err, attestation.ErrVerifier)
+		assert.ErrorContains(t, err, "invalid public key")
 	})
 }

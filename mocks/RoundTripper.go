@@ -16,10 +16,19 @@ func NewRoundTripper(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *RoundTripper {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &RoundTripper{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -71,14 +80,20 @@ type RoundTripper_RoundTrip_Call struct {
 }
 
 // RoundTrip is a helper method to define mock.On call
-//   - request
-func (_e *RoundTripper_Expecter) RoundTrip(request interface{}) *RoundTripper_RoundTrip_Call {
+//   - request *http.Request
+func (_e *RoundTripper_Expecter) RoundTrip(request any) *RoundTripper_RoundTrip_Call {
 	return &RoundTripper_RoundTrip_Call{Call: _e.mock.On("RoundTrip", request)}
 }
 
 func (_c *RoundTripper_RoundTrip_Call) Run(run func(request *http.Request)) *RoundTripper_RoundTrip_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*http.Request))
+		var arg0 *http.Request
+		if args[0] != nil {
+			arg0 = args[0].(*http.Request)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

@@ -15,10 +15,19 @@ func NewAttester(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *Attester {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &Attester{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -76,16 +85,23 @@ type Attester_Attest_Call struct {
 }
 
 // Attest is a helper method to define mock.On call
-//   - options
-func (_e *Attester_Expecter) Attest(options ...interface{}) *Attester_Attest_Call {
+//   - options ...attestation.AttestOption
+func (_e *Attester_Expecter) Attest(options ...any) *Attester_Attest_Call {
 	return &Attester_Attest_Call{Call: _e.mock.On("Attest",
-		append([]interface{}{}, options...)...)}
+		append([]any{}, options...)...)}
 }
 
 func (_c *Attester_Attest_Call) Run(run func(options ...attestation.AttestOption)) *Attester_Attest_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[0].([]attestation.AttestOption)
-		run(variadicArgs...)
+		var arg0 []attestation.AttestOption
+		var variadicArgs []attestation.AttestOption
+		if len(args) > 0 {
+			variadicArgs = args[0].([]attestation.AttestOption)
+		}
+		arg0 = variadicArgs
+		run(
+			arg0...,
+		)
 	})
 	return _c
 }

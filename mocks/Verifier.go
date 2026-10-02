@@ -15,10 +15,19 @@ func NewVerifier(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *Verifier {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &Verifier{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -76,17 +85,29 @@ type Verifier_Verify_Call struct {
 }
 
 // Verify is a helper method to define mock.On call
-//   - attestResult
-//   - options
-func (_e *Verifier_Expecter) Verify(attestResult interface{}, options ...interface{}) *Verifier_Verify_Call {
+//   - attestResult *attestation.AttestResult
+//   - options ...attestation.VerifyOption
+func (_e *Verifier_Expecter) Verify(attestResult any, options ...any) *Verifier_Verify_Call {
 	return &Verifier_Verify_Call{Call: _e.mock.On("Verify",
-		append([]interface{}{attestResult}, options...)...)}
+		append([]any{attestResult}, options...)...)}
 }
 
 func (_c *Verifier_Verify_Call) Run(run func(attestResult *attestation.AttestResult, options ...attestation.VerifyOption)) *Verifier_Verify_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[1].([]attestation.VerifyOption)
-		run(args[0].(*attestation.AttestResult), variadicArgs...)
+		var arg0 *attestation.AttestResult
+		if args[0] != nil {
+			arg0 = args[0].(*attestation.AttestResult)
+		}
+		var arg1 []attestation.VerifyOption
+		var variadicArgs []attestation.VerifyOption
+		if len(args) > 1 {
+			variadicArgs = args[1].([]attestation.VerifyOption)
+		}
+		arg1 = variadicArgs
+		run(
+			arg0,
+			arg1...,
+		)
 	})
 	return _c
 }

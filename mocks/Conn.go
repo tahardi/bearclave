@@ -17,10 +17,19 @@ func NewConn(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *Conn {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &Conn{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -160,14 +169,20 @@ type Conn_Read_Call struct {
 }
 
 // Read is a helper method to define mock.On call
-//   - b
-func (_e *Conn_Expecter) Read(b interface{}) *Conn_Read_Call {
+//   - b []byte
+func (_e *Conn_Expecter) Read(b any) *Conn_Read_Call {
 	return &Conn_Read_Call{Call: _e.mock.On("Read", b)}
 }
 
 func (_c *Conn_Read_Call) Run(run func(b []byte)) *Conn_Read_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		var arg0 []byte
+		if args[0] != nil {
+			arg0 = args[0].([]byte)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -251,14 +266,20 @@ type Conn_SetDeadline_Call struct {
 }
 
 // SetDeadline is a helper method to define mock.On call
-//   - t
-func (_e *Conn_Expecter) SetDeadline(t interface{}) *Conn_SetDeadline_Call {
+//   - t time.Time
+func (_e *Conn_Expecter) SetDeadline(t any) *Conn_SetDeadline_Call {
 	return &Conn_SetDeadline_Call{Call: _e.mock.On("SetDeadline", t)}
 }
 
 func (_c *Conn_SetDeadline_Call) Run(run func(t time.Time)) *Conn_SetDeadline_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Time))
+		var arg0 time.Time
+		if args[0] != nil {
+			arg0 = args[0].(time.Time)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -296,14 +317,20 @@ type Conn_SetReadDeadline_Call struct {
 }
 
 // SetReadDeadline is a helper method to define mock.On call
-//   - t
-func (_e *Conn_Expecter) SetReadDeadline(t interface{}) *Conn_SetReadDeadline_Call {
+//   - t time.Time
+func (_e *Conn_Expecter) SetReadDeadline(t any) *Conn_SetReadDeadline_Call {
 	return &Conn_SetReadDeadline_Call{Call: _e.mock.On("SetReadDeadline", t)}
 }
 
 func (_c *Conn_SetReadDeadline_Call) Run(run func(t time.Time)) *Conn_SetReadDeadline_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Time))
+		var arg0 time.Time
+		if args[0] != nil {
+			arg0 = args[0].(time.Time)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -341,14 +368,20 @@ type Conn_SetWriteDeadline_Call struct {
 }
 
 // SetWriteDeadline is a helper method to define mock.On call
-//   - t
-func (_e *Conn_Expecter) SetWriteDeadline(t interface{}) *Conn_SetWriteDeadline_Call {
+//   - t time.Time
+func (_e *Conn_Expecter) SetWriteDeadline(t any) *Conn_SetWriteDeadline_Call {
 	return &Conn_SetWriteDeadline_Call{Call: _e.mock.On("SetWriteDeadline", t)}
 }
 
 func (_c *Conn_SetWriteDeadline_Call) Run(run func(t time.Time)) *Conn_SetWriteDeadline_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Time))
+		var arg0 time.Time
+		if args[0] != nil {
+			arg0 = args[0].(time.Time)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -395,14 +428,20 @@ type Conn_Write_Call struct {
 }
 
 // Write is a helper method to define mock.On call
-//   - b
-func (_e *Conn_Expecter) Write(b interface{}) *Conn_Write_Call {
+//   - b []byte
+func (_e *Conn_Expecter) Write(b any) *Conn_Write_Call {
 	return &Conn_Write_Call{Call: _e.mock.On("Write", b)}
 }
 
 func (_c *Conn_Write_Call) Run(run func(b []byte)) *Conn_Write_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		var arg0 []byte
+		if args[0] != nil {
+			arg0 = args[0].([]byte)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
