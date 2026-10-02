@@ -14,7 +14,7 @@ your applications without needing to have access to a TEE platform. While this
 is not a true one-to-one replacement, it can be useful for speeding up
 development cycles and reducing cloud costs.
 
-1. Install [Golang](https://golang.org/doc/install) (v1.24.3 or higher) to build
+1. Install [Golang](https://golang.org/doc/install) (v1.26.0 or higher) to build
 and run Bearclave applications.
 2. Install [Process Compose](https://github.com/F1bonacc1/process-compose)
 (v1.78.0 or higher) to orchestrate and run applications in "No TEE" mode.

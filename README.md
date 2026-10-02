@@ -34,10 +34,12 @@ Bearclave SDK.
 - [**Bearclave TF**](https://github.com/tahardi/bearclave-tf) a collection of
 Terraform modules for deploying Bearclave applications to AWS and GCP.
 - [**Bearclave Smart Contracts**](https://github.com/tahardi/bearclave-contracts)
-a (soon-to-be) collection of TEE-related blockchain smart contracts.
-- [**Bearclave zkVM**](https://github.com/tahardi/bearclave-zkvm)
-  a (soon-to-be) collection of Rust crates for verifying TEE attestations in
-Zero-Knowledge Proof Virtual Machines (zkVMs).
+a collection of TEE-related blockchain smart contracts.
+- [**Bearclave zkVM**](https://github.com/tahardi/bearclave-zkvm) a collection
+of RISC Zero guest programs and verifiers. Currently a factors-verifier demo,
+with TEE attestation verifiers in progress.
+- [**Bearclave Foundry**](https://github.com/tahardi/bearclave-foundry) a Go
+test harness for running Foundry (anvil, forge, cast) in integration tests.
 - [**PluckMD**](https://github.com/tahardi/pluckmd) a handy tool for inserting
 code into Markdown documents.
 
