@@ -29,7 +29,7 @@ run: terminate build
 	@nitro-cli run-enclave \
 		--cpu-count 2 \
 		--memory 512 \
-		--enclave-cid 16 \
+		--enclave-cid 4 \
 		--eif-path ./bin/nitro-test.eif \
 		--debug-mode \
 		--attach-console

@@ -6,8 +6,8 @@ These tests need real TEE hardware. `make test-integration` only checks that the
 
 - Nitro: `make test-integration-nitro` builds `test/integration/nitro/bin/nitro-test.eif`. Set `NITRO_CLI` to run
   nitro-cli from a Docker image instead of the host.
-- SEV: `make test-integration-sev` builds and pushes the image.
-- TDX: `make test-integration-tdx` builds and pushes the image.
+- SEV: `make test-integration-sev` builds the image. `make -C test/integration/sev push` also pushes it.
+- TDX: `make test-integration-tdx` builds the image. `make -C test/integration/tdx push` also pushes it.
 
 Set `GCP_REGISTRY` and `IMAGE_TAG` to change where SEV and TDX images go. Run
 `make -C test/integration/<sev|tdx> image-ref` to print the full image reference.

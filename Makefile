@@ -65,11 +65,11 @@ test-integration-nitro:
 
 .PHONY: test-integration-sev
 test-integration-sev:
-	@make -C ./test/integration/sev push
+	@make -C ./test/integration/sev build
 
 .PHONY: test-integration-tdx
 test-integration-tdx:
-	@make -C ./test/integration/tdx push
+	@make -C ./test/integration/tdx build
 
 .PHONY: test-live
 test-live: test-live-notee
