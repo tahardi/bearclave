@@ -47,6 +47,30 @@ type Report struct {
 	Measurement string     `json:"measurement"`
 }
 
+type signedReport struct {
+	Userdata    []byte     `json:"userdata"`
+	Nonce       []byte     `json:"nonce"`
+	VerifyKey   *PublicKey `json:"verifykey"`
+	Timestamp   int64      `json:"timestamp"`
+	Measurement string     `json:"measurement"`
+}
+
+func noTEESignedDigest(report *Report) ([]byte, error) {
+	signed := signedReport{
+		Userdata:    report.Userdata,
+		Nonce:       report.Nonce,
+		VerifyKey:   report.VerifyKey,
+		Timestamp:   report.Timestamp,
+		Measurement: report.Measurement,
+	}
+	signedBytes, err := json.Marshal(signed)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling signed report: %w", err)
+	}
+	digest := sha256.Sum256(signedBytes)
+	return digest[:], nil
+}
+
 type NoTEEAttester struct {
 	privateKey *ecdsa.PrivateKey
 	publicKey  *PublicKey
@@ -85,20 +109,25 @@ func (a *NoTEEAttester) Attest(options ...AttestOption) (*AttestResult, error) {
 		return nil, attesterErrorUserData(msg, nil)
 	}
 
-	signDataHash := sha256.Sum256([]byte(NoTeeMeasurement))
-	signature, err := ECDSASign(a.privateKey, signDataHash[:])
-	if err != nil {
-		return nil, attesterError("signing userdata", err)
-	}
-
 	report := Report{
 		Nonce:       opts.Nonce,
 		Userdata:    opts.UserData,
-		Signature:   signature,
+		Signature:   nil,
 		VerifyKey:   a.publicKey,
 		Timestamp:   time.Now().Unix(),
 		Measurement: NoTeeMeasurement,
 	}
+	digest, err := noTEESignedDigest(&report)
+	if err != nil {
+		return nil, attesterError("computing report digest", err)
+	}
+
+	signature, err := ECDSASign(a.privateKey, digest)
+	if err != nil {
+		return nil, attesterError("signing report", err)
+	}
+	report.Signature = signature
+
 	reportBytes, err := json.Marshal(report)
 	if err != nil {
 		return nil, attesterError("marshaling report", err)
@@ -132,8 +161,12 @@ func (n *NoTEEVerifier) Verify(
 		return nil, verifierError("unmarshalling report", err)
 	}
 
-	signDataHash := sha256.Sum256([]byte(NoTeeMeasurement))
-	err = ECDSAVerify(report.VerifyKey, signDataHash[:], report.Signature)
+	digest, err := noTEESignedDigest(&report)
+	if err != nil {
+		return nil, verifierError("computing report digest", err)
+	}
+
+	err = ECDSAVerify(report.VerifyKey, digest, report.Signature)
 	if err != nil {
 		return nil, err
 	}

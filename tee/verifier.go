@@ -82,9 +82,10 @@ func VerifyUserData(expectedMeasurement []byte, userData []byte) error {
 		return verifierError("measuring user data", err)
 	}
 
-	// The SEV and TDX TEE platforms always return 64 bytes for user data
-	// even if the provided user data was shorter. Ensure that we use the
-	// correct length when comparing so we don't falsely mismatch
+	if len(expectedMeasurement) < len(gotMeasurement) {
+		return verifierError("user data measurement too short", nil)
+	}
+
 	correctedMeasurement := expectedMeasurement[:len(gotMeasurement)]
 	if !bytes.Equal(correctedMeasurement, gotMeasurement) {
 		msg := fmt.Sprintf(
@@ -93,6 +94,12 @@ func VerifyUserData(expectedMeasurement []byte, userData []byte) error {
 			base64.StdEncoding.EncodeToString(gotMeasurement),
 		)
 		return verifierError(msg, nil)
+	}
+
+	for _, b := range expectedMeasurement[len(gotMeasurement):] {
+		if b != 0 {
+			return verifierError("user data measurement has non-zero padding", nil)
+		}
 	}
 	return nil
 }

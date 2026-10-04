@@ -6,6 +6,8 @@ import (
 	"github.com/tahardi/bearclave"
 )
 
+const NoTEEMeasurement = bearclave.NoTEEMeasurement
+
 type Attester struct {
 	base bearclave.Attester
 }

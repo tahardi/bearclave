@@ -211,6 +211,51 @@ func TestNoTEEVerifier_Verify(t *testing.T) {
 		// then
 		assert.ErrorIs(t, err, attestation.ErrVerifierNonce)
 	})
+
+	tamperTests := []struct {
+		name   string
+		tamper func(report *attestation.Report)
+	}{
+		{
+			name:   "error - tampered userdata",
+			tamper: func(report *attestation.Report) { report.Userdata = []byte("evil") },
+		},
+		{
+			name:   "error - tampered nonce",
+			tamper: func(report *attestation.Report) { report.Nonce = []byte("other") },
+		},
+		{
+			name:   "error - tampered timestamp",
+			tamper: func(report *attestation.Report) { report.Timestamp -= 10 },
+		},
+		{
+			name:   "error - tampered measurement",
+			tamper: func(report *attestation.Report) { report.Measurement = "evil" },
+		},
+	}
+	for _, tt := range tamperTests {
+		t.Run(tt.name, func(t *testing.T) {
+			// given
+			attestResult, _, timestamp := noTEEAttestation(t, []byte("hello world"))
+			report := attestation.Report{}
+			require.NoError(t, json.Unmarshal(attestResult.Report, &report))
+			tt.tamper(&report)
+			reportBytes, err := json.Marshal(report)
+			require.NoError(t, err)
+
+			verifier, err := attestation.NewNoTEEVerifier()
+			require.NoError(t, err)
+
+			// when
+			_, err = verifier.Verify(
+				&attestation.AttestResult{Report: reportBytes},
+				attestation.WithVerifyTimestamp(timestamp),
+			)
+
+			// then
+			require.ErrorIs(t, err, attestation.ErrVerifier)
+		})
+	}
 }
 
 func TestECDSASign(t *testing.T) {
