@@ -2,39 +2,40 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
-.DEFAULT_GOAL := run-eif-debug
+.DEFAULT_GOAL := build
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
-.PHONY: nitro-test
-nitro-test: $(shell find . -type f -name '*.go')
+NITRO_CLI ?= nitro-cli
+
+bin/nitro-test: $(shell find . -type f -name '*.go')
 	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c -o ./bin/nitro-test
 
 .PHONY: build-docker
-build-docker: nitro-test
+build-docker: bin/nitro-test
 	@docker build \
 		-f ./nitro.Dockerfile \
 		-t nitro-test \
 		.
 
-.PHONY: build-eif
-build-eif: build-docker
-	@nitro-cli build-enclave \
+.PHONY: build
+build: build-docker
+	@$(NITRO_CLI) build-enclave \
 		--docker-uri nitro-test:latest \
 		--output-file ./bin/nitro-test.eif
 
-.PHONY: run-eif-debug
-run-eif-debug: terminate-eif build-eif
+.PHONY: run
+run: terminate build
 	@nitro-cli run-enclave \
 		--cpu-count 2 \
 		--memory 512 \
-		--enclave-cid 4 \
+		--enclave-cid 16 \
 		--eif-path ./bin/nitro-test.eif \
 		--debug-mode \
 		--attach-console
 
-.PHONY: terminate-eif
-terminate-eif:
+.PHONY: terminate
+terminate:
 	@nitro-cli terminate-enclave --all
 
 .PHONY: clean

@@ -57,10 +57,19 @@ test-unit-internal:
 
 .PHONY: test-integration
 test-integration:
+	@go test -count=1 -run '^$$' ./test/integration/...
 
 .PHONY: test-integration-nitro
 test-integration-nitro:
-	@make -C ./test/integration/nitro
+	@make -C ./test/integration/nitro build
+
+.PHONY: test-integration-sev
+test-integration-sev:
+	@make -C ./test/integration/sev push
+
+.PHONY: test-integration-tdx
+test-integration-tdx:
+	@make -C ./test/integration/tdx push
 
 .PHONY: test-live
 test-live: test-live-notee
@@ -72,3 +81,5 @@ test-live-notee:
 .PHONY: clean
 clean:
 	@make -C ./test/integration/nitro clean
+	@make -C ./test/integration/sev clean
+	@make -C ./test/integration/tdx clean
