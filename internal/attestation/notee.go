@@ -47,27 +47,14 @@ type Report struct {
 	Measurement string     `json:"measurement"`
 }
 
-type signedReport struct {
-	Userdata    []byte     `json:"userdata"`
-	Nonce       []byte     `json:"nonce"`
-	VerifyKey   *PublicKey `json:"verifykey"`
-	Timestamp   int64      `json:"timestamp"`
-	Measurement string     `json:"measurement"`
-}
-
 func noTEESignedDigest(report *Report) ([]byte, error) {
-	signed := signedReport{
-		Userdata:    report.Userdata,
-		Nonce:       report.Nonce,
-		VerifyKey:   report.VerifyKey,
-		Timestamp:   report.Timestamp,
-		Measurement: report.Measurement,
-	}
-	signedBytes, err := json.Marshal(signed)
+	unsigned := *report
+	unsigned.Signature = nil
+	unsignedBytes, err := json.Marshal(unsigned)
 	if err != nil {
-		return nil, fmt.Errorf("marshaling signed report: %w", err)
+		return nil, fmt.Errorf("marshaling unsigned report: %w", err)
 	}
-	digest := sha256.Sum256(signedBytes)
+	digest := sha256.Sum256(unsignedBytes)
 	return digest[:], nil
 }
 
