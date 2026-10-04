@@ -4,6 +4,8 @@ import (
 	"github.com/tahardi/bearclave/internal/attestation"
 )
 
+const NoTEEMeasurement = attestation.NoTeeMeasurement
+
 type Attester = attestation.Attester
 
 var (
