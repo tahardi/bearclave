@@ -23,6 +23,11 @@ var (
 	ErrVerifierNonce       = bearclave.ErrVerifierNonce
 	ErrVerifierTimestamp   = bearclave.ErrVerifierTimestamp
 	ErrCertProvider        = errors.New("cert provider")
+	ErrKeyBinding          = errors.New("key binding")
+	ErrKeyBindingPurpose   = fmt.Errorf("%w: purpose", ErrKeyBinding)
+	ErrKeyBindingNonce     = fmt.Errorf("%w: nonce", ErrKeyBinding)
+	ErrKeyBindingStale     = fmt.Errorf("%w: stale", ErrKeyBinding)
+	ErrKeyBindingPublicKey = fmt.Errorf("%w: public key", ErrKeyBinding)
 	ErrUnsupportedPlatform = errors.New("unsupported platform")
 )
 
@@ -45,6 +50,26 @@ func attesterError(msg string, err error) error {
 
 func certProviderError(msg string, err error) error {
 	return wrapError(ErrCertProvider, msg, err)
+}
+
+func keyBindingError(msg string, err error) error {
+	return wrapError(ErrKeyBinding, msg, err)
+}
+
+func keyBindingPurposeError(msg string, err error) error {
+	return wrapError(ErrKeyBindingPurpose, msg, err)
+}
+
+func keyBindingNonceError(msg string, err error) error {
+	return wrapError(ErrKeyBindingNonce, msg, err)
+}
+
+func keyBindingStaleError(msg string, err error) error {
+	return wrapError(ErrKeyBindingStale, msg, err)
+}
+
+func keyBindingPublicKeyError(msg string, err error) error {
+	return wrapError(ErrKeyBindingPublicKey, msg, err)
 }
 
 func proxyError(msg string, err error) error {
