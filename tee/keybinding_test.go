@@ -2,6 +2,7 @@ package tee_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -23,14 +24,14 @@ func TestAttestKeyBinding(t *testing.T) {
 				Purpose:   tee.HPKEKeyBindingPurpose,
 				PublicKey: []byte("test public key"),
 				Nonce:     []byte("nonce"),
-				IssuedAt:  time.Now().UTC(),
+				IssuedAt:  time.Now().Unix(),
 			},
 		},
 		{
 			name: "error - missing purpose",
 			binding: tee.KeyBinding{
 				PublicKey: []byte("test public key"),
-				IssuedAt:  time.Now(),
+				IssuedAt:  time.Now().Unix(),
 			},
 			wantErr: tee.ErrKeyBinding,
 		},
@@ -38,7 +39,7 @@ func TestAttestKeyBinding(t *testing.T) {
 			name: "error - missing public key",
 			binding: tee.KeyBinding{
 				Purpose:  tee.HPKEKeyBindingPurpose,
-				IssuedAt: time.Now(),
+				IssuedAt: time.Now().Unix(),
 			},
 			wantErr: tee.ErrKeyBinding,
 		},
@@ -73,7 +74,7 @@ func TestAttestKeyBinding(t *testing.T) {
 			assert.Equal(t, tt.binding.Purpose, binding.Purpose)
 			assert.Equal(t, tt.binding.PublicKey, binding.PublicKey)
 			assert.Equal(t, tt.binding.Nonce, binding.Nonce)
-			assert.True(t, tt.binding.IssuedAt.Equal(binding.IssuedAt))
+			assert.Equal(t, tt.binding.IssuedAt, binding.IssuedAt)
 		})
 	}
 }
@@ -89,7 +90,7 @@ func TestVerifyKeyBinding(t *testing.T) {
 		Purpose:   tee.HPKEKeyBindingPurpose,
 		PublicKey: []byte("test public key"),
 		Nonce:     nonce,
-		IssuedAt:  time.Now(),
+		IssuedAt:  time.Now().Unix(),
 	}
 	policy := tee.KeyBindingPolicy{
 		Measurement: tee.NoTEEMeasurement,
@@ -165,14 +166,14 @@ func TestVerifyKeyBinding(t *testing.T) {
 		{
 			name:    "error - stale issued at",
 			purpose: tee.HPKEKeyBindingPurpose,
-			binding: withBinding(func(b *tee.KeyBinding) { b.IssuedAt = time.Now().Add(-2 * time.Hour) }),
+			binding: withBinding(func(b *tee.KeyBinding) { b.IssuedAt = time.Now().Add(-2 * time.Hour).Unix() }),
 			policy:  policy,
 			wantErr: tee.ErrKeyBindingStale,
 		},
 		{
 			name:    "error - issued in the future",
 			purpose: tee.HPKEKeyBindingPurpose,
-			binding: withBinding(func(b *tee.KeyBinding) { b.IssuedAt = time.Now().Add(time.Hour) }),
+			binding: withBinding(func(b *tee.KeyBinding) { b.IssuedAt = time.Now().Add(time.Hour).Unix() }),
 			policy:  policy,
 			wantErr: tee.ErrKeyBindingStale,
 		},
@@ -195,7 +196,7 @@ func TestVerifyKeyBinding(t *testing.T) {
 			assert.Equal(t, tt.binding.Purpose, got.Purpose)
 			assert.Equal(t, tt.binding.PublicKey, got.PublicKey)
 			assert.Equal(t, tt.binding.Nonce, got.Nonce)
-			assert.True(t, tt.binding.IssuedAt.Equal(got.IssuedAt))
+			assert.Equal(t, tt.binding.IssuedAt, got.IssuedAt)
 		})
 	}
 
@@ -247,10 +248,10 @@ func TestVerifyKeyBinding(t *testing.T) {
 
 	t.Run("error - unknown field", func(t *testing.T) {
 		// given
-		issuedAt, err := json.Marshal(time.Now())
-		require.NoError(t, err)
-		userData := `{"purpose":"bearclave/hpke/v1","public_key":"AA==","issued_at":` +
-			string(issuedAt) + `,"extra":1}`
+		userData := fmt.Sprintf(
+			`{"purpose":"bearclave/hpke/v1","public_key":"AA==","issued_at":%d,"extra":1}`,
+			time.Now().Unix(),
+		)
 		attestResult, err := attester.Attest(tee.WithAttestUserData([]byte(userData)))
 		require.NoError(t, err)
 		noNoncePolicy := withPolicy(func(p *tee.KeyBindingPolicy) { p.Nonce = nil })

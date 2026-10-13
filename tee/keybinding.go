@@ -14,10 +14,10 @@ const (
 )
 
 type KeyBinding struct {
-	Purpose   string    `json:"purpose"`
-	PublicKey []byte    `json:"public_key"`
-	Nonce     []byte    `json:"nonce,omitempty"`
-	IssuedAt  time.Time `json:"issued_at"`
+	Purpose   string `json:"purpose"`
+	PublicKey []byte `json:"public_key"`
+	Nonce     []byte `json:"nonce,omitempty"`
+	IssuedAt  int64  `json:"issued_at"`
 }
 
 func AttestKeyBinding(attester *Attester, binding KeyBinding) (*AttestResult, error) {
@@ -26,7 +26,7 @@ func AttestKeyBinding(attester *Attester, binding KeyBinding) (*AttestResult, er
 		return nil, keyBindingError("missing purpose", nil)
 	case len(binding.PublicKey) == 0:
 		return nil, keyBindingError("missing public key", nil)
-	case binding.IssuedAt.IsZero():
+	case binding.IssuedAt == 0:
 		return nil, keyBindingError("missing issued at", nil)
 	}
 
@@ -90,13 +90,16 @@ func VerifyKeyBinding(
 		return nil, keyBindingPublicKeyError("missing public key", nil)
 	case policy.Nonce != nil && !bytes.Equal(policy.Nonce, binding.Nonce):
 		return nil, keyBindingNonceError("mismatched nonce", nil)
-	case binding.IssuedAt.IsZero():
+	case binding.IssuedAt == 0:
 		return nil, keyBindingStaleError("missing issued at", nil)
-	case binding.IssuedAt.After(now.Add(DefaultKeyBindingClockSkew)):
+	}
+
+	issuedAt := time.Unix(binding.IssuedAt, 0)
+	if issuedAt.After(now.Add(DefaultKeyBindingClockSkew)) {
 		return nil, keyBindingStaleError("issued in the future", nil)
 	}
 
-	age := now.Sub(binding.IssuedAt)
+	age := now.Sub(issuedAt)
 	if age > policy.MaxAge {
 		msg := fmt.Sprintf("age %s exceeds max age %s", age, policy.MaxAge)
 		return nil, keyBindingStaleError(msg, nil)
