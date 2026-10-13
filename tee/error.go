@@ -23,6 +23,7 @@ var (
 	ErrVerifierNonce       = bearclave.ErrVerifierNonce
 	ErrVerifierTimestamp   = bearclave.ErrVerifierTimestamp
 	ErrCertProvider        = errors.New("cert provider")
+	ErrHPKE                = errors.New("hpke")
 	ErrKeyBinding          = errors.New("key binding")
 	ErrKeyBindingPurpose   = fmt.Errorf("%w: purpose", ErrKeyBinding)
 	ErrKeyBindingNonce     = fmt.Errorf("%w: nonce", ErrKeyBinding)
@@ -50,6 +51,10 @@ func attesterError(msg string, err error) error {
 
 func certProviderError(msg string, err error) error {
 	return wrapError(ErrCertProvider, msg, err)
+}
+
+func hpkeError(msg string, err error) error {
+	return wrapError(ErrHPKE, msg, err)
 }
 
 func keyBindingError(msg string, err error) error {
