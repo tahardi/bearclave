@@ -11,14 +11,26 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tahardi/bearclave"
+	"github.com/tahardi/bearclave/mocks"
 	"github.com/tahardi/bearclave/tee"
 )
 
 func newTestAttester(t *testing.T) *tee.Attester {
 	t.Helper()
 	attester, err := tee.NewAttester(tee.NoTEE)
+	require.NoError(t, err)
+	return attester
+}
+
+func newFailingAttester(t *testing.T) *tee.Attester {
+	t.Helper()
+	base := mocks.NewAttester(t)
+	base.On("Attest", mock.Anything).Return(nil, assert.AnError)
+	attester, err := tee.NewAttesterWithBase(base)
 	require.NoError(t, err)
 	return attester
 }
@@ -87,6 +99,43 @@ func TestGenerateAttestedCert(t *testing.T) {
 		}
 		assert.True(t, found)
 	})
+
+	t.Run("error - attesting key binding", func(t *testing.T) {
+		// given
+		attester := newFailingAttester(t)
+		privateKey := newTestECDSAPrivateKey(t)
+
+		// when
+		_, err := tee.GenerateAttestedCert(
+			attester,
+			privateKey,
+			tee.DefaultDomain,
+			tee.DefaultIP,
+			tee.DefaultAttestedCertValidity,
+		)
+
+		// then
+		require.ErrorIs(t, err, tee.ErrCertProvider)
+		require.ErrorIs(t, err, assert.AnError)
+	})
+}
+
+func TestNewAttestedCertProvider(t *testing.T) {
+	t.Run("error - attesting key binding", func(t *testing.T) {
+		// given
+		attester := newFailingAttester(t)
+
+		// when
+		_, err := tee.NewAttestedCertProvider(
+			attester,
+			tee.DefaultDomain,
+			tee.DefaultIP,
+			tee.DefaultAttestedCertValidity,
+		)
+
+		// then
+		require.ErrorIs(t, err, tee.ErrCertProvider)
+	})
 }
 
 func TestAttestedCertProvider_GetCert(t *testing.T) {
@@ -140,6 +189,39 @@ func TestAttestedCertProvider_RotateCert(t *testing.T) {
 		assert.NotEqual(t, oldLeaf.RawSubjectPublicKeyInfo, newLeaf.RawSubjectPublicKeyInfo)
 		binding := verifyCertKeyBinding(t, newLeaf)
 		assert.Equal(t, newLeaf.RawSubjectPublicKeyInfo, binding.PublicKey)
+	})
+
+	t.Run("error - attesting key binding keeps old cert", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		noTEE, err := bearclave.NewNoTEEAttester()
+		require.NoError(t, err)
+
+		base := mocks.NewAttester(t)
+		base.On("Attest", mock.Anything).Return(noTEE.Attest).Once()
+		base.On("Attest", mock.Anything).Return(nil, assert.AnError).Once()
+		attester, err := tee.NewAttesterWithBase(base)
+		require.NoError(t, err)
+
+		provider, err := tee.NewAttestedCertProvider(
+			attester,
+			tee.DefaultDomain,
+			tee.DefaultIP,
+			tee.DefaultAttestedCertValidity,
+		)
+		require.NoError(t, err)
+
+		oldCert, err := provider.GetCert(ctx)
+		require.NoError(t, err)
+
+		// when
+		err = provider.RotateCert(ctx)
+
+		// then
+		require.ErrorIs(t, err, tee.ErrCertProvider)
+		gotCert, err := provider.GetCert(ctx)
+		require.NoError(t, err)
+		assert.Same(t, oldCert, gotCert)
 	})
 }
 
