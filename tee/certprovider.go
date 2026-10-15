@@ -102,19 +102,7 @@ func GenerateSelfSignedCert(
 	ip string,
 	validity time.Duration,
 ) (*tls.Certificate, error) {
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(time.Now().UnixNano()),
-		Subject: pkix.Name{
-			CommonName: domain,
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(validity),
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-		DNSNames:              []string{domain},
-		IPAddresses:           []net.IP{net.ParseIP(ip)},
-	}
+	template := makeCertTemplate(domain, ip, validity, time.Now())
 
 	publicKey, err := GetPublicKey(privateKey)
 	if err != nil {
@@ -136,6 +124,22 @@ func GenerateSelfSignedCert(
 		Certificate: [][]byte{certDER},
 		PrivateKey:  privateKey,
 	}, nil
+}
+
+func makeCertTemplate(domain string, ip string, validity time.Duration, now time.Time) x509.Certificate {
+	return x509.Certificate{
+		SerialNumber: big.NewInt(now.UnixNano()),
+		Subject: pkix.Name{
+			CommonName: domain,
+		},
+		NotBefore:             now,
+		NotAfter:              now.Add(validity),
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		DNSNames:              []string{domain},
+		IPAddresses:           []net.IP{net.ParseIP(ip)},
+	}
 }
 
 func GetPublicKey(privateKey crypto.PrivateKey) (crypto.PublicKey, error) {
