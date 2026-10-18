@@ -218,6 +218,30 @@ func TestVerifyAttestedCert(t *testing.T) {
 			wantErr: tee.ErrVerifier,
 		},
 		{
+			name:     "error - not yet valid certificate",
+			verifier: verifier,
+			makeCert: func(t *testing.T) *x509.Certificate {
+				t.Helper()
+				key := newTestECDSAPrivateKey(t)
+				spki, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+				require.NoError(t, err)
+				ext := attestationExtension(t, attester, tee.TLSKeyBindingPurpose, spki, time.Now())
+				return newTestCert(t, key, time.Now().Add(time.Hour), time.Hour, []pkix.Extension{ext})
+			},
+			policy:  policy,
+			wantErr: tee.ErrVerifier,
+		},
+		{
+			name:     "error - missing measurement policy",
+			verifier: verifier,
+			makeCert: func(t *testing.T) *x509.Certificate {
+				t.Helper()
+				return newTestAttestedLeaf(t, attester, tee.DefaultAttestedCertValidity)
+			},
+			policy:  withPolicy(func(p *tee.KeyBindingPolicy) { p.Measurement = "" }),
+			wantErr: tee.ErrKeyBinding,
+		},
+		{
 			name:     "error - wrong platform",
 			verifier: nitroVerifier,
 			makeCert: func(t *testing.T) *x509.Certificate {
@@ -246,13 +270,14 @@ func TestVerifyAttestedCert(t *testing.T) {
 	}
 }
 
-func newTestTLSServer(ctx context.Context, t *testing.T, provider tee.CertProvider) string {
+func newTestTLSServer(ctx context.Context, t *testing.T, provider tee.CertProvider, version uint16) string {
 	t.Helper()
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("hello"))
 	}))
 	srv.TLS = &tls.Config{
-		MinVersion: tls.VersionTLS13,
+		MinVersion: version,
+		MaxVersion: version,
 		GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 			return provider.GetCert(ctx)
 		},
@@ -303,7 +328,7 @@ func TestNewAttestedTLSConfig(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		// given
-		url := newTestTLSServer(ctx, t, newAttestedProvider(t))
+		url := newTestTLSServer(ctx, t, newAttestedProvider(t), tls.VersionTLS13)
 		client := newClient(policy)
 
 		// when
@@ -317,7 +342,7 @@ func TestNewAttestedTLSConfig(t *testing.T) {
 	t.Run("happy path - after rotation", func(t *testing.T) {
 		// given
 		provider := newAttestedProvider(t)
-		url := newTestTLSServer(ctx, t, provider)
+		url := newTestTLSServer(ctx, t, provider, tls.VersionTLS13)
 		client := newClient(policy)
 		_, err := getHello(ctx, t, client, url)
 		require.NoError(t, err)
@@ -335,7 +360,7 @@ func TestNewAttestedTLSConfig(t *testing.T) {
 		// given
 		provider, err := tee.NewSelfSignedCertProvider(tee.DefaultDomain, tee.DefaultIP, tee.DefaultValidity)
 		require.NoError(t, err)
-		url := newTestTLSServer(ctx, t, provider)
+		url := newTestTLSServer(ctx, t, provider, tls.VersionTLS13)
 		client := newClient(policy)
 
 		// when
@@ -347,7 +372,7 @@ func TestNewAttestedTLSConfig(t *testing.T) {
 
 	t.Run("error - wrong measurement", func(t *testing.T) {
 		// given
-		url := newTestTLSServer(ctx, t, newAttestedProvider(t))
+		url := newTestTLSServer(ctx, t, newAttestedProvider(t), tls.VersionTLS13)
 		client := newClient(tee.KeyBindingPolicy{Measurement: "wrong", MaxAge: time.Hour})
 
 		// when
@@ -355,5 +380,28 @@ func TestNewAttestedTLSConfig(t *testing.T) {
 
 		// then
 		require.ErrorIs(t, err, tee.ErrVerifierMeasurement)
+	})
+
+	t.Run("error - TLS 1.2 server", func(t *testing.T) {
+		// given
+		url := newTestTLSServer(ctx, t, newAttestedProvider(t), tls.VersionTLS12)
+		client := newClient(policy)
+
+		// when
+		_, err := getHello(ctx, t, client, url)
+
+		// then
+		require.ErrorContains(t, err, "protocol version")
+	})
+
+	t.Run("error - missing peer certificate", func(t *testing.T) {
+		// given
+		config := tee.NewAttestedTLSConfig(verifier, policy)
+
+		// when
+		err := config.VerifyConnection(tls.ConnectionState{})
+
+		// then
+		require.ErrorIs(t, err, tee.ErrVerifier)
 	})
 }
