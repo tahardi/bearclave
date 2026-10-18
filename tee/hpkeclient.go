@@ -3,7 +3,7 @@ package tee
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
+	crand "crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -19,7 +19,7 @@ func FetchHPKEKey(
 	policy KeyBindingPolicy,
 ) ([]byte, error) {
 	nonce := make([]byte, HPKENonceSize)
-	_, err := rand.Read(nonce)
+	_, err := crand.Read(nonce)
 	if err != nil {
 		return nil, hpkeError("generating nonce", err)
 	}
@@ -61,7 +61,7 @@ func FetchHPKEKey(
 	return binding.PublicKey, nil
 }
 
-func DoHPKERequest(
+func SendSealedRequest(
 	ctx context.Context,
 	client *http.Client,
 	url string,

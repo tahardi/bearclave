@@ -22,7 +22,7 @@ func HPKEAAD(method string, path string) []byte {
 	return []byte(method + " " + path)
 }
 
-func MakeHPKEKeyHandler(attester *Attester, key *HPKEKey, logger *slog.Logger) http.HandlerFunc {
+func MakeFetchHPKEKeyHandler(attester *Attester, key *HPKEKey, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -59,7 +59,7 @@ func MakeHPKEKeyHandler(attester *Attester, key *HPKEKey, logger *slog.Logger) h
 	}
 }
 
-func MakeHPKEHandler(key *HPKEKey, handler HPKEHandlerFunc, logger *slog.Logger) http.HandlerFunc {
+func MakeSendSealedRequestHandler(key *HPKEKey, handler HPKEHandlerFunc, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)

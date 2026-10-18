@@ -39,8 +39,8 @@ func newHPKEServer(
 	t.Helper()
 	logger := slog.New(slog.DiscardHandler)
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hpke-key", tee.MakeHPKEKeyHandler(attester, key, logger))
-	mux.HandleFunc("/echo", tee.MakeHPKEHandler(key, handler, logger))
+	mux.HandleFunc("/hpke-key", tee.MakeFetchHPKEKeyHandler(attester, key, logger))
+	mux.HandleFunc("/echo", tee.MakeSendSealedRequestHandler(key, handler, logger))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return server
@@ -58,7 +58,7 @@ func TestHPKEAAD(t *testing.T) {
 	assert.Equal(t, []byte("POST /echo"), got)
 }
 
-func TestMakeHPKEKeyHandler(t *testing.T) {
+func TestMakeFetchHPKEKeyHandler(t *testing.T) {
 	validNonce := bytes.Repeat([]byte{7}, tee.HPKENonceSize)
 	tests := []struct {
 		name       string
@@ -142,7 +142,7 @@ func TestMakeHPKEKeyHandler(t *testing.T) {
 	}
 }
 
-func TestMakeHPKEHandler(t *testing.T) {
+func TestMakeSendSealedRequestHandler(t *testing.T) {
 	plaintext := []byte("hello")
 	tests := []struct {
 		name       string

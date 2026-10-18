@@ -134,7 +134,7 @@ func TestFetchHPKEKey(t *testing.T) {
 	}
 }
 
-func TestDoHPKERequest(t *testing.T) {
+func TestSendSealedRequest(t *testing.T) {
 	plaintext := []byte("hello")
 	tests := []struct {
 		name       string
@@ -195,7 +195,7 @@ func TestDoHPKERequest(t *testing.T) {
 			publicKey := tt.publicKey(t, key)
 
 			// when
-			got, err := tee.DoHPKERequest(
+			got, err := tee.SendSealedRequest(
 				context.Background(),
 				server.Client(),
 				server.URL+"/echo",
